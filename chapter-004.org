@@ -385,11 +385,17 @@ allAwesome = [awesome, also]
    d ~(+) :: Num a => a -> a -> a~
 
 * 4.10 Definitions
-  - Tuple :: is an ordered grouping of values.
-  - Typeclass :: is a set of operations defined with respect to a polymorphic type.
-  - Data Constructor :: provide means of creating values that inhabit a given type.
-  - Type Constructor :: are not values and can only be used in type signatures.
-  - Data Declaration :: define new datatypes. Always create a new type constructor, may or may not create a new data constructor.
-  - Type Alias :: is a way to refer to a type constructor or a type constant in an alternative way.
-  - Arity :: the number of arguments a function accept.
-  - Polymorphism :: being able to write code in terms of values which may be one of several, or any, type.
+- Tuple :: is an ordered grouping of values.
+- Typeclass :: is a set of operations defined with respect to a polymorphic type.
+- Data Constructor :: provide means of creating values that inhabit a given type.
+- Type Constructor :: are not values and can only be used in type signatures.
+- Data Declaration :: define new datatypes. Always create a new type constructor, may or may not create a new data constructor.
+- Type Alias :: is a way to refer to a type constructor or a type constant in an alternative way.
+- Arity :: the number of arguments a function accept.
+- Polymorphism :: being able to write code in terms of values which may be one of several, or any, type.
+
+* 4.11 Names
+- There are 7 categories of entities that have names
+  - *Functions*, *Term Variables*, *Data Constructors*, *Type Variables*, *Type Constructors*, *Typeclasses* and *Modules*
+  - Term Level: *Term Variables* and *Data Contructors*
+  - Type Level: *Type Variables*, *Type Constructors*, *Typeclasses*
