@@ -82,3 +82,220 @@
    a) ~(Num a, Ord a) => a~
 9. ~kessel :: (Ord a, Num b) => a -> b -> a~ what is the type of ~kessel (1 :: Integer) 2~
    c) ~Integer~
+
+* 5.5 Polymorphism
+  - Polymorphic means "made of many forms"
+  - Polymorphic type variables give us the ability to to implement expressions that can accept arguments of many types and return results of many types without rewriting the expression for every type
+  - Type signatures may have three kind of types:
+    - Concrete
+    - Constrained Polymorphic (also called Ad-Hoc Polymorphism)
+    - Parametrically Polymorphic
+  - Parametricity means that the behaviour of a function doesn't change with respect to the type of its argument if the type is compatible with the constraints.
+** Exercise: Parametricity
+   1. Is not possible
+   2. Write all possible implementation of a function with type signature ~a -> a -> a~
+      #+BEGIN_SRC haskell
+      first :: a -> a -> a
+      first a b = a
+      #+END_SRC
+
+      #+BEGIN_SRC haskell
+      second :: a -> a -> a
+      second a b = b
+      #+END_SRC
+   3. Write all possible implementation of function with type signature ~a -> b -> b~
+      #+BEGIN_SRC haskell
+      only :: a -> b -> b
+      only a b = b
+      #+END_SRC
+
+* 5.6 Type Inference
+  - Type inference is an algorithm for determining the types of expressions.
+** Exercise: Apply Yourself
+   1. ~myConcat :: [Char] -> [Char]~
+   2. ~myMult :: Fractional a => a -> a~
+   3. ~myTake :: Int -> [Char]~
+   4. ~myCom :: Int -> Bool~
+   5. ~myAlph :: Char -> Bool~
+* 5.7 Asserting Types for Declaration
+* 5.8 Chapter Exercises
+** Multiple choice
+   1. c
+   2. a
+   3. b
+   4. c
+** Determine the type
+   1. Determine the value returned by the application of functions and its value
+      1. ~54~, ~Num a => a~
+      2. ~(0, "doge")~, ~Num a => (a, [Char])~
+      3. ~(0, "doge")~, ~(Integer, [Char])~
+      4. ~False~, ~Bool~
+      5. ~5~, ~Int~
+      6. ~False~, ~Bool~
+   2. What's the type of ~w~? ~Num a => a~
+   3. What's the type of ~y~? ~Fractional a => a~
+   3. What's the type of ~y~? ~[Char]~
+** Does it compile?
+   1. It doesn't compile, fixed
+      #+BEGIN_SRC haskell :results none
+      bigNum = (^) 5
+      wahoo = bigNum $ 10
+      wahoo
+      #+END_SRC
+   2. It compiles
+   3. It doesn't compile, fixed
+      #+BEGIN_SRC haskell :results none
+      a = (+)
+      b = a
+      c = b 10
+      d = c 200
+      d
+      #+END_SRC
+   4. I doesn't compile, c is not defined
+** Type variable or specific type constructor?
+   1. Already done in the book
+   2. Fully polymorphic, concrete, concrete
+   3. Fully polymorphic, constrained polymorphic, concrete
+   4. Fully polymorphic, fully polymorphic, concrete
+** Write a type signature
+   1. ~functionH :: [a] -> a~
+   2. ~functionC :: Ord a => a -> a -> Bool~
+   3. ~functionS :: (a, b) -> b~
+** Given a type write a function
+   1. Only one version
+      #+BEGIN_SRC haskell :results none
+      i :: a -> a
+      i x = x
+      #+END_SRC
+   2. Only one version
+      #+BEGIN_SRC haskell :results none
+      c :: a -> b -> a
+      c x y = x
+      #+END_SRC
+   3. Yes
+   4. Only one version
+      #+BEGIN_SRC haskell :results none
+      c' :: a -> b -> b
+      c' x y = y
+      #+END_SRC
+   5. Two known possibilities
+      #+BEGIN_SRC haskell :results none
+      r :: [a] -> [a]
+      r xs = xs
+      #+END_SRC
+      #+BEGIN_SRC haskell :results none
+      r :: [a] -> [a]
+      r xs = reverse xs
+      #+END_SRC
+      #+BEGIN_SRC haskell :results none
+      r :: [a] -> [a]
+      r xs = tail xs
+      #+END_SRC
+   6. Only one version
+      #+BEGIN_SRC haskell :results none
+      co :: (b -> c) -> (a -> b) -> a -> c
+      co b2c a2b a = b2c (a2b a)
+      #+END_SRC
+   7. Only one version
+      #+BEGIN_SRC haskell :results none
+      a :: (a -> c) -> a -> a
+      a _ x = x
+      #+END_SRC
+   8. Only one version
+      #+BEGIN_SRC haskell :results none
+      a' :: (a -> b) -> a -> b
+      a' a2b a = a2b a
+      #+END_SRC
+** Fix it
+   1. Make it compile
+      #+BEGIN_SRC haskell :tangle chapter-005/SingFirst.hs :results none
+      module SingFirst where
+
+      fstString :: [Char] -> [Char]
+      fstString x = x ++ " in the rain"
+
+      sndString :: [Char] -> [Char]
+      sndString x = x ++ " over the rainbow"
+
+      sing = if (x < y) then fstString x else sndString y
+        where
+          x = "Singin"
+          y = "Somewhere"
+      #+END_SRC
+   2. Make it sing the other song
+      #+BEGIN_SRC haskell :tangle chapter-005/SingSecond.hs :results none
+      module SingSecond where
+
+      fstString :: [Char] -> [Char]
+      fstString x = x ++ " in the rain"
+
+      sndString :: [Char] -> [Char]
+      sndString x = x ++ " over the rainbow"
+
+      sing = if (x > y) then fstString x else sndString y
+        where
+          x = "Singin"
+          y = "Somewhere"
+      #+END_SRC
+   3. Make it compile
+      #+BEGIN_SRC haskell :tangle chapter-005/Arith3Broken.hs :results none
+      module Arith3Broken where
+
+      main :: IO ()
+      main = do
+        print (1 + 2)
+        putStrLn (show 10)
+        print (negate (-1))
+        print ((+) 0 blah) where blah = negate 1
+      #+END_SRC
+** COMMENT Type-Known-Do
+   1. Make it type check
+      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+      f :: Int -> String
+      f = undefined
+
+      g :: String -> Char
+      g = undefined
+
+      h :: Int -> Char
+      h x = g . f $ x
+      #+END_SRC
+   2. Make it type check
+      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+      data A
+      data B
+      data C
+
+      q :: A -> B
+      q = undefined
+
+      w :: B -> C
+      w = undefined
+
+      e :: A -> C
+      e x = w . q $ x
+      #+END_SRC
+   3. Make it type check
+      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+      data X
+      data Y
+      data Z
+
+      xz :: X -> Z
+      xz = undefined
+
+      yz :: Y -> Z
+      yz = undefined
+
+      xform :: (X, Y) -> (Z, Z)
+      xform (x, y) = (xz x, yz y)
+      #+END_SRC
+   4. Make it type check
+      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+      munge :: (x -> y)
+            -> (y -> (w, z))
+            -> x
+            -> w
+
+      munge x2y y2wz x = fst $ y2wz $ x2y $ x
+      #+END_SRC
