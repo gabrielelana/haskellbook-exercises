@@ -1,0 +1,1085 @@
+* 6.1 Typeclasses
+In this chapter
+- Typeclasses ~Eq~, ~Num~, ~Ord~, ~Enum~ and ~Show~
+- What is type-defaulting typeclasses?
+- What is Typeclass inheritance?
+- Common but often implicit functions that creates side effects
+
+* 6.2 What are typeclasses?
+Types and Typeclasses are in a sense opposite
+- Declaration of a datatype defines how that type is created.
+- Declaration of a typeclasses defines how a set of types are consumed
+  or used in a computation.
+
+Typeclasses allow us to generalize over a set of types in order to
+define and execute a standard set of functions for those types.
+
+We don't need to define separate equality functions for each different
+type of data, as long as our type *implements* or *instantiates* the
+~Eq~ typeclass, we can use the standard functions defined in ~Eq~.
+
+- *Typeclasses* declare operations (functions members of a typeclass)
+- *Instances* supply implementation for operations declared in
+  typeclasses
+
+* 6.3 Back to Bool
+Look at the typeclasses of ~Bool~. Each of these instances is a
+typeclass that ~Bool~ implements, and the instances are unique
+implementations of the functions defined in the typeclass.
+
+#+BEGIN_SRC haskell :results raw :wrap EXAMPLE
+:i Bool
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+data Bool = False | True 	-- Defined in ‘GHC.Types’
+instance Eq Bool -- Defined in ‘GHC.Classes’
+instance Ord Bool -- Defined in ‘GHC.Classes’
+instance Show Bool -- Defined in ‘GHC.Show’
+instance Read Bool -- Defined in ‘GHC.Read’
+instance Enum Bool -- Defined in ‘GHC.Enum’
+instance Bounded Bool -- Defined in ‘GHC.Enum’
+#+END_EXAMPLE
+
+- Bounded :: for types that have an upper and lower bound
+- Enum :: for things thta can be enumerated
+- Eq :: for things that can be tested for equality
+- Ord :: for things that can be put into a sequential order
+- Show :: render things into strings
+
+Typeclasses have a *hierarchy*, all members of ~Ord~ must be members of
+~Eq~ (to put in order something you need to be able to compare them
+for equality), all members of ~Enum~ must be members of ~Ord~ (to put
+something in an enumerated list you need to be able to sort them).
+
+* 6.4 Eq
+In Haskell equality is implemented with ~Eq~.
+
+#+NAME: head
+#+BEGIN_SRC sh :var n="1" :var content="" :results raw
+echo "$content" | head -n$n
+#+END_SRC
+
+#+BEGIN_SRC haskell :results raw replace :wrap EXAMPLE :post head(n="3", content=*this*)
+:i Eq
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+class Eq a where
+  (==) :: a -> a -> Bool
+  (/=) :: a -> a -> Bool
+#+END_EXAMPLE
+
+Any type that has an instance of ~Eq~ typeclass implements the functions ~==~ and ~/=~
+
+#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :epilogue "0"
+5 == 5
+5 /= 6
+(1, 2) == (2, 1)
+(1, 2) == (1, 2)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+True
+True
+False
+True
+#+END_EXAMPLE
+
+Type binding ~(==) :: a -> a -> Bool~ starts from the left, so if we
+bind the first ~a~ to ~(Integer, Integer)~ then what we expect for the
+second ~a~ it's the same type
+
+#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :epilogue "0"
+:t (==) (1, 2)
+"--------------------------------------"
+(1, 2) == "puppies"
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+(==) (1, 2) :: (Num b, Num a, Eq b, Eq a) => (a, b) -> Bool
+--------------------------------------
+<interactive>:108:11: error:
+    • Couldn't match expected type ‘(Integer, Integer)’
+                  with actual type ‘[Char]’
+    • In the second argument of ‘(==)’, namely ‘"puppies"’
+      In the expression: (1, 2) == "puppies"
+      In an equation for ‘it’: it = (1, 2) == "puppies"
+#+END_EXAMPLE
+* 6.5 Writing typeclass instances
+We will define ~Eq~ for our own datatype without deriving anything,
+first thing look at the [[http://hackage.haskell.org/package/base/docs/Data-Eq.html][definition of the typeclass you need to
+implement]], for ~Eq~ we need to implment either ~==~ or ~/=~ (the other
+can be deduced, you can implement both if you have somthing clever
+that works for your datatype that is more efficient than a simple
+negation)
+
+#+NAME: trivial
+#+BEGIN_SRC haskell :tangle chapter-006/trivial.hs :eval never
+module Trivial where
+
+data Trivial =
+  Trivial
+
+instance Eq Trivial where
+  (==) Trivial Trivial = True
+#+END_SRC
+
+1. ~instance~ keyword beging the declaration of a typeclass instance.
+2. ~Eq~ is the name of the typeclass the instance is providing.
+3. ~Trivial~ is the name of the datatype to which we are providing a
+   typeclass instance.
+4. ~where~ terminates the declaration and starts the implementation.
+5. ~==~ is the infix operator we are providing as part of the
+   typeclass.
+6. ~Trivial~ is the data constructor we are using to identify the
+   first argument.
+7. ~Trivial~ is the data constructor we are using to identify the
+   second argument.
+8. So if both the first and second argument match with the type
+   constructor ~Trivial~ then the result is ~True~.
+9. Typeclass instances are unique to a given type.
+
+#+NAME: ghci-clean
+#+BEGIN_SRC emacs-lisp :var content="" :results raw
+(string-join
+  (seq-map
+    (lambda (line)
+      (replace-regexp-in-string "^.*Prelude> " "" line))
+    (split-string content "\n"))
+  "\n")
+#+END_SRC
+
+#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :noweb yes :epilogue ":load" :post ghci-clean(content=*this*)
+:{
+<<trivial>>
+:}
+Trivial == Trivial
+Trivial /= Trivial
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+True
+False
+#+END_EXAMPLE
+
+Write a less trivial datatype with an instance of ~Eq~ typeclass
+
+#+NAME: dayofweek
+#+BEGIN_SRC haskell :tangle chapter-006/dayofweek.hs :eval never
+module DayOfWeek where
+
+data DayOfWeek = Mon | Tue | Wed | Thu | Fri | Sat | Sun
+
+data Date =
+  Date DayOfWeek Int
+
+instance Eq DayOfWeek where
+  (==) Mon Mon = True
+  (==) Tue Tue = True
+  (==) Wed Wed = True
+  (==) Thu Thu = True
+  (==) Fri Fri = True
+  (==) Sat Sat = True
+  (==) Sun Sun = True
+  (==) _ _ = False
+
+instance Eq Date where
+  (==) (Date dayOfWeek dayOfMonth)
+       (Date dayOfWeek' dayOfMonth') =
+    dayOfWeek == dayOfWeek' && dayOfMonth == dayOfMonth'
+#+END_SRC
+
+#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :noweb yes :epilogue ":load" :post ghci-clean(content=*this*)
+:{
+<<dayofweek>>
+:}
+Date Thu 10 == Date Thu 10
+Date Thu 10 == Date Fri 11
+Date Thu 10 == Date Fri 10
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+True
+False
+False
+#+END_EXAMPLE
+
+** Partial Function
+Partial functions, not to be confused with /partially applied
+functions/, are function that are not defined for all possible input,
+kindly the Haskell compiler will let us know that that's a problem
+
+#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :noweb yes :epilogue ":load" :post ghci-clean(content=*this*)
+:{
+<<dayofweek>>
+
+f :: DayOfWeek -> Int
+f Mon = 1
+f Tue = 2
+f Wed = 3
+:}
+
+f Fri
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+*** Exception: <interactive>:(1493,1)-(1495,9): Non-exhaustive patterns in function f
+#+END_EXAMPLE
+
+Let's try to build one that is complete
+
+#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :noweb yes :epilogue ":load" :post ghci-clean(content=*this*)
+:{
+<<dayofweek>>
+
+f :: DayOfWeek -> Int
+f Mon = 1
+f Tue = 2
+f Wed = 3
+f Thu = 4
+f Fri = 5
+f Sat = 6
+f Sun = 7
+:}
+
+f Fri
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+5
+#+END_EXAMPLE
+
+** Ask for more
+When we are implementing a typeclass for a certain polymorphic
+datatype, we can ask for one or more type arguments to implement one
+or more typeclass
+
+#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+:{
+module IdentityEq where
+
+data Identity a =
+  Identity a
+
+instance Eq (Identity a) where
+  (==) (Identity v) (Identity v') =
+    v == v'
+:}
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+<interactive>:1557:5: error:
+    • No instance for (Eq a) arising from a use of ‘==’
+      Possible fix: add (Eq a) to the context of the instance declaration
+    • In the expression: v == v'
+      In an equation for ‘==’: (==) (Identity v) (Identity v') = v == v'
+      In the instance declaration for ‘Eq (Identity a)’
+#+END_EXAMPLE
+
+#+NAME: identityeq
+#+BEGIN_SRC haskell :tangle chapter-006/identityeq.hs :eval never
+module IdentityEq where
+
+data Identity a =
+   Identity a
+
+instance Eq a => Eq (Identity a) where
+   (==) (Identity v) (Identity v') =
+     v == v'
+#+END_SRC
+
+#+BEGIN_SRC haskell :results output :noweb yes replace :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+:{
+<<identityeq>>
+:}
+Identity 5 == Identity 5
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+True
+#+END_EXAMPLE
+
+** Exercises: Eq Instances
+Write the ~Eq~ instance for the datatype provided
+
+1. Write an ~Eq~ instance for ~TisAnInteger~
+   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   :{
+   module EqIntances01 where
+
+   data TisAnInteger =
+     TisAn Integer
+
+   instance Eq TisAnInteger where
+     (==) (TisAn n1) (TisAn n2) = n1 == n2
+   :}
+   TisAn 1 == TisAn 1
+   TisAn 1 == TisAn 2
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   False
+   #+END_EXAMPLE
+
+2. Write an ~Eq~ instance for ~TwoIntegers~
+   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   :{
+   module EqIntances02 where
+
+   data TwoIntegers =
+     Two Integer Integer
+
+   instance Eq TwoIntegers where
+     (==) (Two nl1 nl2) (Two nr1 nr2) = nl1 == nr1 && nl2 == nr2
+   :}
+   Two 1 1 == Two 1 1
+   Two 1 1 == Two 1 2
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   False
+   #+END_EXAMPLE
+
+3. Write an ~Eq~ instance for ~StringOrInt~
+   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   :{
+   module EqInstances03 where
+
+   data StringOrInt =
+     TisAnInt Int | TisAString String
+
+   instance Eq StringOrInt where
+     (==) (TisAnInt n1) (TisAnInt n2) = n1 == n2
+     (==) (TisAString s1) (TisAString s2) = s1 == s2
+   :}
+   TisAnInt 1 == TisAnInt 1
+   TisAnInt 1 == TisAnInt 2
+   TisAString "aaa" == TisAString "aaa"
+   TisAString "aaa" == TisAString "aab"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   False
+   True
+   False
+   #+END_EXAMPLE
+
+4. Write an ~Eq~ instance for ~(Pair a)~
+   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   :{
+   module EqInstances04 where
+
+   data Pair a =
+     Pair a a
+
+   instance Eq a => Eq (Pair a) where
+     (==) (Pair vl1 vl2) (Pair vr1 vr2) =
+       vl1 == vr1 && vl2 == vr2
+   :}
+   Pair 1 2 == Pair 1 2
+   Pair 1 2 == Pair 2 2
+   Pair "aaa" "bbb" == Pair "aaa" "ccc"
+   Pair "aaa" "bbb" == Pair "aaa" "bbb"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   False
+   False
+   True
+   #+END_EXAMPLE
+
+5. Write an ~Eq~ instance for ~(Tuple a b)~
+   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   :{
+   module EqInstances05 where
+
+   data Tuple a b =
+     Tuple a b
+
+   instance (Eq a, Eq b) => Eq (Tuple a b) where
+     (==) (Tuple vl1 vl2) (Tuple vr1 vr2) =
+       vl1 == vr1 && vl2 == vr2
+   :}
+   Tuple "a" 1 == Tuple "a" 1
+   Tuple "a" 1 == Tuple "a" 2
+   Tuple True (1, 2) == Tuple True (1, 2)
+   Tuple True (1, 2) == Tuple True (1, 3)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   False
+   True
+   False
+   #+END_EXAMPLE
+
+6. Write an ~Eq~ instance for ~(Which a)~
+   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   :{
+   module EqInstances06 where
+
+   data Which a
+     = ThisOne a
+     | ThatOne a
+
+   instance Eq a => Eq (Which a) where
+     (==) (ThisOne l) (ThisOne r) = l == r
+     (==) (ThatOne l) (ThatOne r) = l == r
+     (==) _ _ = False
+   :}
+   ThisOne 1 == ThisOne 1
+   ThisOne 1 == ThisOne 2
+   ThisOne 1 == ThatOne 1
+   ThatOne 1 == ThisOne 1
+   ThatOne 1 == ThatOne 1
+   ThatOne 1 == ThatOne 2
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   False
+   False
+   False
+   True
+   False
+   #+END_EXAMPLE
+
+7. Write an ~Eq~ instance for ~(EitherOr)~
+   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   :{
+   module EqInstances07 where
+
+   data EitherOr a b =
+     Hello a | Goodbye b
+
+   instance (Eq a, Eq b) => Eq (EitherOr a b) where
+     (==) (Hello vl) (Hello vr) = vl == vr
+     (==) (Goodbye vl) (Goodbye vr) = vl == vr
+     (==) _ _ = False
+   :}
+   Hello "Robert" == Hello "Robert"
+   Hello "Robert" == Hello "Mike"
+   Goodbye "Robert" == Goodbye "Robert"
+   Goodbye "Robert" == Goodbye "Mike"
+   Hello "Robert" == Goodbye "Robert"
+   Goodbye "Robert" == Hello "Robert"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   False
+   True
+   False
+   False
+   False
+   #+END_EXAMPLE
+
+* 6.6 Num
+Is a typeclass implemented by most of the number datatype
+
+#+BEGIN_SRC haskell :results raw replace :wrap EXAMPLE
+:i Num
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+class Num a where
+  (+) :: a -> a -> a
+  (-) :: a -> a -> a
+  (*) :: a -> a -> a
+  negate :: a -> a
+  abs :: a -> a
+  signum :: a -> a
+  fromInteger :: Integer -> a
+  {-# MINIMAL (+), (*), abs, signum, fromInteger, (negate | (-)) #-}
+  	-- Defined in ‘GHC.Num’
+instance Num Word -- Defined in ‘GHC.Num’
+instance Num Integer -- Defined in ‘GHC.Num’
+instance Num Int -- Defined in ‘GHC.Num’
+instance Num Float -- Defined in ‘GHC.Float’
+instance Num Double -- Defined in ‘GHC.Float’
+#+END_EXAMPLE
+
+Let's look at the typeclass ~Integral~
+
+#+BEGIN_SRC haskell :results raw replace :wrap EXAMPLE
+:i Integral
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+class (Real a, Enum a) => Integral a where
+  quot :: a -> a -> a
+  rem :: a -> a -> a
+  div :: a -> a -> a
+  mod :: a -> a -> a
+  quotRem :: a -> a -> (a, a)
+  divMod :: a -> a -> (a, a)
+  toInteger :: a -> Integer
+  {-# MINIMAL quotRem, toInteger #-}
+  	-- Defined in ‘GHC.Real’
+instance Integral Word -- Defined in ‘GHC.Real’
+instance Integral Integer -- Defined in ‘GHC.Real’
+instance Integral Int -- Defined in ‘GHC.Real’
+#+END_EXAMPLE
+
+Any type that implements ~Integral~ must implement already ~Real~ and
+~Enum~, since any type that implements ~Real~ must implement ~Num~
+then any type that implements ~Integral~ also implements ~Num~. Since
+~Real~ cannot override the methods of ~Num~, this typeclass
+inheritance is only additive and the ambiguity problems caused by
+multiple inheritance in some programming languages are avoided.
+
+Typeclasses inheritance is additive.
+
+** Exercises: Tuple Experiment
+- `quotRem` always round things towards 0 like it's common for
+  mathematicians
+- `divMod` always round things towards -∞ like it's common to find in
+  other programming languages
+
+#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :epilogue "0"
+quot (-9) 4 -- round towards 0
+div (-9) 4 -- round towards -∞
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+-2
+-3
+#+END_EXAMPLE
+
+* 6.7 Type-defaulting Typeclasses
+When you have a typeclass-constrained (ad hoc) polymorphic value and
+need to evaluate it then the polymorphism must be resolved, sometimes
+it will be because declared so or because of type inference, when it
+doesn't then typeclasses have a default type value.
+
+#+BEGIN_SRC haskell :eval never
+default Num Integer
+default Real Integer
+default Enum Integer
+default Integral Integer
+default Fractional Double
+default RealFrac Double
+default Floating Double
+default RealFloat Double
+#+END_SRC
+
+This is called =Type Defaulting=
+
+* 6.8 Ord
+Typeclass ~Ord~ is for things that can be put in order
+
+#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post head(n="16", content=*this*) :epilogue "0"
+:i Ord
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+class Eq a => Ord a where
+  compare :: a -> a -> Ordering
+  (<) :: a -> a -> Bool
+  (<=) :: a -> a -> Bool
+  (>) :: a -> a -> Bool
+  (>=) :: a -> a -> Bool
+  max :: a -> a -> a
+  min :: a -> a -> a
+  {-# MINIMAL compare | (<=) #-}
+  	-- Defined in ‘GHC.Classes’
+instance (Ord b, Ord a) => Ord (Either a b)
+  -- Defined in ‘Data.Either’
+instance Ord a => Ord [a] -- Defined in ‘GHC.Classes’
+instance Ord Word -- Defined in ‘GHC.Classes’
+instance Ord Ordering -- Defined in ‘GHC.Classes’
+instance Ord Int -- Defined in ‘GHC.Classes’
+#+END_EXAMPLE
+
+Typeclass ~Ord~ requires an instance of ~Eq~
+
+#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :epilogue "0"
+compare 7 8
+compare 8 7
+compare 7 7
+7 <= 8
+(<=) 7 8
+max 7 8
+max True False
+True > False
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+LT
+GT
+EQ
+True
+True
+8
+True
+True
+#+END_EXAMPLE
+
+** Exercises: Will They Work?
+
+1. Yes, result is ~5~, it works because ~length~ returns an ~Int~ and
+   ~Int~ has an instance of ~Ord~
+   #+BEGIN_SRC haskell :results silent
+   max (length [1, 2, 3]) (length [8, 9, 10, 11, 12])
+   #+END_SRC
+
+2. Yes, result is ~LT~, it works because ~*~ returns something that
+   must have an instance of ~Num~ and we have plenty of concrete types
+   that have an instance of ~Num~ and ~Ord~ ex. ~Int~
+   #+BEGIN_SRC haskell :results silent
+   compare (3*4) (3*5)
+   #+END_SRC
+
+3. No, because ~compare~ requires that both its arguments are of the
+   same type
+   #+BEGIN_SRC haskell :results silent
+   compare "Julie" True
+   #+END_SRC
+   The type variable ~a~ will be bound to the type of the first
+   parameter ("Julie") ~[Char]~ and therefore the second parameter is
+   expected to be also of type ~[Char]~
+   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :epilogue "0"
+   :t compare "Julie"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   compare "Julie" :: [Char] -> Ordering
+   #+END_EXAMPLE
+
+4. Yes, result is ~False~, it works for the same reason of the second
+   exercise
+   #+BEGIN_SRC haskell :results silent
+   (5 + 3) > (3 + 6)
+   #+END_SRC
+
+* 6.9 Enum
+Typeclass ~Enum~ is for things that have a =predecessor= and a =successor=
+
+#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue "0"
+:i Enum
+
+succ 4
+pred 4
+succ False
+pred True
+enumFromTo 1 10
+enumFromThenTo 1 4 10
+(toEnum 0) :: Bool
+(toEnum 1) :: Bool
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+class Enum a where
+  succ :: a -> a
+  pred :: a -> a
+  toEnum :: Int -> a
+  fromEnum :: a -> Int
+  enumFrom :: a -> [a]
+  enumFromThen :: a -> a -> [a]
+  enumFromTo :: a -> a -> [a]
+  enumFromThenTo :: a -> a -> a -> [a]
+  {-# MINIMAL toEnum, fromEnum #-}
+  	-- Defined in ‘GHC.Enum’
+instance Enum Word -- Defined in ‘GHC.Enum’
+instance Enum Ordering -- Defined in ‘GHC.Enum’
+instance Enum Integer -- Defined in ‘GHC.Enum’
+instance Enum Int -- Defined in ‘GHC.Enum’
+instance Enum Char -- Defined in ‘GHC.Enum’
+instance Enum Bool -- Defined in ‘GHC.Enum’
+instance Enum () -- Defined in ‘GHC.Enum’
+instance Enum Float -- Defined in ‘GHC.Float’
+instance Enum Double -- Defined in ‘GHC.Float’
+5
+3
+True
+False
+[1,2,3,4,5,6,7,8,9,10]
+[1,4,7,10]
+False
+True
+#+END_EXAMPLE
+
+* 6.10 Show
+Typeclass ~Show~ provides humans-readable string representations of structured data.
+
+- ~Show~ is not a serialization format.
+- The most representative function is ~show~
+  #+BEGIN_SRC haskell :eval never
+  show :: Show a => a -> String
+  #+END_SRC
+- ~Show~ is required as a typeclass contraint by ~print~ on the first
+  argument, the type signature of ~print~ is ~print :: Show a => a -> IO ()~.
+- An ~IO~ action is an action that, when performed, produces side
+  effects such as reading from input, printing to the screen, writing
+  to files, ecc...
+- ~()~ is called =unit=, it's a value and also a type that has only
+  one inhabitant, it essentially represents nothing.
+- ~IO ()~ is an ~IO~ action that will produce nothing.
+- ~IO String~ is an ~IO~ action that will produce a ~String~
+
+* 6.11 Read
+Typeclass ~Read~ provides a means to interpret a string into structured data.
+
+- ~Read~ is not a serialization format.
+- The most representative function is ~read~
+  #+BEGIN_SRC haskell :eval never
+  read :: Read a => String -> a
+  #+END_SRC
+- Function ~read~ is a =partial function=, when the string is not a
+  valid representation of the datatype you want then an exception is
+  raised. Because of that it should be avoided
+
+* 6.12 Typeclasse are dispatched by type
+
+- Typeclasses are defined by the set of operations and values all
+  instances must provide.
+- Typeclasses /instances/ are unique pairings of the typeclass and a
+  type.
+- Typeclasses /instances/ define the ways to implement the typeclasse
+  operations for that type.
+
+* 6.13 Give me more operations
+Concrete types means all the typeclasses they implement. Do not
+require more than you need, this will open the code to be more
+reusable.
+
+* 6.14 Exercises
+
+** Multiple Choice
+
+1. The typeclass =Eq= (c) make equality tests possible
+
+2. The typeclass =Ord= (b) is a subclass of =Eq=
+
+3. Suppose typeclass =Ord= has an operation =>=. What is the type of
+   =>=? (a) =(>) :: (Ord a) => a -> a -> Bool=
+
+4. In =x = divMod 16 12= (c) the type of =x= is a tuple
+
+5. Type typeclass =Integral= includes (a) =Int= and =Integer= numbers
+
+** Does it type check?
+
+1. Does it type check?
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   data Person = Person Bool
+
+   printPerson :: Person -> IO ()
+   printPerson person = putStrLn (show person)
+   #+END_SRC
+   No, because there's no instance of =Show= for =Person= datatype, we
+   must give it one or let the compiler deriving one
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   data Person = Person Bool deriving Show
+
+   printPerson :: Person -> IO ()
+   printPerson person = putStrLn (show person)
+   #+END_SRC
+
+2. Does it type check?
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   data Mood = Blah | Woot deriving Show
+
+   settleDown x =
+     if x == Woot then Blah else x
+   #+END_SRC
+   No, because there's no instance of =Eq= for =Person= datatype,
+   needed for the equality comparison in the =if=, we must provide or
+   derive one
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   data Mood = Blah | Woot deriving (Show, Eq)
+
+   settleDown x =
+     if x == Woot then Blah else x
+   #+END_SRC
+
+3. If you were able to get settleDown to typecheck:
+
+   1. What values are acceptable inputs to that function?
+      #+BEGIN_SRC haskell :results none
+      settleDown :: Mood -> Mood
+      #+END_SRC
+
+   2. What will happen if you try to run settleDown 9? An error. Why?
+      because 9 cannot compare with a value of type =Mood=.
+      #+BEGIN_SRC haskell :results none
+      :{
+      data Mood = Blah | Woot deriving (Show, Eq)
+
+      settleDown x =
+        if x == Woot then Blah else x
+      :}
+
+      settleDown 9
+      #+END_SRC
+
+   3. What will happen if you try to run =Blah > Woot=? An error. Why?
+      because =Mood= doesn't have an instance of =Ord= typeclass
+      #+BEGIN_SRC haskell :results none
+      data Mood = Blah | Woot deriving (Show, Eq)
+      Blah > Woot
+
+      data Mood = Blah | Woot deriving (Show, Eq, Ord)
+      Blah > Woot
+      #+END_SRC
+
+4. Does the following typecheck? Yes
+   #+BEGIN_SRC haskell :results none
+   :{
+   type Subject = String
+   type Verb = String
+   type Object = String
+
+   data Sentence =
+     Sentence Subject Verb Object
+     deriving (Eq, Show)
+   :}
+
+   s1 = Sentence "dogs" "drool"
+   s2 = Sentence "Julie" "loves" "dogs"
+   #+END_SRC
+
+** Given a datatype declaration, what can we do?
+Given the following declarations
+
+#+NAME: papu
+#+BEGIN_SRC haskell :results none
+:{
+data Rocks =
+  Rocks String
+  deriving (Eq, Show)
+
+data Yeah =
+  Yeah Bool
+  deriving (Eq, Show)
+
+data Papu =
+  Papu Rocks Yeah
+  deriving (Eq, Show)
+:}
+#+END_SRC
+
+1. Does it type check? No, wrong data constructor for =Papu=
+   #+BEGIN_SRC haskell :results none :noweb yes
+   <<papu>>
+
+   phew = Papu "chases" True
+   #+END_SRC
+
+2. Does it type check? Yes
+   #+BEGIN_SRC haskell :results none :noweb yes
+   <<papu>>
+
+   truth = Papu (Rocks "chomskydoz") (Yeah True)
+   #+END_SRC
+
+3. Does it type check? Yes
+   #+BEGIN_SRC haskell :results none :noweb yes
+   <<papu>>
+
+   :{
+   equalityForall :: Papu -> Papu -> Bool
+   equalityForall p p' = p == p'
+   :}
+   #+END_SRC
+
+4. Does it type check? No, because =Papu= doesn't implement =Ord=
+   needed for =(>)=
+   #+BEGIN_SRC haskell :results none :noweb yes
+   <<papu>>
+
+   :{
+   comparePapus :: Papu -> Papu -> Bool
+   comparePapus p p' = p > p'
+   :}
+   #+END_SRC
+
+** Match the types
+
+1. Are the two types compatibile for the same value? No
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   i :: Num a => a
+   i = 7
+   #+END_SRC
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   i :: a
+   i = 7
+   #+END_SRC
+
+2. Are the two types compatibile for the same value? No, not all =Num=
+   are compatible with =7.0= which is a =Fractional=
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   f :: Float
+   f = 1.0
+   #+END_SRC
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   f :: Num a => a
+   f = 1.0
+   #+END_SRC
+
+3. Are the two types compatible for the same value? Yes, for the reasons above
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   f :: Float
+   f = 1.0
+   #+END_SRC
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   f :: Fractional a => a
+   f = 1.0
+   #+END_SRC
+
+4. Are the two types compatible for the same value? Yes, because
+   =RealFrac= implies =Fractional=
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   f :: Float
+   f = 1.0
+   #+END_SRC
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   f :: RealFrac a => a
+   f = 1.0
+   #+END_SRC
+
+5. Are the two types compatible for the same value? Yes, the
+   requirements are very low so more constraints are ok.
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   freud :: a -> a
+   freud x = x
+   #+END_SRC
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   freud :: Ord a => a -> a
+   freud x = x
+   #+END_SRC
+
+6. Are the two types compatible for the same value? Yes
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   freud :: a -> a
+   freud x = x
+   #+END_SRC
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   freud :: Int -> Int
+   freud x = x
+   #+END_SRC
+
+7. Are the two types compatible for the same value? No, because
+   =myInt= is declared as an =Int= then =sigmund= must return an =Int=
+   which cannot be coerced into a polymorphic type =a=
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   myX = 1::Int
+   sigmund :: Int -> Int
+   sigmund x = myX
+   #+END_SRC
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   myX = 1::Int
+   sigmund :: a -> a
+   sigmund x = myX
+   #+END_SRC
+
+8. Are the two types compatible for the same value? No, because
+   =myInt= is declared as an =Int= then =sigmund= must return an =Int=
+   which cannot be coerced into a constrained type =Num a=
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   myX = 1::Int
+   sigmund :: Int -> Int
+   sigmund x = myX
+   #+END_SRC
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   myX = 1::Int
+   sigmund :: Num a => a -> a
+   sigmund x = myX
+   #+END_SRC
+
+9. Are the two types compatible for the same value? Yes
+   #+BEGIN_SRC haskell :results none :epilogue ":}\n:m"
+   import Data.List (sort)
+   :{
+   jung :: Ord a => [a] -> a
+   jung xs = head (sort xs)
+   #+END_SRC
+   #+BEGIN_SRC haskell :results none :epilogue ":}\n:m"
+   import Data.List (sort)
+   :{
+   jung :: [Int] -> Int
+   jung xs = head (sort xs)
+   #+END_SRC
+
+10. Are the two types compatible for the same value? Yes
+    #+BEGIN_SRC haskell :results none :epilogue ":}\n:m"
+    import Data.List (sort)
+    :{
+    young :: [Char] -> Char
+    young xs = head (sort xs)
+    #+END_SRC
+    #+BEGIN_SRC haskell :results none :epilogue ":}\n:m"
+    import Data.List (sort)
+    :{
+    young :: Ord a => [a] -> a
+    young xs = head (sort xs)
+    #+END_SRC
+
+11. Are the two types compatible for the same value? No, =signifier=
+    works with =[Char]= and a =[Char]= cannot be coerced into a
+    polymorphic constrained type =Ord a=
+    #+BEGIN_SRC haskell :results none :epilogue ":}\n:m"
+    import Data.List (sort)
+    :{
+    mySort :: [Char] -> [Char]
+    mySort = sort
+
+    signifier :: [Char] -> Char
+    signifier xs = head (mySort xs)
+    #+END_SRC
+    #+BEGIN_SRC haskell :results none :epilogue ":}\n:m"
+    import Data.List (sort)
+    :{
+    mySort :: [Char] -> [Char]
+    mySort = sort
+
+    signifier :: Ord a => [a] -> a
+    signifier xs = head (mySort xs)
+    #+END_SRC
+
+** Type-Kwon-Do Two: Electric Typealoo
+
+1. Derive the implementation from the type signature
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   chk :: Eq b => (a -> b) -> a -> b -> Bool
+   chk a2b a b = b == a2b a
+   #+END_SRC
+
+2. Derive the implementation from the type signature
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   arith :: Num b
+         => (a -> b)
+         -> Integer
+         -> a
+         -> b
+   arith a2b i a = (a2b a) + (fromIntegral i)
+   #+END_SRC
