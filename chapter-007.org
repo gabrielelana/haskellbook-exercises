@@ -1,0 +1,385 @@
+* 7.1 Make it func-y
+  Nothing much
+
+* 7.2 Arguments and parameters
+  - How variables get /bound/ to values?
+    - Apply arguments values to function parameters
+    - ~let ... in~ expressions
+    - ~let~ expressions (?)
+    - ~where~ statements (?)
+    - pattern matching
+  - Haskell is /lexically scoped/ language
+  - Variable /shadowing/, always wins the more nested scope
+
+* 7.3 Anonymous functions
+  - Anonymous functions syntax
+    #+BEGIN_SRC haskell :results none
+    let triple = \x -> x * 3
+    #+END_SRC
+
+    #+BEGIN_SRC haskell :results none
+    let triple = (\x -> x * 3) :: Integer -> Integer
+    #+END_SRC
+
+    #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+    let triple :: Integer -> Integer
+        triple = \x -> x * 3
+    #+END_SRC
+
+    #+BEGIN_SRC haskell :results none
+    let plus = \x y -> x + y
+    #+END_SRC
+
+    #+BEGIN_SRC haskell :results none
+    let plus = \x -> \y -> x + y
+    #+END_SRC
+  - When it is useful an anonymous function?
+    - When it gets passed to another function.
+    - When it not called anywhere else.
+
+* 7.4 Pattern matching
+  - What is /pattern matching/?
+    - A way of matching values against patterns.
+  - What /pattern matching/ does?
+    - Maches pattern against values or data constructors.
+    - On success binds variables exposed in the pattern.
+  - What /pattern matching/ is used for?
+    - Vary what a function does given different input.
+    - Upack and expose the contents of our data.
+  - Pattern matching matches on an and all data constructors.
+  - Pattern matching deconstruct data constructors.
+  - Pattern are matching againts values, or data constructors, not
+    types.
+  - The special symbol ~_~ is the /universal pattern/ that matches
+    with everything.
+  - Patterns are ordered, first pattern that matches wins
+  - Patterns must be exhaustive and cover all the cases given the
+    types involved in the pattern. To have a compile time warning you
+    must use the ~-Wall~ compilation flag.
+  - When we want to express a function argument within a function
+    type, we must use parentheses.
+    #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+    flip :: (a -> b -> c) -> b -> a -> c
+    flip f x y = f y x
+    #+END_SRC
+
+* 7.5 Case expressions
+  - Syntax
+    #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+    case 5 > 7 of
+      False -> "It works"
+      True -> "Run!"
+    #+END_SRC
+
+* 7.6 High-order functions
+  - Higher-order functions are functions which themselves take func-
+    tions as arguments or return functions as results. Due to cur-
+    rying, technically any function that appears to take more than one
+    argument is higher order in Haskell.
+
+* 7.7 Guards
+  - Guards relies on the truth value to decide between two or more
+    possible results.
+    #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+    myAbs :: Integer -> Integer
+    myAbs x
+      | x < 0 = (-x)
+      | otherwise = x
+    #+END_SRC
+  - Guards must be expressions that evaluates to ~Bool~
+  - Guards must be placed between parameters and the equal sign in functions
+  - ~otherwise~ it's another name for ~True~
+  - Guards can be refactored with the use of ~where~
+    #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+    avgGrade :: (Fractional a, Ord a) => a -> Char
+    avgGrade x
+      | y >= 0.9 = 'A'
+      | y >= 0.8 = 'B'
+      | y >= 0.7 = 'C'
+      | y >= 0.59 = 'D'
+      | otherwise = 'F'
+      where y = x / 100
+    #+END_SRC
+
+* 7.8 Function composition
+  - /Function composition/ is a type of /high-order function/ that
+    allow us to combine functions such that the result of applying one
+    function gets passed to the next function as an argument.
+    #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+    :t (.)
+    #+END_SRC
+
+    #+RESULTS:
+    #+BEGIN_EXAMPLE
+    (.) :: (b -> c) -> (a -> b) -> a -> c
+    #+END_EXAMPLE
+
+* Exercises
+
+  #+NAME: ghci-clean
+  #+BEGIN_SRC emacs-lisp :var content="" :results raw
+  (string-join
+   (seq-filter
+    (lambda (line)
+      (not (string-empty-p line)))
+    (seq-map
+     (lambda (line)
+       (replace-regexp-in-string "^.*Prelude> " "" line))
+     (split-string content "\n")))
+   "\n"))
+  #+END_SRC
+
+** Grab the Bag (7.3)
+
+1. Which (two or more) of the following are equivalent?
+   (a), (b), (c) and (d), they are all equivalent
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   mth1 x y z = x * y * z
+   mth2 x y = \z -> x * y * z
+   mth3 x = \y -> \z -> x * y * z
+   mth4 = \x -> \y -> \z -> x * y * z
+
+   mth1 5 4 3
+   mth2 5 4 3
+   mth3 5 4 3
+   mth4 5 4 3
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   60
+   60
+   60
+   60
+   #+END_EXAMPLE
+
+2. The type of ~mth~ is ~Num a => a -> a -> a -> a~. Which is the type of mTh 3?
+   (d) ~Num a => a -> a -> a~
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   mth x y z = x * y * z
+   :t (mth 3)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   (mth 3) :: Num a => a -> a -> a
+   #+END_EXAMPLE
+
+3. Practice writing anonymous lambda syntax functions
+
+   1. Rewrite the ~f~ function in the where clause.
+      #+NAME: add-one-if-odd
+      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+      addOneIfOdd n = case odd n of
+        True -> f n
+        False -> n
+        where f n = n + 1
+      #+END_SRC
+
+      #+NAME: add-one-if-odd-lambda
+      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+      addOneIfOdd n = case odd n of
+        True -> f n
+        False -> n
+        where f = \n -> n + 1
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      <<add-one-if-odd>>
+      :}
+      addOneIfOdd 4
+      addOneIfOdd 5
+      :{
+      <<add-one-if-odd-lambda>>
+      :}
+      addOneIfOdd 4
+      addOneIfOdd 5
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      4
+      6
+      4
+      6
+      #+END_EXAMPLE
+
+   2. Rewrite the following to use anonymous lambda syntax
+      #+BEGIN_SRC haskell :results none
+      addFive x y = (if x > y then y else x) + 5
+      addFive 5 8
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results none
+      addFive = \x -> \y -> (if x > y then y else x) + 5
+      addFive 5 8
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results none
+      addFive = \x -> \y -> (+) 5 $ min x y
+      addFive 5 8
+      #+END_SRC
+
+   3. Rewrite the following so that it doesn't use anonymous lambda
+      syntax
+      #+BEGIN_SRC haskell :results none
+      mflip f = \x -> \y -> f y x
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results none
+      mflip f x y = f y x
+      #+END_SRC
+
+** Variety Pack (7.4)
+
+   1. Given the following declarations
+      #+BEGIN_SRC haskell :results none
+      k (x, y) = x
+      k1 = k ((4-1), 10)
+      k2 = k ("three", (1+2))
+      k3 = k (3, True)
+      #+END_SRC
+
+      1. What is the type of ~k~?
+         #+BEGIN_SRC haskell :results none
+         k :: (a, b) -> a
+         #+END_SRC
+
+      2. What is the type of ~k2~? ~[Char]~. Is it the same as ~k1~ or
+         ~k3~? No
+
+      3. Of ~k1~, ~k2~, ~k3~, which will return the number ~3~ as the
+         result? ~k3~
+
+   2. Fill in the definition of the following function
+      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+      f :: (a, b, c)
+        -> (d, e, f)
+        -> ((a, d), (c, f))
+      f = undefined
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+      f :: (a, b, c)
+        -> (d, e, f)
+        -> ((a, d), (c, f))
+      f (a, b, c) (d, e, f) = ((a, d), (c, f))
+      #+END_SRC
+
+** Exercises: Case Practice (7.5)
+   We're going to practice using case expressions by rewriting functions
+
+   1. The following should return ~x~ when ~x~ is greater than ~y~.
+      #+BEGIN_SRC haskell :results none
+      functionC x y = if (x > y) then x else y
+      functionC 10 5
+      functionC 5 10
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results none
+      :{
+      functionC x y = case x > y of
+        True -> x
+        False -> y
+      :}
+      functionC 10 5
+      functionC 5 10
+      #+END_SRC
+
+   2. The following will add 2 to even numbers and otherwise simply
+      return the input value.
+      #+BEGIN_SRC haskell :results none
+      ifEvenAdd2 n = if even n then (n + 2) else n
+      ifEvenAdd2 3
+      ifEvenAdd2 4
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results none
+      :{
+      ifEvenAdd2 n = case even n of
+        True -> n + 2
+        False -> n
+      :}
+      ifEvenAdd2 3
+      ifEvenAdd2 4
+      #+END_SRC
+
+   3. Make the following a complete function
+      #+BEGIN_SRC haskell :results none
+      :set -Wall
+      :{
+      nums x =
+        case compare x 0 of
+          LT -> -1
+          GT -> 1
+      :}
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results none
+      :set -Wall
+      :{
+      nums x =
+        case compare x 0 of
+          LT -> -1
+          GT -> 1
+          EQ -> 0
+      :}
+      #+END_SRC
+
+** Exercises: Artful Dodgy (7.6)
+   Given the following definition tell us what value results from
+   further applications.
+   #+BEGIN_SRC haskell :results none
+   dodgy x y = x + y * 10
+   oneIsOne = dodgy 1
+   oneIsTwo = (flip dodgy) 2
+   #+END_SRC
+
+   1. Given the expression ~dodgy 1 0~ what do you think will happen
+      if we evaluate it? It will return ~1~
+   2. ~dodgy 1 1~ will return ~11~
+   3. ~dodgy 2 2~ will return ~22~
+   4. ~dodgy 1 2~ will return ~21~
+   5. ~dodgy 2 1~ will return ~12~
+   6. ~oneIsOne 1~ will return ~11~
+   7. ~oneIsOne 2~ will return ~21~
+   8. ~oneIsTwo 1~ will return ~21~
+   9. ~oneIsTwo 2~ will return ~22~
+   10. ~oneIsOne 3~ will return ~31~
+   11. ~oneIsTwo 3~ will return ~23~
+
+** Exercises: Guard Duty (7.7)
+
+   1. What happens if in the function ~avgGrade~ you put ~otherwise~
+      in your top most guard? It will return always ~A~
+
+   2. What happens if you take ~avgGrade~ if you shuffle the guards?
+      Does it still typecheck? Yes. Try move the guard for ~C~ at the
+      top and pass it an argument ~90~ which should be an ~A~. Does it
+      return an ~A~? No, returns a ~C~
+
+   3. The following functions returns? (b) ~True~ when ~xs~ is
+      palindrome
+      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+      pal xs
+        | xs == reverse xs = True
+        | otherwise        = False
+      #+END_SRC
+
+   4. What types of arguments can ~pal~ take? ~Eq a~
+
+   5. What is the type of function ~pal~? ~pal :: Eq a => [a] -> Bool~
+
+   6. The following function returns? (c) an indication of whether its
+      argument is a positive or negative number or zero.
+      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+      numbers x
+        | x < 0 = -1
+        | x == 0 = 0
+        | x > 0 = 1
+      #+END_SRC
+
+   7. What types of arguments can ~numbers~ take? ~(Ord a, Num a)~
+
+   8. What is the type of the function ~numbers~? ~numbers :: (Ord a, Num a, Num b) => a -> b~
