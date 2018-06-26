@@ -114,6 +114,51 @@
     (.) :: (b -> c) -> (a -> b) -> a -> c
     #+END_EXAMPLE
 
+* 7.9 Pointfree style
+  Pointfree refers to a style of composing functions without
+  specifying their arguments. Derives from topology where there're
+  spaces made of points and functions between those points, specifying
+  functions without points means specifying functions without
+  arguments.
+  #+BEGIN_SRC haskell :results none
+  addOne x = x + 1
+  addOneA = \x -> x + 1
+  addOnePF = (+1)
+  #+END_SRC
+
+* 7.10 Demonstrating composition
+  Our dearest function ~print~ is nothing more than the composition of ~putStrLn~ and ~show~
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  :t putStrLn
+  :t show
+  :t print
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  putStrLn :: String -> IO ()
+  show :: Show a => a -> String
+  print :: Show a => a -> IO ()
+  #+END_EXAMPLE
+
+  It can be written like that
+  #+BEGIN_SRC haskell :results none
+  :{
+  print' :: Show a => a -> IO ()
+  print' x = putStrLn (show x)
+  :}
+  print' 10
+  #+END_SRC
+
+  But can be more cleaner in a pointfree style
+  #+BEGIN_SRC haskell :results none
+  :{
+  print' :: Show a => a -> IO ()
+  print'= putStrLn . show
+  :}
+  print' 10
+  #+END_SRC
+
 * Exercises
 
   #+NAME: ghci-clean
@@ -128,6 +173,8 @@
      (split-string content "\n")))
    "\n"))
   #+END_SRC
+
+  #+RESULTS: ghci-clean
 
 ** Grab the Bag (7.3)
 
@@ -147,9 +194,29 @@
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   <interactive>:949:1: warning: [-Wtype-defaults]
+       • Defaulting the following constraints to type ‘Integer’
+           (Show a0) arising from a use of ‘print’ at <interactive>:949:1-10
+           (Num a0) arising from a use of ‘it’ at <interactive>:949:1-10
+       • In a stmt of an interactive GHCi command: print it
    60
+   <interactive>:950:1: warning: [-Wtype-defaults]
+       • Defaulting the following constraints to type ‘Integer’
+           (Show a0) arising from a use of ‘print’ at <interactive>:950:1-10
+           (Num a0) arising from a use of ‘it’ at <interactive>:950:1-10
+       • In a stmt of an interactive GHCi command: print it
    60
+   <interactive>:951:1: warning: [-Wtype-defaults]
+       • Defaulting the following constraints to type ‘Integer’
+           (Show a0) arising from a use of ‘print’ at <interactive>:951:1-10
+           (Num a0) arising from a use of ‘it’ at <interactive>:951:1-10
+       • In a stmt of an interactive GHCi command: print it
    60
+   <interactive>:952:1: warning: [-Wtype-defaults]
+       • Defaulting the following constraints to type ‘Integer’
+           (Show a0) arising from a use of ‘print’ at <interactive>:952:1-10
+           (Num a0) arising from a use of ‘it’ at <interactive>:952:1-10
+       • In a stmt of an interactive GHCi command: print it
    60
    #+END_EXAMPLE
 
@@ -199,9 +266,37 @@
 
       #+RESULTS:
       #+BEGIN_EXAMPLE
+      Prelude| Prelude| Prelude| Prelude| Prelude|
+      <interactive>:977:11: warning: [-Wname-shadowing]
+          This binding for ‘n’ shadows the existing binding
+            bound at <interactive>:974:13
+      <interactive>:979:1: warning: [-Wtype-defaults]
+          • Defaulting the following constraints to type ‘Integer’
+              (Show a0) arising from a use of ‘print’ at <interactive>:979:1-13
+              (Integral a0) arising from a use of ‘it’ at <interactive>:979:1-13
+          • In a stmt of an interactive GHCi command: print it
       4
+      <interactive>:980:1: warning: [-Wtype-defaults]
+          • Defaulting the following constraints to type ‘Integer’
+              (Show a0) arising from a use of ‘print’ at <interactive>:980:1-13
+              (Integral a0) arising from a use of ‘it’ at <interactive>:980:1-13
+          • In a stmt of an interactive GHCi command: print it
       6
+      Prelude| Prelude| Prelude| Prelude| Prelude|
+      <interactive>:985:14: warning: [-Wname-shadowing]
+          This binding for ‘n’ shadows the existing binding
+            bound at <interactive>:982:13
+      <interactive>:987:1: warning: [-Wtype-defaults]
+          • Defaulting the following constraints to type ‘Integer’
+              (Show a0) arising from a use of ‘print’ at <interactive>:987:1-13
+              (Integral a0) arising from a use of ‘it’ at <interactive>:987:1-13
+          • In a stmt of an interactive GHCi command: print it
       4
+      <interactive>:988:1: warning: [-Wtype-defaults]
+          • Defaulting the following constraints to type ‘Integer’
+              (Show a0) arising from a use of ‘print’ at <interactive>:988:1-13
+              (Integral a0) arising from a use of ‘it’ at <interactive>:988:1-13
+          • In a stmt of an interactive GHCi command: print it
       6
       #+END_EXAMPLE
 
@@ -383,3 +478,197 @@
    7. What types of arguments can ~numbers~ take? ~(Ord a, Num a)~
 
    8. What is the type of the function ~numbers~? ~numbers :: (Ord a, Num a, Num b) => a -> b~
+** Exercises: Multiple Choice (7.11)
+
+   1. A polymorphic function (d) may resolve to values of different
+      types depending on inputs
+
+   2. Two functions named ~f~ and ~g~ have types ~Char -> String~ and
+      ~String -> [String]~ respectively. The composed function ~g . f~
+      has the type (b) ~Char -> [String]~
+
+   3. A function ~f~ has the type ~Ord a => a -> a -> Bool~ and we
+      apply it to one numeric value. What is the type now? (d)
+      ~(Num a, Ord a) => a -> Bool~
+
+   4. A function with the type ~(a -> b) -> c~ (b) is an higher-order
+      function
+
+   5. Given the following definition of ~f~, what is the type of
+      ~f True~? (a) ~Bool~
+      #+BEGIN_SRC haskell :results none
+      :{
+      f :: a -> a
+      f x = x
+      :}
+      :t f True
+      #+END_SRC
+
+** Exercises: Let's write code (7.11)
+
+   1. The following function returns the tens digit of an integral argument.
+      #+BEGIN_SRC haskell :results none
+      :{
+      tensDigit :: Integral a => a -> a
+      tensDigit x = d
+        where xLast = x `div` 10
+              d = xLast `mod` 10
+      :}
+      tensDigit 18982912
+      tensDigit 18982923
+      #+END_SRC
+
+      1. First, rewrite it using divMod.
+         #+BEGIN_SRC haskell :results none
+         :{
+         tensDigit :: Integral a => a -> a
+         tensDigit x = d
+           where (xLast, _) = divMod x 10
+                 (_, d) = divMod xLast 10
+         :}
+         tensDigit 18982912
+         tensDigit 18982923
+         #+END_SRC
+
+         In a more convoluted way
+         #+BEGIN_SRC haskell :results none
+         :{
+         tensDigit :: Integral a => a -> a
+         tensDigit x = snd . tensSplit $ fst . tensSplit $ x
+           where tensSplit = flip divMod 10
+         :}
+         tensDigit 18982912
+         tensDigit 18982923
+         #+END_SRC
+
+      2. Does the divMod version have the same type as the original
+         version? Yes
+
+      3. Next, let’s change it so that we’re getting the hundreds
+         digit instead.
+         #+BEGIN_SRC haskell :results none
+         :{
+         hundredsDigit :: Integral a => a -> a
+         hundredsDigit x = d
+           where (xLast, _) = divMod x 100
+                 (_, d) = divMod xLast 10
+         :}
+         hundredsDigit 18982912
+         hundredsDigit 18982723
+         #+END_SRC
+
+   2. Implement the function of the type ~a -> a -> Bool -> a~
+      Using a /case expression/
+      #+BEGIN_SRC haskell :results none
+      :{
+      foldBool :: a -> a -> Bool -> a
+      foldBool x y cond = case cond of
+        True -> x
+        False -> y
+      :}
+      foldBool 1 2 True
+      foldBool 1 2 False
+      #+END_SRC
+
+      Using /guards/
+      #+BEGIN_SRC haskell :results none
+      :{
+      foldBool :: a -> a -> Bool -> a
+      foldBool x y cond
+        | cond = x
+        | otherwise = y
+      :}
+      foldBool 1 2 True
+      foldBool 1 2 False
+      #+END_SRC
+
+   3. Fill in the definition.
+      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+      g :: (a -> b) -> (a, c) -> (b, c)
+      g = undefined
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+      g :: (a -> b) -> (a, c) -> (b, c)
+      g f (a, c) = (f a, c)
+      #+END_SRC
+
+   4. Writing pointfree versions of existing code
+      #+NAME: RoundTrip
+      #+BEGIN_SRC haskell :results none :tangle chapter-007/RoundTrip.hs
+      module RoundTrip where
+
+      roundTrip :: (Show a, Read a) => a -> a
+      roundTrip a = read (show a)
+
+      main = do
+        print (roundTrip 4)
+        print (id 4)
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      <<RoundTrip>>
+      :}
+      main
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      4
+      4
+      #+END_EXAMPLE
+
+   5. Write a pointfree version of roundTrip
+      #+NAME: RoundTripPointFree
+      #+BEGIN_SRC haskell :results none :tangle chapter-007/RoundTripPointFree.hs
+      module RoundTripPointFree where
+
+      roundTrip :: (Show a, Read a) => a -> a
+      roundTrip = read . show
+
+      main = do
+        print (roundTrip 4)
+        print (id 4)
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      <<RoundTripPointFree>>
+      :}
+      main
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      4
+      4
+      #+END_EXAMPLE
+
+   6. change the type of roundTrip in Arith4 to
+      ~(Show a, Read b) => a -> b~. How might we tell GHC which
+      instance of Read to dispatch against the String now?
+      #+NAME: RoundTripDispatch
+      #+BEGIN_SRC haskell :results none :tangle chapter-007/RoundTripDispatch.hs
+      module RoundTripDispatch where
+
+      roundTrip :: (Show a, Read b) => a -> b
+      roundTrip = read . show
+
+      main = do
+        print ((roundTrip 4) :: Integer)
+        print (id 4)
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      <<RoundTripDispatch>>
+      :}
+      main
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      4
+      4
+      #+END_EXAMPLE
