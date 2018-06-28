@@ -1,0 +1,473 @@
+* 8.1 Recusion
+  Nothing much
+
+* 8.2 Factorial!
+  #+NAME: Factorial
+  #+BEGIN_SRC haskell :results none :tangle chapter-008/Factorial.hs
+  module Factorial where
+
+  factorial :: Integer -> Integer
+  factorial 0 = 1
+  factorial n = n * factorial (n - 1)
+  #+END_SRC
+
+  #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  :{
+  <<Factorial>>
+  :}
+  factorial 0
+  factorial 1
+  factorial 7
+  factorial 16
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  1
+  1
+  5040
+  20922789888000
+  #+END_EXAMPLE
+
+** Exercise
+   Given the following definition
+   #+BEGIN_SRC haskell :eval never
+   applyTimes :: (Eq a, Num a) => a -> (b -> b) -> b -> b
+   applyTimes 0 f b = b
+   applyTimes n f b = f (applyTimes (n-1) f b)
+   #+END_SRC
+
+   Write out the evaluation of the following
+   #+BEGIN_SRC haskell :eval never
+   applyTimes 5 (+1) 5
+   #+END_SRC
+
+   #+BEGIN_EXAMPLE
+   applyTimes 5 (+1) 5
+   (+1) (applyTimes 4 'applyTimes 5)
+   (+1) (+1) (applyTimes 3 'applyTimes 5)
+   (+1) (+1) (+1) (applyTimes 2 'applyTimes 5)
+   (+1) (+1) (+1) (+1) (applyTimes 1 'applyTimes 5)
+   (+1) (+1) (+1) (+1) (+1) (applyTimes 0 'applyTimes 5)
+   (+1) (+1) (+1) (+1) (+1) 5
+   (+1) (+1) (+1) (+1) 6
+   (+1) (+1) (+1) 7
+   (+1) (+1) 8
+   (+1) 9
+   10
+   #+END_EXAMPLE
+
+* 8.3 Bottom
+  In type theory, a theory within mathematical logic, the bottom type
+  is the type that has no values. It is also called the zero or empty
+  type, and is sometimes denoted with falsum (⊥ aka "UP TACK" symbol).
+
+  In Haskell is used to represent computation that do not terminate
+  successfully in any value.
+
+  Represents:
+  - Computation that failed with an error
+  - Computation that do not terminate
+
+  The following it's a partial function, the real type of the function
+  here is ~f :: Bool -> Int | ⊥~
+
+  #+BEGIN_SRC haskell :eval never
+  f :: Bool -> Int
+  f False = 0
+  f True = error "blah"
+  #+END_SRC
+
+  We can turn the function ~f~ to be a total function with ~Maybe~
+
+  #+BEGIN_SRC haskell :eval never
+  f :: Bool -> Maybe Int
+  f False = Just 0
+  f _ = Nothing
+  #+END_SRC
+
+* 8.4 Fibonacci
+  #+NAME: Fibonacci
+  #+BEGIN_SRC haskell :results none :tangle chapter-008/Fibonacci.hs
+  module Fibonacci where
+
+  fibonacci :: Integral a => a -> a
+  fibonacci 0 = 0
+  fibonacci 1 = 1
+  fibonacci n = fibonacci (n - 1) + fibonacci (n - 2)
+  #+END_SRC
+
+  #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  :{
+  <<Fibonacci>>
+  :}
+  fibonacci 0
+  fibonacci 1
+  fibonacci 7
+  fibonacci 16
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  0
+  1
+  13
+  987
+  #+END_EXAMPLE
+
+* 8.5 Integral division from scratch
+  #+NAME: DivFromScratch
+  #+BEGIN_SRC haskell :results none :tangle chapter-008/DivFromScratch.hs
+  module DivFromScratch where
+
+  type Numerator = Integer
+  type Denominator = Integer
+  type Quotient = Integer
+
+  dividedBy :: Numerator -> Denominator -> Quotient
+  dividedBy n d = go n d 0
+    where go n d c
+            | n < d = c
+            | otherwise = go (n - d) d (c + 1)
+  #+END_SRC
+
+  #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  :{
+  <<DivFromScratch>>
+  :}
+  dividedBy 10 2
+  dividedBy 9 2
+  dividedBy 3 2
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  5
+  4
+  1
+  #+END_EXAMPLE
+
+* Exercises
+
+  #+NAME: ghci-clean
+  #+BEGIN_SRC emacs-lisp :var content="" :results raw
+  (string-join
+   (seq-filter
+    (lambda (line)
+      (not (string-empty-p line)))
+    (seq-map
+     (lambda (line)
+       (replace-regexp-in-string "^.*Prelude> " "" line))
+     (split-string content "\n")))
+   "\n"))
+  #+END_SRC
+
+  #+NAME: start-at-line
+  #+BEGIN_SRC sh :var content="" :var line="0" :results raw
+  echo "$content" | tail -n +$line
+  #+END_SRC
+
+  #+NAME: directory
+  #+BEGIN_SRC emacs-lisp :output raw
+   (concat
+    ":set -i"
+    (file-name-as-directory (file-name-directory (buffer-file-name)))
+    (file-name-base (buffer-file-name)))
+  #+END_SRC
+
+** Exercise: Review of types
+
+   1. What is the type of ~[[True, False], [True, True], [False, True]]~?
+      (d) ~[ [ Bool ] ]~
+
+   2. Which of the following has the same type as
+      ~[[True, False], [True, True], [False, True]]~?
+      (b) ~[[3 == 3], [6 > 5], [3 < 4]]~
+
+   3. For the following function, which of the following is true?
+      #+BEGIN_SRC haskell :eval never
+      func :: [a] -> [a] -> [a]
+      func x y = x ++ y
+      #+END_SRC
+      (d) All of the above (aka "x and y must be of the same type", "x
+      and y must be both lists", "if x is a String then y must be a
+      String")
+
+   4. For the func code above, which is a valid application of func to
+      both of its arguments? (b) ~func "Hello" "World"~
+
+** Exercise: Reviewing currying
+   Given the following definitions, tell us what value results from
+   further applications.
+
+   #+BEGIN_SRC haskell :results none
+   :{
+   cattyConny :: String -> String -> String
+   cattyConny x y = x ++ " mrow " ++ y
+
+   -- fill in the types
+   flippy :: String -> String -> String
+   flippy = flip cattyConny
+
+   appendCatty :: String -> String
+   appendCatty = cattyConny "woops"
+
+   frappe :: String -> String
+   frappe = flippy "haha"
+   :}
+   #+END_SRC
+
+   1. What is the value of?
+      #+BEGIN_SRC haskell :results none
+      appendCatty "woohoo!"
+      #+END_SRC
+      "woops mrow woohoo!"
+
+   2. What is the value of?
+      #+BEGIN_SRC haskell :results none
+      frappe "1"
+      #+END_SRC
+      "1 mrow haha"
+
+   3. What is the value of?
+      #+BEGIN_SRC haskell :results none
+      frappe (appedCatty "2")
+      #+END_SRC
+      "woops mrow 2 mrow haha"
+
+   4. What is the value of?
+      #+BEGIN_SRC haskell :results none
+      appendCatty (frappe "blue")
+      #+END_SRC
+      "woops mrow blue mrow haha"
+
+   5. What is the value of?
+      #+BEGIN_SRC haskell :results none
+      cattyConny (frappe "pink") (cattyConny "green" (appedCatty "blue"))
+      #+END_SRC
+      "pink mrow haha mrow green mrow woops mrow blue"
+
+   6. What is the value of?
+      #+BEGIN_SRC haskell :results none
+      cattyConny (flippy "Pugs" "are") "awesome"
+      #+END_SRC
+      "are mrow Pugs mrow awesome"
+
+** Exercise: Recursion
+
+   1. Write out the steps for reducing ~dividedBy 15 2~ to its final
+      answer according to the Haskell code.
+      #+BEGIN_EXAMPLE
+      dividedBy 15 2
+      go 15 2 0
+      go 13 2 1
+      go 11 2 2
+      go 9 2 3
+      go 7 2 4
+      go 5 2 5
+      go 3 2 6
+      go 1 2 7
+      7
+      #+END_EXAMPLE
+
+   2. Write a function that recursively sums all numbers from 1 to n.
+      #+NAME: SumsUpTo
+      #+BEGIN_SRC haskell :results none :tangle chapter-008/SumsUpTo.hs
+      module SumsUpTo where
+
+      sumsUpTo :: (Eq a, Num a) => a -> a
+      sumsUpTo 0 = 0
+      sumsUpTo 1 = 1
+      sumsUpTo n = n + sumsUpTo (n - 1)
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      <<SumsUpTo>>
+      :}
+      sumsUpTo 6
+      sumsUpTo 10
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      21
+      55
+      #+END_EXAMPLE
+
+   3. Write a function that multiplies two integral numbers using
+      recursive summation.
+      #+NAME: RecursiveMul
+      #+BEGIN_SRC haskell :results none :tangle chapter-008/RecursiveMul.hs
+      module RecursiveMul where
+
+      recursiveSum :: Integral a => a -> a -> a
+      recursiveSum x 0 = x
+      recursiveSum x y = recursiveSum (x + 1) (y - 1)
+
+      recursiveMul :: Integral a => a -> a -> a
+      recursiveMul x y = go x y 0
+        where go x y s
+                | y == 0 = s
+                | otherwise = go x (y - 1) (recursiveSum x s)
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      <<RecursiveMul>>
+      :}
+      recursiveSum 2 2
+      recursiveSum 2 4
+      recursiveMul 2 2
+      recursiveMul 2 4
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      4
+      6
+      4
+      8
+      #+END_EXAMPLE
+
+** Exercise: Fixing dividedBy
+   Our dividedBy function wasn't quite ideal. For one thing. It was a
+   partial function and doesn't return a result (bottom) when given a
+   divisor that is 0 or less.
+
+   #+NAME: MaybeDividedBy
+   #+BEGIN_SRC haskell :results none :tangle chapter-008/MaybeDividedBy.hs
+   module MaybeDividedBy where
+
+   type Numerator = Integer
+   type Denominator = Integer
+   type Quotient = Integer
+
+   data DividedByResult
+     = Result Quotient
+     | DividedByZero
+     deriving Show
+
+   dividedBy :: Numerator -> Denominator -> DividedByResult
+   dividedBy n 0 = DividedByZero
+   dividedBy n d = Result $ div n d
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   :{
+   <<MaybeDividedBy>>
+   :}
+   dividedBy 10 2
+   dividedBy 10 (-2)
+   dividedBy (-10) 2
+   dividedBy (-10) (-2)
+   dividedBy 10 0
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Result 5
+   Result (-5)
+   Result (-5)
+   Result 5
+   DividedByZero
+   #+END_EXAMPLE
+
+** Exercise: McCarthy 91 function
+   The McCarthy 91 function yields x − 10 when x > 100 and 91
+   otherwise (NDE. the description is wrong). The function is
+   recursive.
+
+   #+NAME: McCarthy91
+   #+BEGIN_SRC haskell :results none :tangle chapter-008/McCarthy91.hs
+   module McCarthy91 where
+
+   mc91 :: Integer -> Integer
+   mc91 n
+     | n > 100 = n - 10
+     | otherwise = mc91 . mc91 $ n + 11
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   :{
+   <<McCarthy91>>
+   :}
+   map mc91 [95..110]
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [91,91,91,91,91,91,91,92,93,94,95,96,97,98,99,100]
+   #+END_EXAMPLE
+
+** Exercise: Numbers into words
+   Complete the definition
+
+   #+BEGIN_SRC haskell :eval never
+   module WordNumber where
+
+   import Data.List (intersperse)
+
+   digitToWord :: Int -> String
+   digitToWord n = undefined
+
+   digits :: Int -> [Int]
+   digits n = undefined
+
+   wordNumber :: Int -> String
+   wordNumber n = undefined
+   #+END_SRC
+
+   #+NAME: WordNumber
+   #+BEGIN_SRC haskell :results none :tangle chapter-008/WordNumber.hs
+   module WordNumber where
+
+   import Data.List (intersperse)
+
+   digitToWord :: Int -> String
+   digitToWord 0 = "zero"
+   digitToWord 1 = "one"
+   digitToWord 2 = "two"
+   digitToWord 3 = "three"
+   digitToWord 4 = "four"
+   digitToWord 5 = "five"
+   digitToWord 6 = "six"
+   digitToWord 7 = "seven"
+   digitToWord 8 = "eight"
+   digitToWord 9 = "nine"
+
+   digits :: Int -> [Int]
+   digits n
+     | n < 10 = [n]
+     | otherwise = digits (div n 10) ++ [mod n 10]
+
+   wordNumber :: Int -> String
+   wordNumber n = concat $ intersperse "-" $ map digitToWord $ digits n
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results output :noweb yes replace :wrap EXAMPLE :epilogue ":load" :post start-at-line(content=*this*, line=4)
+   <<directory()>>
+   :load WordNumber
+   digitToWord 3
+   digitToWord 7
+   digitToWord 0
+   digits 0
+   digits 4
+   digits 14
+   digits 149
+   digits 1498
+   wordNumber 1498
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   three
+   seven
+   zero
+   [0]
+   [4]
+   [1,4]
+   [1,4,9]
+   [1,4,9,8]
+   one-four-nine-eight
+   #+END_EXAMPLE
