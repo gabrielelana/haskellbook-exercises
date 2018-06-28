@@ -174,8 +174,6 @@
    "\n"))
   #+END_SRC
 
-  #+RESULTS: ghci-clean
-
 ** Grab the Bag (7.3)
 
 1. Which (two or more) of the following are equivalent?
