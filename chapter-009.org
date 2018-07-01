@@ -1,0 +1,1254 @@
+* 9.1 Lists
+  Nothing much
+
+* 9.2 The list datatype
+  The list datatype is defined like this:
+
+  #+BEGIN_EXAMPLE
+  data [] a = [] | a : [a]
+  1    2  3 4 5  6 7
+  #+END_EXAMPLE
+
+  1. At type level
+  2. We have a datatype with /type constructor/ ~[]~
+  3. Takes a single /type constructor/ argument ~a~
+  4. At the term level
+  5. A nullary /data constructor/ ~[]~
+  6. Or it can be constructed by
+  7. The second /data constructor/ ~:~ which is a product of values of
+     type ~a~ and ~[a]~
+
+  As a whole is a sum type (~|~) but the second /data constructor/
+  it's a product type because it take two arguments.
+
+* 9.3 Pattern matching
+  We can match on /data constructors/ and /data constructors/ of lists
+  is not an exception.
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  (x : xs) = [1, 2, 3, 4]
+  x
+  xs
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  1
+  [2,3,4]
+  #+END_EXAMPLE
+
+  A list of type ~[a]~ can be empty, since a list of pattern matches
+  should be exaustive we always need to take care of the empty list,
+  for this it can be useful to use the type ~Maybe~
+
+* 9.4 List’s syntactic sugar
+  We don't have tu use the ~:~ /data constructor/
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  (1 : 2 : 3 : []) == [1, 2, 3]
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  True
+  #+END_EXAMPLE
+
+  The /cons cells/ are the consituents of the lists, we call /spine/
+  the "shape" or the "structure" of the list.
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  length (1 : undefined : 3 : undefined : [])
+  length (1 : 2 : 3 : 4 : undefined)
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  4
+  ,*** Exception: Prelude.undefined
+  CallStack (from HasCallStack):
+    error, called at libraries/base/GHC/Err.hs:79:14 in base:GHC.Err
+    undefined, called at <interactive>:160:25 in interactive:Ghci3
+  #+END_EXAMPLE
+
+  The first list from the value point of view is not completely
+  defined (there're bottoms in the list) but ~length~ cares only about
+  the /spine/ of the list (aka. the structure of the /cons cells/ are
+  there). The second list is complete from the value point of view but
+  the /spine/ is broken because it doesn't end with an empty list.
+
+* 9.5 Using ranges to construct lists
+
+  With syntax sugar
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load"
+  [1..10]
+  [1,2..10]
+  [1,3..10]
+  [1,4..10]
+  [1,5..10]
+  [1,6..10]
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  [1,2,3,4,5,6,7,8,9,10]
+  [1,2,3,4,5,6,7,8,9,10]
+  [1,3,5,7,9]
+  [1,4,7,10]
+  [1,5,9]
+  [1,6]
+  #+END_EXAMPLE
+
+  Without syntax sugar
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load"
+  enumFromTo 1 10
+  enumFromThenTo 1 2 10
+  enumFromThenTo 1 3 10
+  enumFromThenTo 1 4 10
+  enumFromThenTo 1 5 10
+  enumFromThenTo 1 6 10
+  :t enumFromTo
+  :t enumFromThenTo
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  [1,2,3,4,5,6,7,8,9,10]
+  [1,2,3,4,5,6,7,8,9,10]
+  [1,3,5,7,9]
+  [1,4,7,10]
+  [1,5,9]
+  [1,6]
+  enumFromTo :: Enum a => a -> a -> [a]
+  enumFromThenTo :: Enum a => a -> a -> a -> [a]
+  #+END_EXAMPLE
+
+  ~enumFromThenTo~ is part of the ~Enum~ typeclass
+
+** Exercise: EnumFromTo
+   Write your own enumFromTo definitions for the types provided
+
+   #+BEGIN_SRC haskell :eval never
+   module EnumFromTo where
+
+   eftBool :: Bool -> Bool -> [Bool]
+   eftBool = undefined
+
+   eftOrd :: Ordering -> Ordering -> [Ordering]
+   eftOrd = undefined
+
+   eftInt :: Int -> Int -> [Int]
+   eftInt = undefined
+
+   eftChar :: Char -> Char -> [Char]
+   eftChar = undefined
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results none :tangle chapter-009/EnumFromTo.hs
+   module EnumFromTo where
+
+   eftBool :: Bool -> Bool -> [Bool]
+   eftBool = eft
+
+   eftOrd :: Ordering -> Ordering -> [Ordering]
+   eftOrd = eft
+
+   eftInt :: Int -> Int -> [Int]
+   eftInt = eft
+
+   eftChar :: Char -> Char -> [Char]
+   eftChar = eft
+
+   eft :: (Enum a, Ord a) => a -> a -> [a]
+   eft x y
+     | x > y = []
+     | x == y = [x]
+     | otherwise = x : (eft (succ x) y)
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post start-at-line(content=*this*, line=4)
+   <<add-current-chapter-directory-in-path()>>
+   :load EnumFromTo
+   eftInt 1 10
+   eftInt 9 10
+   eftInt 10 9
+   eftChar 'a' 'z'
+   eftBool False True
+   eftOrd LT GT
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1,2,3,4,5,6,7,8,9,10]
+   [9,10]
+   []
+   abcdefghijklmnopqrstuvwxyz
+   [False,True]
+   [LT,EQ,GT]
+   #+END_EXAMPLE
+
+* 9.6 Extracting portions of lists
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load"
+  take 5 [1..10]
+  take 5 $ enumFrom 152
+  drop 3 [1..10]
+  splitAt 15 [10..30]
+  takeWhile (< 10) [1..30]
+  dropWhile (< 10) [1..30]
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  [1,2,3,4,5]
+  [152,153,154,155,156]
+  [4,5,6,7,8,9,10]
+  ([10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],[25,26,27,28,29,30])
+  [1,2,3,4,5,6,7,8,9]
+  [10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
+  #+END_EXAMPLE
+
+** Exercises: The Fearful Symmetry
+
+   1. Using ~takeWhile~ and ~dropWhile~, write a function that takes a
+      string and returns a list of strings, using spaces to separate
+      the elements of the string into words
+
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      words :: [Char] -> [[Char]]
+      words "" = []
+      words s = (takeUntilSpace s) : (words (dropToSpace s))
+         where takeUntilSpace = takeWhile (/= ' ')
+               dropToSpace = dropWhile (== ' ') . dropWhile (/= ' ')
+      :}
+      words "sheryl wants fun"
+      words ""
+      words "sheryl"
+      words "sheryl      wants   fun"
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      ["sheryl","wants","fun"]
+      []
+      ["sheryl"]
+      ["sheryl","wants","fun"]
+      #+END_EXAMPLE
+
+   2. Next, write a function that takes a string and returns a list of
+      strings, using newline separators to break up the string.
+
+      #+BEGIN_SRC haskell :eval never :tangle chapter-009/PoemLines.hs
+      module PoemLines where
+
+      firstSen = "Tyger Tyger, burning bright\n"
+      secondSen = "In the forests of the night\n"
+      thirdSen = "What immortal hand or eye\n"
+      fourthSen = "Could frame thy fearful symmetry?"
+
+      sentences = firstSen ++ secondSen ++ thirdSen ++ fourthSen
+      -- putStrLn sentences -- should print
+      -- Tyger Tyger, burning bright
+      -- In the forests of the night
+      -- What immortal hand or eye
+      -- Could frame thy fearful symmetry?
+
+      -- Implement this
+      lines :: String -> [String]
+      lines "" = []
+      lines s = (takeWhile (/= '\n') s) : lines ((dropWhile (== '\n') . dropWhile (/= '\n')) s)
+
+      -- What we want 'lines sentences'
+      -- to equal
+      shouldEqual =
+        [ "Tyger Tyger, burning bright"
+        , "In the forests of the night"
+        , "What immortal hand or eye"
+        , "Could frame thy fearful symmetry?"
+        ]
+
+      -- The main function here is a small test -- to ensure you've written your function -- correctly.
+      main :: IO ()
+      main = print $
+             "Are they equal? "
+             ++ show (lines sentences == shouldEqual)
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post start-at-line(content=*this*, line=4)
+      <<add-current-chapter-directory-in-path()>>
+      :load PoemLines
+      main
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Are they equal? True
+      #+END_EXAMPLE
+
+   3. Now let’s look at what those two functions have in common. Try
+      writing a new function that parameterizes the character you’re
+      breaking the string argument on and rewrite ~myWords~ and
+      ~lines~ using it.
+
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      splitAt :: Char -> String -> [String]
+      splitAt _ "" = []
+      splitAt c s = (takeWhile (/= c) s) : splitAt c ((dropWhile (== c) . dropWhile (/= c)) s)
+      :}
+      splitAt ' ' "aaa bbb"
+      splitAt '\n' "aaa\nbbb"
+      :{
+      words :: String -> [String]
+      words = splitAt ' '
+      :}
+      words "sheryl wants fun"
+      words ""
+      words "sheryl"
+      words "sheryl      wants   fun"
+      :{
+      lines :: String -> [String]
+      lines = splitAt '\n'
+      :}
+      lines "aaa\nbbb\n\n"
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      ["aaa","bbb"]
+      ["aaa","bbb"]
+      ["sheryl","wants","fun"]
+      []
+      ["sheryl"]
+      ["sheryl","wants","fun"]
+      ["aaa","bbb"]
+      #+END_EXAMPLE
+
+* 9.7 List Comprehensions
+  A kind of expression meant to create a new list starting from one or more lists
+
+  #+BEGIN_EXAMPLE
+  [x^2 | x <- [1..10]]
+   1   2 3    4
+  #+END_EXAMPLE
+
+  1. The output function that will apply to the members of list we indicate
+  2. The separator between output and input
+  3. The input variable bound to the current element of the input set/list
+  4. The input set/list
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load"
+  [x^2 | x <- [1..10]]
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  [1,4,9,16,25,36,49,64,81,100]
+  #+END_EXAMPLE
+
+  List comprehensions can have predicates (functions that evaluates to
+  ~Bool~) and can work on multiple lists
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load"
+  [(x, y, z) | x <- [1..10], y <- [1..10], z <- [1..10], x^2 + y^2 == z^2]
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  [(3,4,5),(4,3,5),(6,8,10),(8,6,10)]
+  #+END_EXAMPLE
+
+  Introducing ~elem~ function
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load"
+  :t elem
+  elem 'e' "Hello"
+  elem 'y' "Hello"
+  let acronym s = [c | c <- s, elem c ['A'..'Z']]
+  acronym "Self Contained Underwater Breathing Apparatus"
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  elem :: (Eq a, Foldable t) => a -> t a -> Bool
+  True
+  False
+  SCUBA
+  #+END_EXAMPLE
+
+** Exercise: Comprehend Thy List
+   Given
+   #+NAME: mySqr
+   #+BEGIN_SRC haskell :eval never
+   let mySqr = [x^2 | x <- [1..10]]
+   #+END_SRC
+
+   1. What's the output of the following code?
+      #+BEGIN_SRC haskell :results none :noweb yes
+      <<mySqr>>
+      [x | x <- mySqr, rem x 2 == 0]
+      #+END_SRC
+      The list of even numbers of ~mySqr~
+
+   2. What's the output of the following code?
+      #+BEGIN_SRC haskell :results none :noweb yes
+      <<mySqr>>
+      [(x, y) | x <- mySqr, y <- mySqr, x < 50, y > 50]
+      #+END_SRC
+      The list made of 2-tuples where the first elements are all the
+      numbers from ~mySqr~ less than 50 combined with all the numbers
+      from ~mySqr~ greater than 50.
+      ~[(1, 64), (1, 81), (1, 100), (4, 64), (4, 81), ...]~
+
+   3. What's the output of the following code?
+      #+BEGIN_SRC haskell :results none :noweb yes
+      <<mySqr>>
+      take 5 [(x, y) | x <- mySqr, y <- mySqr, x < 50, y > 50]
+      #+END_SRC
+      Same as above but only the first 5 elements
+      ~[(1, 64), (1, 81), (1, 100), (4, 64), (4, 81)]~
+
+** Exercise: Square Cube
+   Given the following code
+
+   #+NAME: lists
+   #+BEGIN_SRC haskell :eval never
+   let mySqr = [x^2 | x <- [1..5]]
+   let myCube = [y^3 | y <- [1..5]]
+   #+END_SRC
+
+   1. First write an expression that will make tuples of the outputs
+      of ~mySqr~ and ~myCube~.
+      #+BEGIN_SRC haskell :results none :noweb yes
+      <<lists>>
+      [(x, y) | x <- mySqr, y <- myCube]
+      #+END_SRC
+
+   2. Now alter that expression so that it only uses the x and y
+      values that are less than 50.
+      #+BEGIN_SRC haskell :results none :noweb yes
+      <<lists>>
+      [(x, y) | x <- mySqr, y <- myCube, x < 50 && y < 50]
+      #+END_SRC
+
+   3. Apply another function to determine how many elements inhabits
+      your output list.
+      #+BEGIN_SRC haskell :results none :noweb yes
+      <<lists>>
+      length [(x, y) | x <- mySqr, y <- myCube, x < 50 && y < 50]
+      #+END_SRC
+
+* 9.8 Spines and non strict evaluation
+  The /spine/ is the connective structure that holds the values
+  together in a data structure.
+
+  Introducing ~:sprint~ GHCi command: since Haskell is lazy and when
+  you want to print something you trigger the evaluation of what you
+  want to print, if you want to know if something has been evaluated
+  or not you cannot use ~print~ but you have to use ~:sprint~, a value
+  no yet evaluated is represented with ~_~
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  let blah = enumFromTo 'a' 'z'
+  :sprint blah
+  take 1 blah
+  :sprint blah
+  take 2 blah
+  :sprint blah
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  blah = _
+  a
+  blah = 'a' : _
+  ab
+  blah = 'a' : 'b' : _
+  #+END_EXAMPLE
+
+  Values in Haskell get reduced to weak head normal form by
+  default. /Weak Head Normal Form/ (WHNF) means the expression is only
+  evaluated as far as is necessary to reach a data constructor or a
+  lambda waiting for an argument. WHNF contains the possiblity that:
+  - The expression is already fully evaluated (/Normal Form/ NF)
+  - The expression has been evaluated to the point of arriving at a
+    data constructor or lambda awaiting an argument.
+
+  Examples
+  - ~(1, 2)~ NF and WHNF, it's fully evaluated so NF and so WHNF (NF
+    implies WHNF).
+  - ~(1, 1 + 1)~ WHNF but not NF, there's still ~+~ that can be
+    applied.
+  - ~\x -> x * 10~ NF and WHNF, it's fully evaluated, it's true that
+    there's still ~*~ that can be applied but we need ~x~ to do that.
+  - ~"Foo" ++ "Bar"~ no WHNF nor NF, there's no data constructor here
+    and there's still ~++~ to apply.
+  - ~[1..10]~ WHNF but not NF.
+
+** Exercise: Bottom Madness
+
+   1. Will it blow up?
+      #+BEGIN_SRC haskell :results none
+      [x^y | x <- [1..5], y <- [2, undefined]]
+      #+END_SRC
+      Yes, yes because by printing the entire list we are going to
+      evaluate ~undefined~
+
+   2. Will it blow up?
+      #+BEGIN_SRC haskell :results none
+      take 1 $ [x^y | x <- [1..5], y <- [2, undefined]]
+      #+END_SRC
+      No, only the first element of the list is evaluated which is
+      ~1^2~
+
+   3. Will it blow up?
+      #+BEGIN_SRC haskell :results none
+      sum [1, undefined, 3]
+      #+END_SRC
+      Yes, to calculate the sum of all values you need to evaluate all
+      values
+
+   4. Will it blow up?
+      #+BEGIN_SRC haskell :results none
+      length [1, 2, undefined]
+      #+END_SRC
+      No, ~length~ is /spine strict/ not /value strict/
+
+   5. Will it blow up?
+      #+BEGIN_SRC haskell :results none
+      length $ [1, 2, 3] ++ undefined
+      #+END_SRC
+      Yes, to concatenate you need to have a compatibile spine/type
+      and ~undefined~ is not
+
+   6. Will it blow up?
+      #+BEGIN_SRC haskell :results none
+      take 1 $ filter even [1, 2, 3, undefined]
+      #+END_SRC
+      No, only the evaluation of the first two values is needed
+
+   7. Will it blow up?
+      #+BEGIN_SRC haskell :results none
+      take 1 $ filter even [1, 3, undefined]
+      #+END_SRC
+      Yes, no even values before ~undefined~
+
+   8. Will it blow up?
+      #+BEGIN_SRC haskell :results none
+      take 1 $ filter odd [1, 3, undefined]
+      #+END_SRC
+      No, only the evaluation of the first value is needed
+
+   9. Will it blow up?
+      #+BEGIN_SRC haskell :results none
+      take 2 $ filter odd [1, 3, undefined]
+      #+END_SRC
+      No, only the evaluation of the first two values is needed
+
+   10. Will it blow up?
+       #+BEGIN_SRC haskell :results none
+       take 3 $ filter odd [1, 3, undefined]
+       #+END_SRC
+       Yes, the third value is needed and it's ~undefined~
+
+** Exercise: Normal Form
+
+   1. Is it in normal form?
+      #+BEGIN_SRC haskell :results none
+      [1, 2, 3, 4, 5]
+      #+END_SRC
+      NF & WHNF
+
+   2. Is it in normal form?
+      #+BEGIN_SRC haskell :results none
+      1 : 2 : 3 : 4 : _
+      #+END_SRC
+      WHNF
+
+   3. Is it in normal form?
+      #+BEGIN_SRC haskell :results none
+      enumFromTo 1 10
+      #+END_SRC
+      Neither
+
+   4. Is it in normal form?
+      #+BEGIN_SRC haskell :results none
+      length [1, 2, 3, 4, 5]
+      #+END_SRC
+      Neither
+
+   5. Is it in normal form?
+      #+BEGIN_SRC haskell :results none
+      sum (enumFromTo 1 10)
+      #+END_SRC
+      Neither
+
+   6. Is it in normal form?
+      #+BEGIN_SRC haskell :results none
+      ['a'..'m'] ++ ['n'..'z']
+      #+END_SRC
+      Neither
+
+   7. Is it in normal form?
+      #+BEGIN_SRC haskell :results none
+      (_, 'b')
+      #+END_SRC
+      WHNF
+
+* 9.9 Transforming lists of values
+  If we have to turn a list in another list with the same number of
+  elements but different values, instead of coding the transformation
+  by hand recursively, we can use an higher-order function like ~map~
+  or ~fmap~ to do the recursion part for us and passing in the
+  transformation function that turns a value from the input list into
+  a value for the output list
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load"
+  :t map
+  :t fmap
+  map (+1) [1..10]
+  fmap (+1) [1..10]
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  map :: (a -> b) -> [a] -> [b]
+  fmap :: Functor f => (a -> b) -> f a -> f b
+  [2,3,4,5,6,7,8,9,10,11]
+  [2,3,4,5,6,7,8,9,10,11]
+  #+END_EXAMPLE
+
+** Exercise: More Bottoms
+
+   1. Will the following expression return a value or be ⊥?
+      #+BEGIN_SRC haskell :results none
+      take 1 $ map (+1) [undefined, 2, 3]
+      #+END_SRC
+      It will return ⊥
+
+   2. Will the following expression return a value?
+      #+BEGIN_SRC haskell :results none
+      take 1 $ map (+1) [1, undefined, 3]
+      #+END_SRC
+      Yes, ~[2]~
+
+   3. Will the following expression return a value?
+      #+BEGIN_SRC haskell :results none
+      take 2 $ map (+1) [1, undefined, 3]
+      #+END_SRC
+      No
+
+   4. What does the following mystery function do? What is its type?
+      #+BEGIN_SRC haskell :results none
+      itIsMystery xs = map (\x -> elem x "aeiou") xs
+      :t itIsMystery
+      itIsMystery "not really"
+      #+END_SRC
+      It will turn a string in a list of booleans with a ~True~ in
+      place of vowels and ~False~ for other characters. The type is
+      ~itIsMistery :: [Char] -> [Bool]~
+
+   5. What will be the result of the following functions
+
+      1. ~map (^2) [1..10]~ the value is
+         ~[1, 4, 9, 16, 25, 36, 49, 64, 81, 100]~
+
+      2. ~map minimum [[1..10], [10..20], [20..30]]~ the value is
+         ~[1, 10, 20]~
+
+      3. ~map sum [[1..5], [1..5], [1..5]]~ the value is
+         ~[15, 15, 15]~
+
+   6. Write a function that those the same as the following but using
+      ~Data.Bool.bool~ function
+      #+BEGIN_SRC haskell :results none
+      map (\x -> if x == 3 then (-x) else (x)) [1..10]
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results none :epilogue ":m"
+      import Data.Bool
+      map (\x -> bool x (-x) (x == 3)) [1..10]
+      #+END_SRC
+
+* 9.10 Filtering list of values
+  If we need to keep only the elements of a list that satify some
+  predicate then we can use the higher-order function ~filter~
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load"
+  :t filter
+  filter even [1..10]
+  filter odd [1..10]
+  filter (flip elem $ "aeiou") "Stranger Things"
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  filter :: (a -> Bool) -> [a] -> [a]
+  [2,4,6,8,10]
+  [1,3,5,7,9]
+  aei
+  #+END_EXAMPLE
+
+** Exercise: Filtering
+
+   1. Write a function that gives us all the multiple of 3 out of a
+      list from 1 to 30.
+      #+BEGIN_SRC haskell :results none
+      filter ((== 0) . (flip rem $ 3)) [1..30]
+      #+END_SRC
+
+   2. How could we compose the above function with the length function
+      to tell us *how many* multiples of 3 there are between 1 and 30?
+      #+BEGIN_SRC haskell :results none
+      length . filter ((== 0) . (flip rem $ 3)) $ [1..30]
+      #+END_SRC
+
+   3. Next we’re going to work on removing all articles (’the’, ’a’,
+      and ’an’) from sentences
+      #+BEGIN_SRC haskell :results none
+      :{
+      let sansArticles s = filter (not . isAnArticle) (words s)
+            where isAnArticle e = elem e ["the", "a", "an"]
+      :}
+      sansArticles "the brown dog was a goof"
+      #+END_SRC
+
+* 9.12 Zipping lists
+  Zipping lists together is a means of combining values from multiple
+  lists into a single list.
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load"
+  :t zip
+  zip [1..10] [3..12]
+  :t unzip
+  unzip $ zip [1, 2, 3] [4, 5, 6]
+  :t zipWith
+  zipWith (+) [1..3] [4..6]
+  (zipWith (,) [1..3] [4..6]) == (zip [1..3] [4..6])
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  zip :: [a] -> [b] -> [(a, b)]
+  [(1,3),(2,4),(3,5),(4,6),(5,7),(6,8),(7,9),(8,10),(9,11),(10,12)]
+  unzip :: [(a, b)] -> ([a], [b])
+  ([1,2,3],[4,5,6])
+  zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
+  [5,7,9]
+  True
+  #+END_EXAMPLE
+
+** Exercise: Zipping
+
+   1. Write your own version of zip and ensure it behaves the same as
+      the original.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      myZip :: [a] -> [b] -> [(a, b)]
+      myZip _ [] = []
+      myZip [] _ = []
+      myZip (x:xs) (y:ys) = (x, y) : myZip xs ys
+      :}
+      myZip [] [] == zip [] []
+      myZip [1] [] == zip [1] []
+      myZip [] [1] == zip [] [1]
+      myZip [1] [1] == zip [1] [1]
+      myZip [1..3] [1..3] == zip [1..3] [1..3]
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      True
+      True
+      True
+      True
+      True
+      True
+      #+END_EXAMPLE
+
+   2. Do what you did for ~zip~, but now for ~zipWith~
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      myZipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
+      myZipWith f [] _ = []
+      myZipWith f _ [] = []
+      myZipWith f (x:xs) (y:ys) = f x y : myZipWith f xs ys
+      :}
+      myZipWith (+) [] [] == zipWith (+) [] []
+      myZipWith (+) [1] [] == zipWith (+) [1] []
+      myZipWith (+) [] [1] == zipWith (+) [] [1]
+      myZipWith (+) [1] [1] == zipWith (+) [1] [1]
+      myZipWith (+) [1..3] [1..3] == zipWith (+) [1..3] [1..3]
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      True
+      True
+      True
+      True
+      True
+      #+END_EXAMPLE
+
+   3. Rewrite your zip in terms of the zipWith you wrote.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      myZipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
+      myZipWith f [] _ = []
+      myZipWith f _ [] = []
+      myZipWith f (x:xs) (y:ys) = f x y : myZipWith f xs ys
+      :}
+      :{
+      myZip :: [a] -> [b] -> [(a, b)]
+      myZip = myZipWith (,)
+      :}
+      myZip [] [] == zip [] []
+      myZip [1] [] == zip [1] []
+      myZip [] [1] == zip [] [1]
+      myZip [1] [1] == zip [1] [1]
+      myZip [1..3] [1..3] == zip [1..3] [1..3]
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      True
+      True
+      True
+      True
+      True
+      #+END_EXAMPLE
+
+* Exercises
+
+  #+NAME: ghci-clean
+  #+BEGIN_SRC emacs-lisp :var content="" :results raw
+  (string-join
+   (seq-filter
+    (lambda (line)
+      (not (string-empty-p line)))
+    (seq-map
+     (lambda (line)
+       (replace-regexp-in-string "^.*Prelude.*> " "" line))
+     (split-string content "\n")))
+   "\n"))
+  #+END_SRC
+
+  #+NAME: add-current-chapter-directory-in-path
+  #+BEGIN_SRC emacs-lisp :output raw
+   (concat
+    ":set -i"
+    (file-name-as-directory (file-name-directory (buffer-file-name)))
+    (file-name-base (buffer-file-name)))
+  #+END_SRC
+
+  #+NAME: start-at-line
+  #+BEGIN_SRC sh :var content="" :var line="0" :results raw
+  echo "$content" | tail -n +$line
+  #+END_SRC
+
+** Exercise: Data.Char
+
+   1. Query the types of ~isUpper~ and ~toUpper~.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":m\n:load" :post ghci-clean(content=*this*)
+      import Data.Char
+      :t isUpper
+      :t toUpper
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      isUpper :: Char -> Bool
+      toUpper :: Char -> Char
+      #+END_EXAMPLE
+
+   2. Which would we use to write a function that filters all the
+      uppercase letters out of a String? ~isUpper~. Write that
+      function such that, given the input "HbEfLrLxO," your function
+      will return "HELLO"
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":m\n:load" :post ghci-clean(content=*this*)
+      import Data.Char
+      let onlyUpper = filter isUpper
+      onlyUpper "HbEfLrLxO"
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      HELLO
+      #+END_EXAMPLE
+
+   3. Write a function that will capitalize the first letter of a
+      string and return the entire string
+      #+BEGIN_SRC haskell :results none :epilogue ":m"
+      import Data.Char
+      :{
+      capitalize "" = ""
+      capitalize (c:cs) = toUpper c : cs
+      :}
+      capitalize "hello"
+      #+END_SRC
+
+   4. Now make a new version of that function that is recursive such
+      that if you give it the input “woot” it will holler back at you
+      “WOOT.”
+      #+BEGIN_SRC haskell :results none :epilogue ":m"
+      import Data.Char
+      :{
+      upperAll "" = ""
+      upperAll (c:cs) = toUpper c : upperAll cs
+      :}
+      upperAll "woot"
+      #+END_SRC
+
+   5. Query the type of head and experiment with it to see what it
+      does.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :t head
+      head [1, 2, 3]
+      head "hello"
+      head []
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      head :: [a] -> a
+      1
+      'h'
+      ,*** Exception: Prelude.head: empty list
+      #+END_EXAMPLE
+
+      Now write a function that will capitalize the first letter of a
+      String and return only that letter as the result.
+
+      #+BEGIN_SRC haskell :results none :epilogue ":m"
+      import Data.Char
+      upperHead = toUpper . head
+      upperHead "hello"
+      #+END_SRC
+
+   6. Now rewrite it as a composed function. Then, for fun, rewrite it
+      pointfree.
+
+** Exercise: Ciphers
+   Your goal in this exercise is to write a basic Caesar cipher that
+   shifts rightward.
+
+   #+BEGIN_SRC haskell :eval never :tangle chapter-009/Cipher.hs
+   module Cipher where
+
+   import Data.Char
+
+   encode :: Int -> String -> String
+   encode n s = map (encodeChar n) s
+
+   decode :: Int -> String -> String
+   decode n s = map (decodeChar n) s
+
+   decodeChar :: Int -> Char -> Char
+   decodeChar n = encodeChar (-n)
+
+   encodeChar :: Int -> Char -> Char
+   encodeChar n c
+     | elem c ['a'..'z'] = shift n c
+     | otherwise = c
+
+   shift :: Int -> Char -> Char
+   shift n c = chr ((mod ((ord c - base) + n) l) + base)
+     where l = (ord 'z') - (ord 'a') + 1
+           base = ord 'a'
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post start-at-line(content=*this*, line=4)
+   <<add-current-chapter-directory-in-path()>>
+   :load Cipher
+   encode 3 "hello"
+   decode 3 "kh1oor"
+   encode 3 "If he had anything confidential to say, he wrote it in cipher"
+   encode 3 "If he had anything confidential to say, he wrote it in cipher" == "Ii kh kdg dqbwklqj frqilghqwldo wr vdb, kh zurwh lw lq flskhu"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   khoor
+   he1llo
+   Ii kh kdg dqbwklqj frqilghqwldo wr vdb, kh zurwh lw lq flskhu
+   True
+   #+END_EXAMPLE
+
+** Exercise: Writing your own standard functions
+
+   1. ~myOr~ returns ~True~ if any ~Bool~ in the list is ~True~.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      myOr :: [Bool] -> Bool
+      myOr [] = False
+      myOr (b:bs) = b || myOr bs
+      :}
+      myOr []
+      myOr [True]
+      myOr [False]
+      myOr [True, False]
+      myOr [False, False]
+      myOr [True, True, False]
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      False
+      True
+      False
+      True
+      False
+      True
+      #+END_EXAMPLE
+
+   2. ~myAny~ returns ~True~ if ~a -> Bool~ applied to any of the
+      values in the list returns ~True~.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      myAny :: (a -> Bool) -> [a] -> Bool
+      myAny _ [] = False
+      myAny f (x:xs) = f x || myAny f xs
+      :}
+      myAny undefined []
+      myAny even [1, 3, 5]
+      myAny even [1, 3, 6]
+      myAny even [2, 3, 3, 3]
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      False
+      False
+      True
+      True
+      #+END_EXAMPLE
+
+   3. Write ~myElem~ your version of ~elem~
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      myElem :: (Eq a) => a -> [a] -> Bool
+      myElem y [] = False
+      myElem y (x:xs)
+        | x == y = True
+        | otherwise = myElem y xs
+      :}
+      myElem 1 [1, 2, 3]
+      myElem 6 [1, 2, 3]
+      myElem 1 []
+      myElem 1 [1]
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      True
+      False
+      False
+      True
+      #+END_EXAMPLE
+
+      Write a version of ~myElem~ that uses ~any~
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      myElem :: (Eq a) => a -> [a] -> Bool
+      myElem y = any (== y)
+      :}
+      myElem 1 [1, 2, 3]
+      myElem 6 [1, 2, 3]
+      myElem 1 []
+      myElem 1 [1]
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      True
+      False
+      False
+      True
+      #+END_EXAMPLE
+
+   4. Implement ~myReverse~
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      myReverse :: [a] -> [a]
+      myReverse [] = []
+      myReverse (x:xs) = (myReverse xs) ++ [x]
+      :}
+      myReverse []
+      myReverse [1]
+      myReverse [1, 2]
+      myReverse [1, 2, 3]
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      []
+      [1]
+      [2,1]
+      [3,2,1]
+      #+END_EXAMPLE
+
+      Implemented with an accumulator
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      myReverse :: [a] -> [a]
+      myReverse xs = go [] xs
+        where go ys [] = ys
+              go ys (x:xs) = go (x:ys) xs
+      :}
+      myReverse []
+      myReverse [1]
+      myReverse [1, 2]
+      myReverse [1, 2, 3]
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      []
+      [1]
+      [2,1]
+      [3,2,1]
+      #+END_EXAMPLE
+
+   5. ~squish~ flattens a list of lists into a list.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      squish :: [[a]] -> [a]
+      squish [] = []
+      squish (x:xs) = x ++ squish xs
+      :}
+      squish [[1, 2], [3]]
+      squish [[1, 2], [3, 4, 5]]
+      squish [[], [1], []]
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      [1,2,3]
+      [1,2,3,4,5]
+      [1]
+      #+END_EXAMPLE
+
+   6. ~squishMap~ maps a function over a list and concatenates the
+      re-sults.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      squishMap :: (a -> [b]) -> [a] -> [b]
+      squishMap _ [] = []
+      squishMap f (x:xs) = (f x) ++ squishMap f xs
+      :}
+      squishMap (\x -> [1, x, 3]) [2]
+      squishMap (\x -> "WO "++[x]++" HOO ") "123"
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      [1,2,3]
+      WO 1 HOO WO 2 HOO WO 3 HOO
+      #+END_EXAMPLE
+
+   7. ~squishAgain~ flattens a list of lists into a list. This time
+      re-use the squishMap function.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      squishMap :: (a -> [b]) -> [a] -> [b]
+      squishMap _ [] = []
+      squishMap f (x:xs) = (f x) ++ squishMap f xs
+      :}
+      :{
+      squishAgain :: [[a]] -> [a]
+      squishAgain = squishMap id
+      :}
+      squishAgain [[1, 2], [3]]
+      squishAgain [[1, 2], [3, 4, 5]]
+      squishAgain [[], [1], []]
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      [1,2,3]
+      [1,2,3,4,5]
+      [1]
+      #+END_EXAMPLE
+
+   8. ~myMaximumBy~ takes a comparison function and a list and returns
+      the greatest element of the list based on the last value that
+      the comparison returned ~GT~ for.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      myMaximumBy :: (a -> a -> Ordering) -> [a] -> a
+      myMaximumBy _ [] = error "empty list"
+      myMaximumBy _ (x:[]) = x
+      myMaximumBy f (x1:x2:xs) =
+        case f x1 x2 of
+          LT -> myMaximumBy f (x2:xs)
+          _ -> myMaximumBy f (x1:xs)
+      :}
+      myMaximumBy compare [1, 53, 9001, 10]
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      9001
+      #+END_EXAMPLE
+
+   9. ~myMinimumBy~ takes a comparison function and a list and returns
+      the least element of the list based on the last value that the
+      comparison returned LT for.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      myMinimumBy :: (a -> a -> Ordering) -> [a] -> a
+      myMinimumBy _ [] = error "empty list"
+      myMinimumBy _ (x:[]) = x
+      myMinimumBy f (x1:x2:xs) =
+        case f x1 x2 of
+          LT -> myMinimumBy f (x1:xs)
+          _ -> myMinimumBy f (x2:xs)
+      :}
+      myMinimumBy compare [1, 53, 9001, 10]
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      1
+      #+END_EXAMPLE
+
+   10. Using the ~myMinimumBy~ and ~myMaximumBy~ functions, write your own
+       versions of ~maximum~ and ~minimum~.
+       #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+       :{
+       myMaximumBy :: (a -> a -> Ordering) -> [a] -> a
+       myMaximumBy _ [] = error "empty list"
+       myMaximumBy _ (x:[]) = x
+       myMaximumBy f (x1:x2:xs) =
+         case f x1 x2 of
+           LT -> myMaximumBy f (x2:xs)
+           _ -> myMaximumBy f (x1:xs)
+       :}
+       :{
+       myMinimumBy :: (a -> a -> Ordering) -> [a] -> a
+       myMinimumBy _ [] = error "empty list"
+       myMinimumBy _ (x:[]) = x
+       myMinimumBy f (x1:x2:xs) =
+         case f x1 x2 of
+           LT -> myMinimumBy f (x1:xs)
+           _ -> myMinimumBy f (x2:xs)
+       :}
+       :{
+       myMaximum :: (Ord a) => [a] -> a
+       myMaximum = myMaximumBy compare
+       :}
+       myMaximum [1, 2, 3]
+       myMaximum [1, 2, 3] == maximum [1, 2, 3]
+       :{
+       myMinimum :: (Ord a) => [a] -> a
+       myMinimum = myMinimumBy compare
+       :}
+       myMinimum [1, 2, 3]
+       myMinimum [1, 2, 3] == minimum [1, 2, 3]
+       #+END_SRC
+
+       #+RESULTS:
+       #+BEGIN_EXAMPLE
+       3
+       True
+       1
+       True
+       #+END_EXAMPLE
