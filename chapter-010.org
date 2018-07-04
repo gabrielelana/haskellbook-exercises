@@ -1,0 +1,482 @@
+* 10.1 Folds
+  - Folds as a general concept are called catamorphisms (/cata/ means
+    /down/ and /morphism/ means /transformation/)
+  - If the spine of a list is the structure of a list then a fold is
+    what reduce that structure
+
+* 10.2 Bringing you into the fold
+  Before GHC 7.6 ~foldr~ (fold right) was defined as
+  #+BEGIN_SRC haskell :eval never
+  foldr :: (a -> b -> b) -> b -> [a] -> b
+  #+END_SRC
+
+  Then it got replaced with a more general
+  #+BEGIN_SRC haskell :eval never
+  foldr :: Foldable t => (a -> b -> b) -> b -> t a -> b
+  #+END_SRC
+
+  With which we can implement the list version using ~[]~ as a type
+  constructor, because ~[]~ is ~Foldable~ along with many others.
+
+* 10.3 Recursive pattern
+  We have seen the same pattern, over and over again to reduce lists
+  #+BEGIN_SRC haskell :eval never
+  sum :: [a] -> a
+  sum [] = 0
+  sum (x:xs) = x + sum xs
+  #+END_SRC
+
+  - The base case is the identity for that function
+  - There's a main function with a recursive pattern that associates
+    to the right (~x + (sum xs)~ the parentheses groups items on the
+    right)
+
+* 10.4 Fold right
+  We call ~foldr~ "Fold right" because the fold is right associative
+  #+BEGIN_SRC haskell :eval never
+  foldr :: (a -> b -> b) -> b -> [a] -> b
+  foldr f z [] = z
+  foldr f z (x:xs) = f x (foldr f z xs)
+  #+END_SRC
+
+  Example of execution
+  #+BEGIN_EXAMPLE
+  foldr (+) 0 [1, 2, 3]
+  (+) 1 (foldr (+) 0 [2, 3])
+  (+) 1 ((+) 2 (foldr (+) 0 [3]))
+  (+) 1 ((+) 2 ((+) 3 (foldr (+) 0 [])))
+  (+) 1 ((+) 2 ((+) 3 0))
+  (+) 1 ((+) 2 3)
+  (+) 1 5
+  6
+  #+END_EXAMPLE
+
+  - Folding happens in two stages: /traversing/ and /folding/
+    - /Traversing/ is the stage in which the fold recurses over the spine.
+    - /Folding/ is the stage of the evaluation or reduction of the
+      function over the values.
+
+  - Given this two stage evaluation and lazyness if the reduce
+    function doesn't need to evalute the second argument (aka the rest
+    of the fold) then the evaluation can stop at the first step.
+
+  - The above reduction traverses all the spine of the list and
+    evaluates all the values because ~(+)~ is strict on both
+    arguments. For that ~foldr~ can be used on potentially infinite
+    foldable data structures.
+    #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+    :{
+    myAny :: (a -> Bool) -> [a] -> Bool
+    myAny f xs = foldr (\x b -> f x || b) False xs
+    :}
+    myAny even [1..]
+    #+END_SRC
+
+    #+RESULTS:
+    #+BEGIN_EXAMPLE
+    True
+    #+END_EXAMPLE
+
+  - Another term we use for this never-ending evaluation is /bottom/
+    or /undefined/
+
+  - If the function we give to ~foldr~ doesn't use the values of the
+    list then we can have ~undefined~ in the list
+    #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+    foldr (\_ _ -> 42) undefined [undefined]
+    #+END_SRC
+
+    #+RESULTS:
+    #+BEGIN_EXAMPLE
+    42
+    #+END_EXAMPLE
+
+    The above will not traverse the spine nor evaluates the arguments,
+    the one below will traverse the spine but it will not evaluate the
+    arguments. NOTE: we need the default value to be not ~undefined~
+    #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+    foldr (\_ n -> n + 1) 0 [undefined, undefined]
+    #+END_SRC
+
+    #+RESULTS:
+    #+BEGIN_EXAMPLE
+    2
+    #+END_EXAMPLE
+
+* 10.5 Fold left
+  We call ~foldl~ "Fold left" because the fold is left associative
+  #+BEGIN_SRC haskell :eval never
+  foldl :: (b -> a -> b) -> b -> [a] -> b
+  foldl f acc [] = acc
+  foldl f acc (x:xs) = foldl f (f acc x) xs
+  #+END_SRC
+
+  Example of execution
+  #+BEGIN_EXAMPLE
+  foldl (+) 0 [1, 2, 3]
+  foldl (+) ((+) 1 0) [2, 3]
+  foldl (+) ((+) 2 ((+) 1 0)) [3]
+  foldl (+) ((+) 3 ((+) 2 ((+) 1 0))) []
+  (+) 3 ((+) 2 ((+) 1 0))
+  (+) 3 ((+) 2 1)
+  (+) 3 3
+  6
+  #+END_EXAMPLE
+
+  The result is the same as ~foldl~ but only because the operation
+  ~(+)~ is associative, if the operation/function is not then there's
+  a big difference
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  foldr (^) 2 [1, 2, 3]
+  foldl (^) 2 [1, 2, 3]
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  1
+  64
+  #+END_EXAMPLE
+
+  Execution of ~foldr~
+  #+BEGIN_EXAMPLE
+  foldr (^) 2 [1, 2, 3]
+  (^) 1 (foldr (^) 2 [2, 3])
+  (^) 1 ((^) 2 foldr (^) 2 [3])
+  (^) 1 ((^) 2 ((^) 3 foldr (^) 2 []))
+  (^) 1 ((^) 2 ((^) 3 2))
+  (^) 1 512
+  1
+  #+END_EXAMPLE
+
+  Execution of ~foldl~
+  #+BEGIN_EXAMPLE
+  foldl (^) 2 [1, 2, 3]
+  foldl (^) ((^) 2 1) [2, 3]
+  foldl (^) ((^) ((^) 2 1) 2) [3]
+  foldl (^) ((^) ((^) ((^) 2 1) 2) 3) []
+  ((^) ((^) ((^) 2 1) 2) 3)
+  ((^) ((^) 2 2) 3)
+  ((^) 4 3)
+  64
+  #+END_EXAMPLE
+
+  Sometimes you have to use ~flip~ with ~foldl~ or with ~foldr~
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  foldr (:) [] [1, 2, 3]
+  foldl (:) [] [1, 2, 3]
+  foldl (flip (:)) [] [1, 2, 3]
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  [1,2,3]
+  <interactive>:1513:7: error:
+      • Occurs check: cannot construct the infinite type: a ~ [a]
+        Expected type: [a] -> [a] -> [a]
+          Actual type: a -> [a] -> [a]
+      • In the first argument of ‘foldl’, namely ‘(:)’
+        In the expression: foldl (:) [] [1, 2, 3]
+        In an equation for ‘it’: it = foldl (:) [] [1, 2, 3]
+      • Relevant bindings include
+          it :: [a] (bound at <interactive>:1513:1)
+  [3,2,1]
+  #+END_EXAMPLE
+
+** Exercises: Understanding folds
+
+   1. The following code will return the same sult as which of the
+      following?
+      #+BEGIN_SRC haskell :results none
+      foldr (*) 1 [1..5]
+      #+END_SRC
+
+      All of them because ~(*)~ is associative and commutative
+
+   2. Write out the evaluation steps for
+      #+BEGIN_SRC haskell :results none
+      foldl (flip (*)) 1 [1..3]
+      #+END_SRC
+
+      #+BEGIN_EXAMPLE
+      foldl (flip (*)) 1 [1, 2, 3]
+      foldl (flip (*)) ((flip (*)) 1 1) [2, 3]
+      foldl (flip (*)) ((flip (*)) ((flip (*)) 1 1) 2) [3]
+      foldl (flip (*)) ((flip (*)) ((flip (*)) ((flip (*)) 1 1) 2) 3) []
+      (flip (*)) ((flip (*)) ((flip (*)) 1 1) 2) 3
+      (flip (*)) ((flip (*)) 1 2) 3
+      (flip (*)) 2 3
+      6
+      #+END_EXAMPLE
+
+   3. One difference between ~foldr~ and ~foldl~ is: (c) ~foldr~ but
+      not ~foldl~ is associative to the right
+
+   4. Folds are /catamorphisms/, which means they are generally used
+      to (a) reduce structure
+
+   5. The following folds have at least one error, fix it
+
+      1. Fix the errors in
+         #+BEGIN_SRC haskell :results none
+         foldr (++) ["woot", "WOOT", "woot"]
+         #+END_SRC
+
+         There's no zero value
+         #+BEGIN_SRC haskell :results none
+         foldr (++) "" ["woot", "WOOT", "woot"]
+         #+END_SRC
+
+      2. Fix the errors in
+         #+BEGIN_SRC haskell :results none
+         foldr max [] "fear is the little death"
+         #+END_SRC
+
+         Wrong zero value, must be a ~Char~
+         #+BEGIN_SRC haskell :results none
+         foldr max 'a' "fear is the little death"
+         #+END_SRC
+
+      3. Fix the errors in
+         #+BEGIN_SRC haskell :results none
+         foldr and True [False, True]
+         #+END_SRC
+
+         Wrong function, ~and~ operates on ~Foldable t => Bool~ we
+         need something that operates on ~Bool~
+         #+BEGIN_SRC haskell :results none
+         foldr (&&) True [False, True]
+         #+END_SRC
+
+      4. Fix the errors in
+         #+BEGIN_SRC haskell :results none
+         foldr (||) True [False, True]
+         #+END_SRC
+
+         This is not wrong per se but the default/zero value is not
+         good because that ~foldr~ will always return ~True~. A more
+         useful thing would be to have ~False~ as default/zero value
+         so to implement ~or~
+         #+BEGIN_SRC haskell :results none
+         foldr (||) False [False, True]
+         #+END_SRC
+
+      5. Fix the errors in
+         #+BEGIN_SRC haskell :results none
+         foldl ((++) . show) "" [1..5]
+         #+END_SRC
+
+         It doesn't work because the function taken by ~foldl~ takes
+         as first argument the accumulator and not one of the values
+         from the list (which requires the ~show~)
+         #+BEGIN_SRC haskell :results none
+         foldl (flip ((++) .show)) "" [1..5]
+         #+END_SRC
+
+      6. Fix the errors in
+         #+BEGIN_SRC haskell :results none
+         foldr const 'a' [1..5]
+         #+END_SRC
+
+         The reduction function have type ~a -> b -> a~ and the type
+         of the reduction function to give to ~foldr~ must be ~a -> b
+         -> b~ then ~a~ must be equal to ~b~ and it cannot be because
+         ~b~ is ~Char~ and ~a~ is ~Num a => a~
+         #+BEGIN_SRC haskell :results none
+         foldr const 1 [1..5]
+         #+END_SRC
+
+      7. Fix the errors in
+         #+BEGIN_SRC haskell :results none
+         foldr const 0 "tacos"
+         #+END_SRC
+
+         Same as the above
+         #+BEGIN_SRC haskell :results none
+         foldr const 'a' "tacos"
+         #+END_SRC
+
+      8. Fix the errors in
+         #+BEGIN_SRC haskell :results none
+         foldl (flip const) 0 "burritos"
+         #+END_SRC
+
+         The type of ~flip const~ is ~b -> a -> a~ the expected type
+         is ~b -> a -> b~ so ~b~ must be the same as ~a~ and that's
+         the problem because ~Char~ is not the same ad ~Num a => a~
+         #+BEGIN_SRC haskell :results none
+         foldl (flip const) 'a' "burritos"
+         #+END_SRC
+
+      9. Fix the errors in
+         #+BEGIN_SRC haskell :results none
+         foldl const 'z' [1..5]
+         #+END_SRC
+
+         Same as the above
+         #+BEGIN_SRC haskell :results none
+         foldl (flip const) 0 [1..5]
+         #+END_SRC
+
+* 10.6 How to write fold functions
+  Nothing much.
+
+** Exercise: Database Processing
+
+   Complete the following code
+   #+NAME: Database
+   #+BEGIN_SRC haskell :eval never :tangle chapter-010/Database.hs
+   module Database where
+
+   import Data.Time
+
+   data DatabaseItem = DbString String
+                     | DbNumber Integer
+                     | DbDate   UTCTime
+                     deriving (Eq, Ord, Show)
+
+   theDatabase :: [DatabaseItem]
+   theDatabase =
+     [ DbDate (UTCTime (fromGregorian 1911 5 1) (secondsToDiffTime 34123))
+     , DbNumber 9001
+     , DbString "Hello, world!"
+     , DbDate (UTCTime (fromGregorian 1921 5 1) (secondsToDiffTime 34123))
+     ]
+   #+END_SRC
+
+   1. Write a function that filters for DbDate values and returns a
+      list of the UTCTime values inside them.
+      #+NAME: Database
+      #+BEGIN_SRC haskell :eval never :tangle chapter-010/Database.hs
+      filterDbDate :: [DatabaseItem] -> [UTCTime]
+      filterDbDate db = foldr accumulateDates [] db
+        where accumulateDates item times =
+                case item of
+                  DbDate time -> time : times
+                  _ -> times
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post start-at-line(content=*this*, line=4)
+      <<add-current-chapter-directory-in-path()>>
+      :load Database
+      filterDbDate theDatabase
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      [1911-05-01 09:28:43 UTC,1921-05-01 09:28:43 UTC]
+      #+END_EXAMPLE
+
+   2. Write a function that filters for DbNumber values and returns a
+      list of the Integer values inside them.
+      #+NAME: Database
+      #+BEGIN_SRC haskell :eval never :tangle chapter-010/Database.hs
+      filterDbNumber :: [DatabaseItem] -> [Integer]
+      filterDbNumber db = foldr accumulateNumbers [] db
+        where accumulateNumbers item numbers =
+                case item of
+                  DbNumber n -> n : numbers
+                  _ -> numbers
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post start-at-line(content=*this*, line=4)
+      <<add-current-chapter-directory-in-path()>>
+      :load Database
+      filterDbNumber theDatabase
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      [9001]
+      #+END_EXAMPLE
+
+   3. Write a function that gets the most recent date.
+      #+NAME: Database
+      #+BEGIN_SRC haskell :eval never :tangle chapter-010/Database.hs
+      mostRecent :: [DatabaseItem] -> UTCTime
+      mostRecent = maximum . filterDbDate
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post start-at-line(content=*this*, line=4)
+      <<add-current-chapter-directory-in-path()>>
+      :load Database
+      mostRecent theDatabase
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      1921-05-01 09:28:43 UTC
+      #+END_EXAMPLE
+
+   4. Write a function that sums all of the DbNumber values.
+      #+NAME: Database
+      #+BEGIN_SRC haskell :eval never :tangle chapter-010/Database.hs
+      sumDb :: [DatabaseItem] -> Integer
+      sumDb = sum . filterDbNumber
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post start-at-line(content=*this*, line=4)
+      <<add-current-chapter-directory-in-path()>>
+      :load Database
+      sumDb theDatabase
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      9001
+      #+END_EXAMPLE
+
+   5. Write a function that gets the average of the DbNumber values.
+      #+NAME: Database
+      #+BEGIN_SRC haskell :eval never :tangle chapter-010/Database.hs
+      avgDb :: [DatabaseItem] -> Double
+      avgDb theDatabase = (fromIntegral (sum numbers)) / (fromIntegral (length numbers))
+        where numbers = (filterDbNumber theDatabase)
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post start-at-line(content=*this*, line=4)
+      <<add-current-chapter-directory-in-path()>>
+      :load Database
+      avgDb theDatabase
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      9001.0
+      #+END_EXAMPLE
+
+* 10.7 Folding and evaluation
+  TODO
+
+* 10.8 Summary
+  TODO
+
+* 10.9 Scans
+  TODO
+
+* Exercises
+
+  #+NAME: ghci-clean
+  #+BEGIN_SRC emacs-lisp :var content="" :results raw
+  (string-join
+   (seq-filter
+    (lambda (line)
+      (not (string-empty-p line)))
+    (seq-map
+     (lambda (line)
+       (replace-regexp-in-string "^.*Prelude.*> " "" line))
+     (split-string content "\n")))
+   "\n"))
+  #+END_SRC
+
+  #+NAME: add-current-chapter-directory-in-path
+  #+BEGIN_SRC emacs-lisp :output raw
+   (concat
+    ":set -i"
+    (file-name-as-directory (file-name-directory (buffer-file-name)))
+    (file-name-base (buffer-file-name)))
+  #+END_SRC
+
+  #+NAME: start-at-line
+  #+BEGIN_SRC sh :var content="" :var line="0" :results raw
+  echo "$content" | tail -n +$line
+  #+END_SRC
