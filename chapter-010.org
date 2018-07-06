@@ -619,3 +619,234 @@
   #+BEGIN_SRC sh :var content="" :var line="0" :results raw
   echo "$content" | tail -n +$line
   #+END_SRC
+
+** Warm-up and Review
+
+   1. Given the following sets of consonants and vowels
+
+      #+NAME: letters
+      #+BEGIN_SRC haskell :eval never
+      stops  = "pbtdkg"
+      vowels = "aeiou"
+      #+END_SRC
+
+      1. Write a function that takes inputs from stops and vowels and
+         makes 3-tuples of all possible /stop-vowel-stop/
+         combinations.
+
+         #+BEGIN_SRC haskell :results none :noweb yes
+         <<letters>>
+         stopVowelStop = [(s1, w, s2) | s1 <- stops, w <- vowels, s2 <- vowels]
+         stopVowelStop
+         #+END_SRC
+
+      2. Modify that function so that it only returns the combinations
+         that begin with a /p/.
+
+         #+BEGIN_SRC haskell :results none :noweb yes
+         <<letters>>
+         stopVowelStop = [(s1, w, s2) | s1 <- stops, w <- vowels, s2 <- vowels, s1 == 'p']
+         stopVowelStop
+         #+END_SRC
+
+      3. Now set up lists of nouns and verbs (instead of stops and
+         vowels) and modify the function to make tuples represent- ing
+         possible noun-verb-noun sentences.
+
+         #+BEGIN_SRC haskell :results none
+         nouns = ["people", "history", "way", "art", "world"]
+         verbs = ["ask", "be", "become", "begin", "call", "can"]
+         nounVerbNoun = [n1 ++ " " ++ v ++ " " ++ n2 | n1 <- nouns, v <- verbs, n2 <- nouns]
+         nounVerbNoun
+         #+END_SRC
+
+   2. What does the following mystery function do? What is its type?
+
+      #+BEGIN_SRC haskell :results none
+      seekritFunc x = div (sum (map length (words x))) (length (words x))
+      #+END_SRC
+
+      It calculates the average lenght of words in a string, the type
+      is ~String -> Int~
+
+   3. We’d really like the answer to be more precise. Can you rewrite
+      that using fractional division?
+
+      #+BEGIN_SRC haskell :results none
+      :{
+      seekritFunc x = (sum (map length' (words x))) / (length' (words x))
+        where length' = fromIntegral . length
+      :}
+      :t seekritFunc
+      #+END_SRC
+
+** Exercises: Rewriting functions using folds
+   In the previous chapter, you wrote these functions using direct
+   recur- sion over lists. The goal now is to rewrite them using
+   folds. Where possible, to gain a deeper understanding of folding,
+   try rewriting the fold version so that it is point-free.
+
+   1. ~myOr~ returns ~True~ if any ~Bool~ in the list is ~True~.
+
+      #+BEGIN_SRC haskell :results none
+      :{
+      myOr :: [Bool] -> Bool
+      myOr = foldr (||) False
+      :}
+      myOr []
+      myOr [False]
+      myOr [True]
+      myOr [False, True]
+      myOr [False, False]
+      myOr [True, False]
+      #+END_SRC
+
+   2. ~myAny~ returns ~True~ if ~a -> Bool~ applied to any of the
+      values in the list returns ~True~.
+
+      #+BEGIN_SRC haskell :results none
+      :{
+      myAny :: (a -> Bool) -> [a] -> Bool
+      myAny f = foldr ((||) . f) False
+      :}
+      myAny even [1]
+      myAny even [1, 3]
+      myAny even [1, 2, 3]
+      #+END_SRC
+
+   3. Write two versions of ~myElem~. One version should use folding and
+      the other should use ~any~.
+
+      #+BEGIN_SRC haskell :results none
+      :{
+      myElem :: Eq a => a -> [a] -> Bool
+      myElem x = foldr ((||) . (==) x) False
+      :}
+      myElem 1 [1, 2, 3]
+      myElem 1 [2, 3]
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results none
+      :{
+      myElem :: Eq a => a -> [a] -> Bool
+      myElem x = any ((==) x)
+      :}
+      myElem 1 [1, 2, 3]
+      myElem 1 [2, 3]
+      #+END_SRC
+
+   4. Implement ~myReverse~, don’t worry about trying to make it lazy.
+
+      #+BEGIN_SRC haskell :results none
+      :{
+      myReverse :: [a] -> [a]
+      myReverse = foldl (flip (:)) []
+      :}
+      myReverse []
+      myReverse [1]
+      myReverse [1, 2]
+      myReverse [1, 2, 3]
+      myReverse "blah"
+      #+END_SRC
+
+   5. Write ~myMap~ in terms of ~foldr~. It should have the same behavior
+      as the built-in ~map~.
+
+      #+BEGIN_SRC haskell :results none
+      :{
+      myMap :: (a -> b) -> [a] -> [b]
+      myMap f = foldr ((:) . f) []
+      :}
+      myMap id []
+      myMap id [1]
+      myMap id [1, 2]
+      #+END_SRC
+
+   6. Write ~myFilter~ in terms of foldr. It should have the same
+      behavior as the built-in ~filter~.
+
+      #+BEGIN_SRC haskell :results none :epilogue ":m"
+      import Data.Bool
+      :{
+      myFilter :: (a -> Bool) -> [a] -> [a]
+      myFilter f = foldr (\e a -> bool a (e : a) (f e)) []
+      :}
+      myFilter even [1, 2, 3]
+      #+END_SRC
+
+   7. ~squish~ flattens a list of lists into a list
+
+      #+BEGIN_SRC haskell :results none
+      :{
+      squish :: [[a]] -> [a]
+      squish = foldr (flip $ foldr (:)) []
+      :}
+      squish [[1..3], [3..5]]
+      #+END_SRC
+
+   8. ~squishMap~ maps a function over a list and concatenates the
+      results.
+
+      #+BEGIN_SRC haskell :results none
+      :{
+      squishMap :: (a -> [b]) -> [a] -> [b]
+      squishMap f = foldr ((flip (foldr (:))) . f) []
+      :}
+      squishMap (\x -> [1, x, 3]) [2]
+      squishMap (\x -> "WO " ++ [x] ++ " OT ") "blah"
+      #+END_SRC
+
+   9. ~squishAgain~ flattens a list of lists into a list. This time
+      reuse the ~squishMap~ function.
+
+      #+BEGIN_SRC haskell :results none
+      :{
+      squishMap :: (a -> [b]) -> [a] -> [b]
+      squishMap f = foldr ((flip (foldr (:))) . f) []
+      :}
+      :{
+      squishAgain :: [[a]] -> [a]
+      squishAgain = squishMap id
+      :}
+      squishAgain [[1..3], [3..5]]
+      #+END_SRC
+
+   10. ~myMaximumBy~ takes a comparison function and a list and
+       returns the greatest element of the list based on the last
+       value that the comparison returned ~GT~ for.
+
+       #+BEGIN_SRC haskell :results none
+       :{
+       myMaximumBy :: (a -> a -> Ordering) -> [a] -> a
+       myMaximumBy _ [] = error "empty list"
+       myMaximumBy f (x:xs) = foldl max x xs
+         where max x y = case f x y of
+                           GT -> x
+                           _ -> y
+       :}
+       myMaximumBy compare [1]
+       myMaximumBy compare [1, 2]
+       myMaximumBy (\_ _ -> GT) [1..10]
+       myMaximumBy (\_ _ -> LT) [1..10]
+       myMaximumBy compare [1..10]
+       #+END_SRC
+
+   11. ~myMinimumBy~ takes a comparison function and a list and returns
+       the least element of the list based on the last value that the
+       comparison returned LT for.
+
+       #+BEGIN_SRC haskell :results none
+       :{
+       myMinimumBy :: (a -> a -> Ordering) -> [a] -> a
+       myMinimumBy _ [] = error "empty list"
+       myMinimumBy f (x:xs) = foldl min x xs
+         where min x y = case f x y of
+                           LT -> x
+                           _ -> y
+       :}
+       myMinimumBy compare [1]
+       myMinimumBy compare [1, 2]
+       myMinimumBy (\_ _ -> GT) [1..10]
+       myMinimumBy (\_ _ -> LT) [1..10]
+       myMinimumBy compare [1..10]
+       #+END_SRC
