@@ -1,0 +1,465 @@
+* 11.1 Algebraic datatypes
+
+  #+BEGIN_QUOTE
+  A type can be tought of as an enumeration of constructors that have
+  zero or more arguments.
+  #+END_QUOTE
+
+  Expectations of current chapter:
+  - explain the "algebra" of /algebraic datatype/
+  - analyze the construction of data constructors
+  - spell out when and how to write your own datatypes
+  - clarify usage of /type synonyms/ and /newtypes/
+  - introduce kinds
+
+* 11.2 Data declaration review
+
+  #+BEGIN_EXAMPLE
+  data Bool  =  False  |  True
+  [1]  [2]  [3] [4]   [5] [6]
+  #+END_EXAMPLE
+
+  1. What follows is a data declaration or a declaration of a
+     /datatype/
+  2. Name of the /type constructor/ with no arguments.
+  3. Divides the /type constructor/ from its /data constructors/
+  4. Data constructor with no arguments. Also called /nullary data
+     constructor/. It's one of the possible values of this type.
+  5. Denotes a /sum type/
+  6. Data constructor with no arguments. Also called /nullary data
+     constructor/. It's one of the value of this type.
+
+  #+BEGIN_EXAMPLE
+  data [] a = []  |  a : [a]
+  [1]  [2]    [3]    [4]
+  #+END_EXAMPLE
+
+  1. What follows is a data declaration or a declaration of a
+     /datatype/
+  2. Type constructor with one argument. Here the argument is a
+     polymorphic type variable so the list argument can be of
+     different types.
+  3. Data constructor of the empty list with no arguments.
+  4. Data constructor of the not empty list with two arguments.
+
+  #+BEGIN_QUOTE
+  A type can be tought of as an enumeration of constructors that have
+  zero or more arguments.
+  #+END_QUOTE
+
+  - When we talk about /data declaration/ we talk about the definition
+    of the entire type.
+  - ~Bool~ is an enumeration of two possible constructors each of
+    which take zero arguments
+  - ~[] a~ is an enumeration of two possible constructors one of the
+    takes two arguments.
+  - The pipe (~|~) denotes a /sum types/ aka a type with more than one
+    data constructor.
+
+* 11.3 Type and data constructors
+  Two kind of constructors in Haskell:
+  - Type constructor :: used at the type level, type signature,
+       typeclass declarations and instances. Static and resolves at
+       compile time.
+  - Data constructor :: construct values used at term level, values
+       with which we can interact at runtime.
+
+  Why *constructors*? Because they define a means of creating or
+  building types and values.
+
+  Constructors that take no arguments are called /nullary
+  constructors/ or /constants/. Ex. ~Bool~ is a /type constant/ and
+  ~True~ and ~False~ are /constants/
+
+  When a constructor takes an argument than it behaves like a function
+  in the sense that must be /applied/ to become a /concrete type/ or a
+  /value/
+
+* 11.4 Type constructors and kinds
+
+  #+BEGIN_SRC haskell :eval never
+  data [] a = [] | a : [a]
+  #+END_SRC
+
+  This must be applied to a concrete type before we have a list.
+
+  Kinds are the types of types, or types one level up. We represent
+  kinds in Haskell with ~*~. We know something is a fully applied,
+  concrete type when it is represented as ~*~. When it is ~* -> *~,
+  it, like a function, is still waiting to be applied.
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load"
+  :k Bool
+  :k [Int]
+  :k []
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  Bool :: *
+  [Int] :: *
+  [] :: * -> *
+  #+END_EXAMPLE
+
+  ~Bool~ and ~[Int]~ are fully applied and therefore are /concrete
+  types/. ~[]~ still needs to be applied to become a concrete type,
+  this is what /constructor/ in "type constructor" stands for.
+
+* 11.5 Data constructors and values
+
+  #+BEGIN_SRC haskell :eval never
+  data PugType = PugData
+  --             [1]
+
+  data HuskyType a = HuskyData
+  --                 [2]
+
+  data DogueDeBordeaux doge = DogueDeBordeaux doge
+  --                          [3]
+  #+END_SRC
+
+  1. Data constructor ~PugData~ takes no arguments so is /nullary data
+     contructor/ or a /constant value/
+  2. Data constructor ~HuskyData~ does not use the declared type
+     variable ~a~ this means that ~HuskyData~ is a /constat value/ and
+     the type argument ~a~ is a /phantom/ or /has no witness/
+  3. Data constructor ~DogueDeBordeaux~ shares the same name as its
+     type constructor but they are not the same thing
+
+  So the behavior of constructors is such that if they don’t take any
+  arguments, they behave like (type or value-level) constants. If they
+  do take arguments, they act like (type or value-level) functions
+  that don’t do anything except get applied.
+
+** Exercise: Dog Types
+   Given the following data declaration
+
+   #+BEGIN_SRC haskell :results none
+   :{
+   data Doggies a = Husky a
+                  | Mastiff a
+                  deriving (Eq, Show)
+   :}
+   data DogueDeBordeaux doge = DogueDeBordeaux doge
+   #+END_SRC
+
+   1. ~Doggies~ is a type constructor
+   2. ~Doggies~ has kind ~Doggies :: * -> *~
+   3. ~Doggies String~ has kind ~Doggies String :: *~
+   4. ~Husky 10~ has type ~Husky 10 :: Num a => Doggies a~
+   5. ~Husky (10 :: Integer)~ has type ~Husky (10 :: Integer) :: Doggies Integer~
+   6. ~Mastiff "Scooby Doo"~ has type ~Mastiff "Scooby Doo" :: Doggies [Char]~
+   7. ~DogueDeBordeaux~ is both a type and a data constructor
+   8. ~DogueDeBordeaux~ has type ~DogueDeBordeaux :: doge -> DogueDeBordeaux doge~
+   9. ~DogueDeBordeaux "doggie"~ has type ~DogueDeBordeaux "doggie" :: DogueDeBordeaux [Char]~
+
+* 11.6 What's a type and what's data?
+
+  - Type constructors -> Compile time
+  - Data constructors -> Runtime
+  - They both begins with a capital letter
+  - In a /data declaration/ what comes before ~=~ is a type constructor
+  - In a /data declaration/ what comes after ~=~ is a data constructor
+  - Data constructors are usually generated by data declaration
+  - Data constructors cannot be totally generated by data declarations
+    when they take other types.
+
+  #+BEGIN_SRC haskell :results none
+  data Price = Price Integer deriving (Eq, Show)
+  #+END_SRC
+
+  Here ~Price~ doesn't depends only by the current datatype but also
+  on ~Integer~
+
+** Exercise: Vehicles
+
+   #+NAME: vehicle
+   #+BEGIN_SRC haskell :results none
+   data Price = Price Integer deriving (Eq, Show)
+
+   :{
+   data Manufacturer = Mini
+                     | Mazda
+                     | Tata
+                     deriving (Eq, Show)
+   :}
+
+   :{
+   data Airline = PapuAir
+                | CatapultsR'Us
+                | TakeYourChancesUnited
+                deriving (Eq, Show)
+   :}
+
+   :{
+   data Vehicle = Car Manufacturer Price
+                | Plane Airline
+                deriving (Eq, Show)
+   :}
+
+   myCar = Car Mini (Price 14000)
+   urCar = Car Mazda (Price 20000)
+   clownCar = Car Tata (Price 7000)
+   doge = Plane PapuAir
+   #+END_SRC
+
+   1. ~myCar~ type is ~myCar :: Vehicle~
+   2. Define the following functions: ~isCar~, ~isPlane~, ~areCars~
+      #+BEGIN_SRC haskell :results none :noweb yes :epilogue ":load"
+      <<vehicle>>
+
+      :{
+      isCar :: Vehicle -> Bool
+      isCar (Car _ _) = True
+      isCar _ = False
+      :}
+
+      :{
+      isPlane :: Vehicle -> Bool
+      isPlane (Plane _) = True
+      isPlane _ = False
+      :}
+
+      :{
+      areCars :: [Vehicle] -> [Bool]
+      areCars = map isCar
+      :}
+
+      isCar myCar
+      isCar urCar
+      isCar doge
+
+      isPlane myCar
+      isPlane doge
+
+      areCars [myCar, urCar]
+      areCars [myCar, doge]
+      #+END_SRC
+   3. Function to tell the manufacturer of a car
+      #+BEGIN_SRC haskell :results none :noweb yes :epilogue ":load"
+      <<vehicle>>
+
+      :{
+      manufacturer :: Vehicle -> Manufacturer
+      manufacturer (Car m _) = m
+      manufacturer _ = error "Not a car"
+      :}
+
+      manufacturer myCar
+      manufacturer urCar
+      manufacturer doge
+      #+END_SRC
+   4. If you use the previous function on a ~Plane~ data you get an
+      error
+   5. Change ~Plane~ to take also the size
+      #+BEGIN_SRC haskell :results none
+      data Price = Price Integer deriving (Eq, Show)
+
+      data Size = Size Integer deriving (Eq, Show)
+
+      data Manufacturer = Mini
+                        | Mazda
+                        | Tata
+                        deriving (Eq, Show)
+
+      data Airline = PapuAir
+                   | CatapultsR'Us
+                   | TakeYourChancesUnited
+                   deriving (Eq, Show)
+
+      data Vehicle = Car Manufacturer Price
+                   | Plane Airline Size
+                   deriving (Eq, Show)
+
+      myCar = Car Mini (Price 14000)
+      urCar = Car Mazda (Price 20000)
+      clownCar = Car Tata (Price 7000)
+      doge = Plane PapuAir (Size 1000)
+      #+END_SRC
+
+* 11.7 Data constructor arities
+
+  #+BEGIN_QUOTE
+  A type can be tought of as an enumeration of constructors that have
+  zero or more arguments.
+  #+END_QUOTE
+
+  #+BEGIN_SRC haskell :results none
+  -- nullary data constructor or costant
+  data Example0 = Example0 deriving (Eq, Show)
+
+  -- unary data constructor
+  data Example1 = Example1 Int deriving (Eq, Show)
+
+  -- product data constructor of Int and String
+  data Example2 = Example2 Int String deriving (Eq, Show)
+  #+END_SRC
+
+* 11.8 What makes these datatypes algebraic?
+  Algebraic datatypes in Haskell are algebraic because we can describe
+  the patterns of argument structures using two basic operations: sum
+  and product.
+
+** Exercise: Cardinality
+
+   1. Cardinality of the following? 1
+      #+BEGIN_SRC haskell :results none
+      data PugType = PugData
+      #+END_SRC
+   2. Cardinality of the following? 3
+      #+BEGIN_SRC haskell :results none
+      data Airline = PapuAir
+                   | CatapultsR'Us
+                   | TakeYourChancesUnited
+      #+END_SRC
+   3. Given that we know the cardinality of ~Int8~ what's the
+      cardinality of ~Int16~? ~∥Int8∥ ^ 2~
+   4. What can you say about the cardinality of ~Int~? That is limited
+      because it has an instance of the ~Bounded~ typeclass. What can
+      you say about the cardinality of ~Integer~? It's infinite.
+   5. What’s the connection between the ~8~ in ~Int8~ and that type’s
+      cardinality of ~256~? ~8~ is the amount of bits used to
+      represents values of ~Int8~ type, therefore you can represent
+      ~2^8~ or ~256~ possible values.
+
+** Exercise: For Example
+   #+BEGIN_SRC haskell :results none
+   data Example = MakeExample deriving (Eq, Show)
+   #+END_SRC
+
+   1. The type of data constructor ~MakeExample~ is
+      ~MakeExample :: Example~. What happens when you request the
+      type of Example? You get an error because ~Example~ data
+      constructor is not in scope
+   2. Using ~:i Example~ you can tell that ~Example~ is type
+      constructor, you get the data declaration and you can tell which
+      are the typeclasses implemented
+   3. Create an example of a unary data constructor
+      #+BEGIN_SRC haskell :results none
+      data AnotherExample = MakeAnotherExample Int deriving (Eq, Show)
+      #+END_SRC
+      The type is ~MakeAnotherExample :: Int -> AnotherExample~
+
+* 11.9 Newtype
+
+  - It only allows data constructor with one argument.
+  - The cardinality is the cardinality of the type given as argument.
+  - It only exists at compile time.
+  - It has no runtime overhead.
+  - It reuses the representation of the type it contains. The
+    difference between newtype and the type it contains is gone by the
+    time the compiler generates the code.
+  - We can define typeclasses on newtypes but not on aliases.
+
+  #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+  tooManyGoats :: Int -> Bool
+  tooManyGoats n = n > 42
+  #+END_SRC
+
+  The problem is we can mix up the number of cows with the number of goats
+
+  #+BEGIN_SRC haskell :results none
+  tooManyGoats 10   -- number of goats
+  tooManyGoats 100  -- number of cows
+  #+END_SRC
+
+  Solution
+
+  #+BEGIN_SRC haskell :results none
+  newtype Goats = Goats Int deriving (Eq, Show)
+  newtype Cows = Cows Int deriving (Eq, Show)
+  #+END_SRC
+
+  Then
+
+  #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+  tooManyGoats' :: Goats -> Bool
+  tooManyGoats' (Goats n) = n > 42
+  #+END_SRC
+
+  This works
+
+  #+BEGIN_SRC haskell :results none
+  tooManyGoats' (Goats 10)
+  #+END_SRC
+
+  This doesn't compile
+
+  #+BEGIN_SRC haskell :results none
+  tooManyGoats' (Cows 43)
+  #+END_SRC
+
+  We can define a /typeclass/ for a /newtype/
+
+  #+BEGIN_SRC haskell :results none
+  class TooMany a where tooMany :: a -> Bool
+
+  instance TooMany Int where tooMany n = n > 42
+
+  tooMany (11 :: Int)
+  tooMany (43 :: Int)
+
+  instance TooMany Goats where tooMany (Goats n) = n > 43
+
+  tooMany (Goats 11)
+  tooMany (Goats 43)
+
+  :t tooMany
+  #+END_SRC
+
+  Since /newtypes/ are thin wrappers around a preexisting type for
+  /newtypes/ we can derive the /typeclasses/ implementations of the
+  wrapped type with a language extension called
+  ~GeneralizedNewtypeDeriving~
+
+  #+BEGIN_SRC haskell :results none
+  {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
+  class TooMany a where tooMany :: a -> Bool
+
+  instance TooMany Int where tooMany n = n > 42
+
+  newtype Goats = Goats Int deriving (Eq, Show, TooMany)
+
+  tooMany (Goats 11)
+  tooMany (Goats 43)
+  #+END_SRC
+
+** Exercise: Logic Goats
+
+   1. Write an instance of typeclass ~TooMany~ for ~(Int, String)~
+
+      #+BEGIN_SRC haskell :results none
+      {-# LANGUAGE FlexibleInstances #-}
+
+      instance TooMany (Int, String) where tooMany (n, _) = n > 42
+
+      tooMany (11 :: Int, "Hello Mike")
+      #+END_SRC
+
+   2. Write an instance of typeclass ~TooMany~ for ~(Int, Int)~
+      summing the values together.
+
+      #+BEGIN_SRC haskell :results none
+      {-# LANGUAGE FlexibleInstances #-}
+
+      instance TooMany (Int, Int) where tooMany (n, m) = (n + m) > 42
+
+      tooMany (5 :: Int, 6 :: Int)
+      tooMany (5 :: Int, 40 :: Int)
+      #+END_SRC
+
+   3. Write an instance of typeclass ~TooMany~ for ~(Num a, TooMany a)~
+
+      #+BEGIN_SRC haskell :results none
+      {-# LANGUAGE FlexibleInstances #-}
+
+      instance TooMany Int where tooMany n = n > 42
+
+      instance (Num a, TooMany a) => TooMany (a, a) where tooMany (n, m) = tooMany (n + m)
+
+      tooMany (50 :: Int, 10 :: Int)
+      #+END_SRC
+
+* 11.10 Sum Types
+  bla bla bla
