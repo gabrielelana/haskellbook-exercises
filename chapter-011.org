@@ -154,7 +154,6 @@
    9. ~DogueDeBordeaux "doggie"~ has type ~DogueDeBordeaux "doggie" :: DogueDeBordeaux [Char]~
 
 * 11.6 What's a type and what's data?
-
   - Type constructors -> Compile time
   - Data constructors -> Runtime
   - They both begins with a capital letter
@@ -341,7 +340,6 @@
       The type is ~MakeAnotherExample :: Int -> AnotherExample~
 
 * 11.9 Newtype
-
   - It only allows data constructor with one argument.
   - The cardinality is the cardinality of the type given as argument.
   - It only exists at compile time.
@@ -462,4 +460,125 @@
       #+END_SRC
 
 * 11.10 Sum Types
-  bla bla bla
+  - The ~|~ represents the /disjunction/ that is "/or/".
+  - The cardinality of a sum type is the sum of the cardinality of
+    its inhabitants.
+
+** Exercise: Pity the Bool
+
+   1. Given a datatype
+      #+BEGIN_SRC haskell :results none
+      data BigSmall
+        = Big Bool
+        | Small Bool
+        deriving (Eq, Show)
+      #+END_SRC
+
+      What's the cardinality of this datatype? 4
+
+      #+BEGIN_EXAMPLE
+      Big Bool | Small Bool = ??
+      Big (True | False) | Small (True | False) = ??
+      Big (True + False) | Small (True + False) = ??
+      Big (1 + 1) | Small (1 + 1) = ??
+      Big 2 | Small 2 = ??
+      2 | 2 = ??
+      2 + 2 = 4
+      #+END_EXAMPLE
+
+   2. Given a datatype
+      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+      import Data.Int -- bring Int8 in scope
+
+      data NumberOrBool
+        = Numba Int8
+        | BoolyBool Bool
+        deriving (Eq, Show)
+      #+END_SRC
+
+      1. What is the cardinality of ~NumberOrBool~? 258
+      2. What happens if you try to create a Numba with a numeric
+         literal larger than 127? Error. And with a numeric literal
+         smaller than (-128)? Error.
+
+* 11.11 Product Types
+  - The cardinality of a product type is the product of the
+    cardinality of its inhabitants.
+  - Product types express /conjunction/ that is "/and/".
+  - Any data constructor with two or more type arguments it's a
+    product.
+  - Product types do not have speciali syntax like ~|~ for sum types.
+
+** Record Syntax
+
+   The following solution to represent a person
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   data Person = Person String Int deriving (Eq, Show)
+
+   jm = Person "Julie" 27
+   rk = Person "Rick" 42
+
+   :{
+   name :: Person -> String
+   name (Person n _) = n
+   :}
+
+   :t name
+   name jm
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   name :: Person -> String
+   Julie
+   #+END_EXAMPLE
+
+   Can be replaced with a record syntax, a function for each field
+   (in this case ~name~ and ~age~) will be implicitly defined
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   data Person = Person {name :: String, age :: Int} deriving (Eq, Show)
+
+   jm = Person "Julie" 27
+   rk = Person "Rick" 42
+
+   :t name
+   :t age
+
+   name jm
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   name :: Person -> String
+   age :: Person -> Int
+   Julie
+   #+END_EXAMPLE
+
+* 11.12
+* Exercises
+
+  #+NAME: ghci-clean
+  #+BEGIN_SRC emacs-lisp :var content="" :results raw
+  (string-join
+   (seq-filter
+    (lambda (line)
+      (not (string-empty-p line)))
+    (seq-map
+     (lambda (line)
+       (replace-regexp-in-string "^.*Prelude[^>]*> " "" line))
+     (split-string content "\n")))
+   "\n"))
+  #+END_SRC
+
+  #+NAME: add-current-chapter-directory-in-path
+  #+BEGIN_SRC emacs-lisp :output raw
+   (concat
+    ":set -i"
+    (file-name-as-directory (file-name-directory (buffer-file-name)))
+    (file-name-base (buffer-file-name)))
+  #+END_SRC
+
+  #+NAME: start-at-line
+  #+BEGIN_SRC sh :var content="" :var line="0" :results raw
+  echo "$content" | tail -n +$line
+  #+END_SRC
