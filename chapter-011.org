@@ -554,7 +554,245 @@
    Julie
    #+END_EXAMPLE
 
-* 11.12
+* 11.12 Normal Form
+  As in normal arithmetic multiplication distributes over addition
+  #+BEGIN_EXAMPLE
+  a * (b + c) = (a * b) + (a * c)
+  #+END_EXAMPLE
+
+  In haskell product types distributes over sum types. The sum of the
+  product types is called the /normal form/
+
+  ~Author~ it is a product of a sum type
+  #+BEGIN_SRC haskell :results none :epilogue ":load"
+  data Fiction = Fiction deriving Show
+  data NonFiction = NonFiction deriving Show
+
+  :{
+  data BookType = FictionBook Fiction
+                | NonFictionBook NonFiction
+                deriving Show
+  :}
+
+  type AuthorName = String
+
+  data Author = Author (AuthorName, BookType) deriving Show
+  #+END_SRC
+
+  In normal form it will become like that
+  #+BEGIN_SRC haskell :results none :epilogue ":load"
+  type AuthorName = String
+  data Author = Fiction AuthorName
+              | NonFiction AuthorName
+              deriving (Eq, Show)
+  #+END_SRC
+
+** Exercises: How Does Your Garden Grow?
+
+   1. Given the type
+      #+BEGIN_SRC haskell :results none :epilogue ":load"
+      :{
+      data FlowerType = Gardenia
+                      | Daisy
+                      | Rose
+                      | Lilac
+                      deriving Show
+      :}
+
+      type Gardener = String
+
+      data Garden = Garden Gardener FlowerType deriving Show
+      #+END_SRC
+
+      What is the normal form of Garden?
+      #+BEGIN_SRC haskell :results none :epilogue ":load"
+      type Gardener = String
+
+      :{
+      data Garden = Gardenia Gardener
+                  | Daisy Gardener
+                  | Rose Gardener
+                  | Lilac Gardener
+                  deriving Show
+      :}
+      #+END_SRC
+
+* 11.13 Constructing and Deconstructiong Values
+
+   See how ~Sum~ and ~Product~ can generalise sum and product types
+   #+BEGIN_SRC haskell :results none
+   data Sum a b = First a | Second b deriving (Eq, Show)
+   data Product a b = Product a b deriving (Eq, Show)
+   #+END_SRC
+
+   How to use them
+   #+BEGIN_SRC haskell :results none
+   data Twitter = Twitter deriving (Eq, Show)
+   data Reddit = Reddit deriving (Eq, Show)
+   type SocialNetwork = Sum Twitter Reddit
+   #+END_SRC
+
+   How to construct values
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   First Twitter :: SocialNetwork
+   Second Reddit :: SocialNetwork
+
+   -- the following are not valid
+   First Reddit :: SocialNetwork
+   Second Twitter :: SocialNetwork
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   First Twitter
+   Second Reddit
+   <interactive>:328:1: error:
+       • Couldn't match type ‘Reddit’ with ‘Twitter’
+         Expected type: SocialNetwork
+           Actual type: Sum Reddit Reddit
+       • In the expression: First Reddit :: SocialNetwork
+         In an equation for ‘it’: it = First Reddit :: SocialNetwork
+   <interactive>:329:1: error:
+       • Couldn't match type ‘Twitter’ with ‘Reddit’
+         Expected type: SocialNetwork
+           Actual type: Sum Twitter Twitter
+       • In the expression: Second Twitter :: SocialNetwork
+         In an equation for ‘it’: it = Second Twitter :: SocialNetwork
+   #+END_EXAMPLE
+
+   Type aliases will let to create what you will consider the wrong
+   types
+   #+BEGIN_SRC haskell :results none
+   data Sum a b = First a | Second b deriving (Eq, Show)
+   type Twitter = String
+   type Reddit = String
+   type SocialNetwork = Sum Twitter Reddit
+
+   First "Twitter" :: SocialNetwork
+   Second "Reddit" :: SocialNetwork
+
+   First "Reddit" :: SocialNetwork
+   Second "Twitter" :: SocialNetwork
+   #+END_SRC
+
+   Accidental bottoms in records
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   data Car = Null | Car {model :: String , year :: Integer}
+
+   :t model
+   :t Null
+
+   -- So the type system will let us do this
+   model Null
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   model :: Car -> String
+   Null :: Car
+   "*** Exception: No match in record selector model
+   #+END_EXAMPLE
+
+   Avoid accidental bottoms in records
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   data Car = Car {model :: String, year :: Integer} deriving (Eq, Show)
+   data Automobile = Null | Automobile Car
+
+   boxter = Car {model = "Porche Boxter", year = 2016}
+   :t model
+   model boxter
+   model Null
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   model :: Car -> String
+   Porche Boxter
+   <interactive>:771:7: error:
+       • Couldn't match expected type ‘Car’ with actual type ‘Automobile’
+       • In the first argument of ‘model’, namely ‘Null’
+         In the expression: model Null
+         In an equation for ‘it’: it = model Null
+   #+END_EXAMPLE
+
+** Exercises: Programmers
+   Given the types
+   #+BEGIN_SRC haskell :results none
+   :{
+   data OperatingSystem = GnuPlusLinux
+                        | OpenBSD
+                        | Mac
+                        | Windows
+                        deriving (Eq, Show)
+   :}
+
+   :{
+   data ProgrammingLanguage = Haskell
+                            | Agda
+                            | Idris
+                            | PureScript
+                            deriving (Eq, Show)
+   :}
+
+   :{
+   data Programmer = Programmer { lang :: ProgrammingLanguage
+                                , os :: OperatingSystem
+                                }
+                     deriving (Eq, Show)
+   :}
+   #+END_SRC
+
+   Write a function that generates all possible values of
+   ~Programmer~. Use the provided lists of inhabitants of
+   ~OperatingSystem~ and ~ProgrammingLanguages~.
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   :{
+   allOperatingSystems :: [OperatingSystem]
+   allOperatingSystems = [ GnuPlusLinux
+                         , OpenBSD
+                         , Mac
+                         , Windows
+                         ]
+   :}
+
+   :{
+   allProgrammingLanguages :: [ProgrammingLanguage]
+   allProgrammingLanguages = [ Haskell
+                             , Agda
+                             , Idris
+                             , PureScript
+                             ]
+   :}
+
+   :{
+   allProgrammers :: [Programmer]
+   allProgrammers = [ Programmer { os = os, lang = lang } | os <- allOperatingSystems, lang <- allProgrammingLanguages ]
+   :}
+
+   allProgrammers
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [Programmer {lang = Haskell, os = GnuPlusLinux},
+    Programmer {lang = Agda, os = GnuPlusLinux},
+    Programmer {lang = Idris, os = GnuPlusLinux},
+    Programmer {lang = PureScript, os = GnuPlusLinux},
+    Programmer {lang = Haskell, os = OpenBSD},
+    Programmer {lang = Agda, os = OpenBSD},
+    Programmer {lang = Idris, os = OpenBSD},
+    Programmer {lang = PureScript, os = OpenBSD},
+    Programmer {lang = Haskell, os = Mac},
+    Programmer {lang = Agda, os = Mac},
+    Programmer {lang = Idris, os = Mac},
+    Programmer {lang = PureScript, os = Mac},
+    Programmer {lang = Haskell, os = Windows},
+    Programmer {lang = Agda, os = Windows},
+    Programmer {lang = Idris, os = Windows},
+    Programmer {lang = PureScript, os = Windows}]
+   #+END_EXAMPLE
+
+
 * Exercises
 
   #+NAME: ghci-clean
