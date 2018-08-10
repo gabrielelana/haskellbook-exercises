@@ -793,6 +793,356 @@
    #+END_EXAMPLE
 
 
+* 11.14 Function Type is Exponential
+  In the arithmetic of calculating inhabitants of types, function type
+  (~->~) is the exponent operator. Given a function ~a -> b~ and given
+  that the cardinality operator ~|x|~ then
+  #+BEGIN_EXAMPLE
+  |a -> b| = |b| ^ |a|
+  #+END_EXAMPLE
+
+  Given the type
+  #+BEGIN_SRC haskell :results none
+  data Quantum = Yes | No | Both deriving (Eq, Show)
+  #+END_SRC
+
+  Cardinality of sum (~Either~) of ~Quantum~ is
+  ~|Quantum| + |Quantum|~ = ~3 + 3~ = ~6~
+  #+BEGIN_SRC haskell :results none
+  type QuantumSum = Either Quantum Quantum
+
+  quantumSum1 :: QuantumSum; quantumSum1 = Left Yes
+  quantumSum2 :: QuantumSum; quantumSum2 = Left No
+  quantumSum3 :: QuantumSum; quantumSum3 = Left Both
+  quantumSum4 :: QuantumSum; quantumSum4 = Right Yes
+  quantumSum5 :: QuantumSum; quantumSum5 = Right No
+  quantumSum6 :: QuantumSum; quantumSum6 = Right Both
+  #+END_SRC
+
+  Cardinality of product (~(,)~) of ~Quantum~ is
+  ~|Quantum| * |Quantum|~ = ~3 * 3~ = ~9~
+  #+BEGIN_SRC haskell :results none
+  type QuantumProduct = (Quantum, Quantum)
+
+  quantumProduct1 :: QuantumProduct; quantumProduct1 = (Yes, Yes)
+  quantumProduct2 :: QuantumProduct; quantumProduct2 = (Yes, No)
+  quantumProduct3 :: QuantumProduct; quantumProduct3 = (Yes, Both)
+  quantumProduct4 :: QuantumProduct; quantumProduct4 = (No, Yes)
+  quantumProduct5 :: QuantumProduct; quantumProduct5 = (No, No)
+  quantumProduct6 :: QuantumProduct; quantumProduct6 = (No, Both)
+  quantumProduct7 :: QuantumProduct; quantumProduct7 = (Both, Yes)
+  quantumProduct8 :: QuantumProduct; quantumProduct8 = (Both, No)
+  quantumProduct9 :: QuantumProduct; quantumProduct9 = (Both, Both)
+  #+END_SRC
+
+  Cardinality of function ~Quantum -> Quantum~ is
+  ~|Quantum| ^ |Quantum|~ = ~3 ^ 3~ = ~27~
+  #+BEGIN_SRC haskell :results none
+  type QuantumFunction = Quantum -> Quantum
+
+  :{
+  quantumFunction1 :: QuantumFunction
+  quantumFunction1 Yes = Yes
+  quantumFunction1 No = Yes
+  quantumFunction1 Both = Yes
+  :}
+
+  :{
+  quantumFunction2 :: QuantumFunction
+  quantumFunction2 Yes = No
+  quantumFunction2 No = Yes
+  quantumFunction2 Both = Yes
+  :}
+
+  :{
+  quantumFunction3 :: QuantumFunction
+  quantumFunction3 Yes = Both
+  quantumFunction3 No = Yes
+  quantumFunction3 Both = Yes
+  :}
+
+  :{
+  quantumFunction4 :: QuantumFunction
+  quantumFunction4 Yes = Yes
+  quantumFunction4 No = No
+  quantumFunction4 Both = Yes
+  :}
+
+  -- We can continue like that...
+  #+END_SRC
+
+** Exercise: Exponentiation in what Order?
+   What the cardinality of the following type? ~2^3~. Prove it
+   #+BEGIN_SRC haskell :result none
+   data Quantum = Yes | No | Both deriving (Eq, Show)
+   type convertFunction :: Quantum -> Bool
+
+   :{
+   convert1 Yes = True
+   convert1 No = True
+   convert1 Both = True
+   :}
+
+   :{
+   convert2 Yes = False
+   convert2 No = True
+   convert2 Both = True
+   :}
+
+   :{
+   convert3 Yes = True
+   convert3 No = False
+   convert3 Both = True
+   :}
+
+   :{
+   convert4 Yes = True
+   convert4 No = True
+   convert4 Both = False
+   :}
+
+   :{
+   convert5 Yes = False
+   convert5 No = False
+   convert5 Both = True
+   :}
+
+   :{
+   convert6 Yes = True
+   convert6 No = False
+   convert6 Both = False
+   :}
+
+   :{
+   convert7 Yes = False
+   convert7 No = True
+   convert7 Both = False
+   :}
+
+   :{
+   convert8 Yes = False
+   convert8 No = False
+   convert8 Both = False
+   :}
+   #+END_SRC
+
+** Exercise: The Quad
+   Given the type
+   #+BEGIN_SRC haskell :results none
+   data Quad = One | Two | Three | Four deriving (Eq, Show)
+   #+END_SRC
+
+   1. Determine how many inhabitants the following type has. It is a
+      sum type so its cardinality is the sum of the cardinalities of
+      the types ~4 + 4 = 8~
+      #+BEGIN_SRC haskell :results none
+      sumQuad :: Either Quad Quad
+      sumQuad = undefined
+      #+END_SRC
+
+   2. Determine how many inhabitants the following type has. It is a
+      product type so its cardinality is product of the cardinality of
+      the the types ~4 * 4 = 16~
+      #+BEGIN_SRC haskell :results none
+      prodQuad :: (Quad, Quad)
+      #+END_SRC
+
+   3. Determine how many inhabitants the following type has. It is a
+      function type so its cardinality is ~4 ^ 4 = 256~
+      #+BEGIN_SRC haskell :results none
+      funcQuad :: Quad -> Quad
+      #+END_SRC
+
+   4. Determine how many inhabitants the following type has. It is a
+      product type so ~2 * 2 * 2 = 8~
+      #+BEGIN_SRC haskell :results none
+      prod3Bool :: (Bool, Bool, Bool)
+      #+END_SRC
+
+   5. Determine how many inhabitants the following type has. It is a
+      function type so ~(2 ^ 2) ^ 2 = 16~
+      #+BEGIN_SRC haskell :results none
+      gTwo :: Bool -> Bool -> Bool
+      #+END_SRC
+
+   6. Determine how many inhabitants the following type has. It is a
+      function type so ~(4 ^ 4) ^ 2 = 65536~
+      #+BEGIN_SRC haskell :results none
+      fTwo :: Bool -> Quad -> Quad
+      #+END_SRC
+
+* 11.15 Higher-Kinded Types
+  - Kinds are the types of type constructors, primarily encoding the
+    number of arguments they take
+  - The default kind in Haskell is ~*~
+  - Kinds are not types until they are fully applied
+  - Only types have inhabitants at the term level
+  - Higher-Kinded types are the kinds that need to be applied more
+    than once to become types
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+  data Silly a b c d = Silly a b c d deriving Show
+
+  :kind Silly
+
+  :kind (,,,)
+  :kind (,,,) Int
+  :kind (,,,) Int Int
+  :kind (,,,) Int Int Int
+  :kind (,,,) Int Int Int Int
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  Silly :: * -> * -> * -> * -> *
+  (,,,) :: * -> * -> * -> * -> *
+  (,,,) Int :: * -> * -> * -> *
+  (,,,) Int Int :: * -> * -> *
+  (,,,) Int Int Int :: * -> *
+  (,,,) Int Int Int Int :: *
+  #+END_EXAMPLE
+
+* 11.16 Lists are Polymorphic
+  Lists are polymorphic because they can contain values of any types
+
+  #+BEGIN_EXAMPLE
+  data [] a = [] | a : [a]
+  #+END_EXAMPLE
+
+  The type constructor ~[]~ has an argument ~a~ which is not known
+  until the type constructor is fully applied.
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+  :kind []
+  :kind [] Int
+  :kind [Int]
+  :t []
+  :t [] :: [Int]
+  :t [5 :: Int]
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  [] :: * -> *
+  [] Int :: *
+  [Int] :: *
+  [] :: [a]
+  [] :: [Int] :: [Int]
+  [5 :: Int] :: [Int]
+  #+END_EXAMPLE
+
+* 11.17 Binary Trees
+  Another datatype like lists
+
+  #+BEGIN_SRC haskell :results none
+  data BinaryTree a = Leaf | Node (BinaryTree a) a (BinaryTree a) deriving (Eq, Ord, Show)
+
+  :kind BinaryTree
+  :kind BinaryTree Int
+  :t Leaf
+  :t Node Leaf (4 :: Int) Leaf
+  #+END_SRC
+
+** Exercise: Insert into ~BinaryTree~
+
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue "0"
+   :{
+   insert :: Ord a => a -> BinaryTree a -> BinaryTree a
+   insert x Leaf = Node Leaf x Leaf
+   insert x (Node left v right)
+       | x < v = Node (insert x left) v right
+       | x > v = Node left v (insert x right)
+       | x == v = Node left v right
+   :}
+
+   insert 5 Leaf
+   insert 5 $ insert 4 $ Leaf
+   insert 5 $ insert 4 $ insert 6 $ Leaf
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Node Leaf 5 Leaf
+   Node Leaf 4 (Node Leaf 5 Leaf)
+   Node (Node Leaf 4 (Node Leaf 5 Leaf)) 6 Leaf
+   #+END_EXAMPLE
+
+** Exercise: Write a map function for ~BinaryTree~
+
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue "0"
+   :{
+   mapTree :: (a -> b) -> BinaryTree a -> BinaryTree b
+   mapTree _ Leaf = Leaf
+   mapTree a2b (Node left a right) = Node (mapTree a2b left) (a2b a) (mapTree a2b right)
+   :}
+
+   t = insert 5 $ insert 4 $ insert 6 $ Leaf
+   t
+   mapTree (*2) t
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Node (Node Leaf 4 (Node Leaf 5 Leaf)) 6 Leaf
+   Node (Node Leaf 8 (Node Leaf 10 Leaf)) 12 Leaf
+   #+END_EXAMPLE
+
+** Exercise: Convert ~BinaryTree~ to a List
+
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue "0"
+   :{
+   preorder :: BinaryTree a -> [a]
+   preorder Leaf = []
+   preorder (Node left v right) = [v] ++ (preorder left) ++ (preorder right)
+   :}
+
+   :{
+   inorder :: BinaryTree a -> [a]
+   inorder Leaf = []
+   inorder (Node left v right) = (inorder left) ++ [v] ++ (inorder right)
+   :}
+
+   :{
+   postorder :: BinaryTree a -> [a]
+   postorder Leaf = []
+   postorder (Node left v right) = (postorder left) ++ (postorder right) ++ [v]
+   :}
+
+   t = insert 5 $ insert 4 $ insert 6 $ Leaf
+   t
+   preorder t
+   inorder t
+   postorder t
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Node (Node Leaf 4 (Node Leaf 5 Leaf)) 6 Leaf
+   [6,4,5]
+   [4,5,6]
+   [5,4,6]
+   #+END_EXAMPLE
+
+** Exercise: Write a fold function for ~BinaryTree~
+
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue "0"
+   :{
+   foldTree :: (a -> b -> b) -> b -> BinaryTree a -> b
+   foldTree _ b Leaf = b
+   foldTree f b (Node left a right) = foldTree f (f a (foldTree f b left)) right
+   :}
+
+   t = insert 5 $ insert 4 $ insert 6 $ Leaf
+   t
+   foldTree (:) [] t
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Node (Node Leaf 4 (Node Leaf 5 Leaf)) 6 Leaf
+   [6,5,4]
+   #+END_EXAMPLE
+
 * Exercises
 
   #+NAME: ghci-clean
