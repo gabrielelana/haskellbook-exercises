@@ -792,7 +792,6 @@
     Programmer {lang = PureScript, os = Windows}]
    #+END_EXAMPLE
 
-
 * 11.14 Function Type is Exponential
   In the arithmetic of calculating inhabitants of types, function type
   (~->~) is the exponent operator. Given a function ~a -> b~ and given
@@ -1147,15 +1146,44 @@
 
   #+NAME: ghci-clean
   #+BEGIN_SRC emacs-lisp :var content="" :results raw
+  (defun report-compiling-module-p (line)
+    (string-match-p "\\[[0-9]+ of [0-9]+\\] Compiling" line))
+
+  (defun report-loaded-module-p (line)
+    (string-match-p "Ok, .+ modules? loaded\\." line))
+
+  (defun report-eoe-p (line)
+    (string-match-p "org-babel-haskell-eoe" line))
+
+  (defun clean-line (line)
+    (->> line remove-prompt unquote))
+
+  (defun remove-prompt (line)
+    (message (concat "remove-prompt>>> " line))
+    (let ((current-prompt (current-prompt line)))
+      (if (string-empty-p current-prompt)
+          line
+        (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
+
+  (defun current-prompt (line)
+    (if (string-match "\\(^[^|>]+\\)[|>]" line)
+        (match-string 1 line)
+      ""))
+
+  (defun unquote (line)
+    (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" line))
+
   (string-join
-   (seq-filter
-    (lambda (line)
-      (not (string-empty-p line)))
-    (seq-map
-     (lambda (line)
-       (replace-regexp-in-string "^.*Prelude[^>]*> " "" line))
-     (split-string content "\n")))
-   "\n"))
+   (seq-map #'clean-line
+            (seq-filter
+             (lambda (line)
+               (and
+                (not (string-empty-p line))
+                (not (report-eoe-p line))
+                (not (report-compiling-module-p line))
+                (not (report-loaded-module-p line))))
+             (split-string content "\n")))
+   "\n")
   #+END_SRC
 
   #+NAME: add-current-chapter-directory-in-path
@@ -1166,7 +1194,358 @@
     (file-name-base (buffer-file-name)))
   #+END_SRC
 
-  #+NAME: start-at-line
-  #+BEGIN_SRC sh :var content="" :var line="0" :results raw
-  echo "$content" | tail -n +$line
-  #+END_SRC
+** Multiple Choice
+
+   1. Given the following datatype
+      #+BEGIN_SRC haskell :results none
+      data Weekday
+          = Monday
+          | Tuesday
+          | Wednesday
+          | Thursday
+          | Friday
+      #+END_SRC
+      a) ~Weekday~ is a type with 5 data constructors
+
+   2. What is the type of the following function
+      #+BEGIN_SRC haskell :results none
+      f Friday = "Miller Time"
+      #+END_SRC
+      c) ~f :: Weekday -> String~
+
+   3. Types defined with ~data~ keyword
+      b) Must begin with a capital letter
+
+   4. The function ~g xs = xs !! (length xs - 1)~
+      c) Delivers the final element of ~xs~
+
+** Ciphers
+   Write a [[Vigenère cipher][Vigenère cipher]]. [[file:./chapter-011/Cipher.hs][Solution]]
+
+   #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   <<add-current-chapter-directory-in-path()>>
+   :load Cipher
+
+   vigenereEncode ['A'..'Z'] "ALLY" "MEET AT DAWN"
+   vigenereEncode ['A'..'Z'] "ALLY" "MEET AT 1234"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   MPPR AE OYWY
+   MPPR AE 1234
+   #+END_EXAMPLE
+
+** As-Pattern
+   Is a way to pattern match on a data constructor but at the same
+   time be able to refer to the entire original value
+
+   1. Implement the following funciton with the as-pattern
+      #+BEGIN_SRC haskell :eval never
+      isSubsequenceOf :: (Eq a) => [a] -> [a] -> Bool
+      isSubsequenceOf = undefined
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      isSubsequenceOf :: (Eq a) => [a] -> [a] -> Bool
+      isSubsequenceOf [] _ = True
+      isSubsequenceOf _ [] = False
+      isSubsequenceOf ll@(hl:tl) (hr:tr)
+       | hl == hr = isSubsequenceOf tl tr
+       | otherwise = isSubsequenceOf ll tr
+      :}
+
+      isSubsequenceOf "blah" "blahwoot" == True
+      isSubsequenceOf "blah" "wootblah" == True
+      isSubsequenceOf "blah" "wboloath" == True
+      isSubsequenceOf "blah" "wootbla" == False
+      isSubsequenceOf "blah" "halbwoot" == False
+      isSubsequenceOf "blah" "blawhoot" == True
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      True
+      True
+      True
+      True
+      True
+      True
+      #+END_EXAMPLE
+
+   2. Implement the following function with as-pattern. Split a
+      sentence into words and tuple them with their capitalized
+      version
+      #+BEGIN_SRC haskell :eval never
+      capitalizeWords :: String -> [(String, String)]
+      capitalizeWords = undefinedf
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      import Data.Char (toUpper)
+
+      :{
+      capitalizeWords :: String -> [(String, String)]
+      capitalizeWords s = map (\w@(h:t) -> (w, (toUpper h) : t))  (words s)
+      :}
+
+      capitalizeWords "hello world"
+      capitalizeWords "greetings haskellers"
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      [("hello","Hello"),("world","World")]
+      [("greetings","Greetings"),("haskellers","Haskellers")]
+      #+END_EXAMPLE
+
+** Language Exercises
+
+   1. Write a function that capitalize a word
+
+      #+NAME: capitalize-word
+      #+BEGIN_SRC haskell :eval never
+      import Data.Char (toUpper)
+
+      :{
+      capitalizeWord :: String -> String
+      capitalizeWord "" = ""
+      capitalizeWord (' ':t) = ' ' : (capitalizeWord t)
+      capitalizeWord (h:t) = (toUpper h) : t
+      :}
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<capitalize-word>>
+      capitalizeWord "Chortle"
+      capitalizeWord "chortle"
+      capitalizeWord " chortle"
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Chortle
+      Chortle
+       Chortle
+      #+END_EXAMPLE
+
+   2. Write a function that capitalize sentences (reuse ~capitalizeWord~)
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<capitalize-word>>
+
+      data Split = Whole String | Splitted String String deriving (Eq, Show)
+
+      :{
+      splitOn :: Char -> String -> Split
+      splitOn _ "" = Whole ""
+      splitOn d s =
+          case (dropWhile (/= d) s) of
+            "" -> Whole s
+            rest -> Splitted (takeWhile (/= d) s) (dropWhile (== d) rest)
+      :}
+
+      :{
+      sentences :: Char -> String -> [String]
+      sentences d s =
+          case splitOn d s of
+            Whole l -> [l]
+            Splitted l r -> l : (sentences d r)
+      :}
+
+      :{
+      unsentences :: Char -> [String] -> String
+      unsentences _ (s:ss) = foldl ((++) . (++ ['.'])) s ss
+      :}
+
+      :{
+      capitalizeParagraph :: String -> String
+      capitalizeParagraph s = unsentences '.' $ map capitalizeWord $ sentences '.' s
+      :}
+
+      capitalizeParagraph "blah. woot ha."
+      capitalizeParagraph "blah. woot ha." == "Blah. Woot ha."
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Blah. Woot ha.
+      True
+      #+END_EXAMPLE
+
+** Phone
+   Remember old-fashioned phone inputs for writing text where you had
+   to press a button multiple times to get different letters to come
+   up? You’re going to write code to translate sequences of button
+   presses into strings and vice versa. Solution [[file:./chapter-011/Phone.hs][here]]
+
+   1. Create a data structure for the phone. [[file:./chapter-011/Phone.hs:18][Solution]]
+
+   2. Convert the following conversations into the keypresses required
+      to express them.
+      #+NAME: conversations
+      #+BEGIN_SRC haskell :eval never
+      conversations :: [String]
+      conversations =
+        ["Wanna play 20 questions",
+          "Ya",
+          "U 1st haha",
+          "Lol ok. Have u ever tasted alcohol",
+          "Lol ya",
+          "Wow ur cool haha. Ur turn",
+          "Ok. Do u think I am pretty Lol",
+          "Lol ya",
+          "Just making sure rofl ur turn"]
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<add-current-chapter-directory-in-path()>>
+      :load Phone
+
+      :{
+      <<conversations>>
+      :}
+
+      map (toTaps phone) conversations
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      [[('*',1),('9',1),('2',1),('6',2),('6',2),('2',1),('0',1),('7',1),('5',3),('2',1),('9',3),('0',1),('2',4),('0',3),('0',1),('7',2),('8',2),('3',2),('7',4),('8',1),('4',3),('6',3),('6',2),('7',4)],
+      [('*',1),('9',3),('2',1)],
+      [('*',1),('8',2),('0',1),('1',1),('7',4),('8',1),('0',1),('4',2),('2',1),('4',2),('2',1)],
+      [('*',1),('5',3),('6',3),('5',3),('0',1),('6',3),('5',2),('#',1),('0',1),('*',1),('4',2),('2',1),('8',3),('3',2),('0',1),('8',2),('0',1),('3',2),('8',3),('3',2),('7',3),('0',1),('8',1),('2',1),('7',4),('8',1),('3',2),('3',1),('0',1),('2',1),('5',3),('2',3),('6',3),('4',2),('6',3),('5',3)],
+      [('*',1),('5',3),('6',3),('5',3),('0',1),('9',3),('2',1)],
+      [('*',1),('9',1),('6',3),('9',1),('0',1),('8',2),('7',3),('0',1),('2',3),('6',3),('6',3),('5',3),('0',1),('4',2),('2',1),('4',2),('2',1),('#',1),('0',1),('*',1),('8',2),('7',3),('0',1),('8',1),('8',2),('7',3),('6',2)],
+      [('*',1),('6',3),('5',2),('#',1),('0',1),('*',1),('3',1),('6',3),('0',1),('8',2),('0',1),('8',1),('4',2),('4',3),('6',2),('5',2),('0',1),('*',1),('4',3),('0',1),('2',1),('6',1),('0',1),('7',1),('7',3),('3',2),('8',1),('8',1),('9',3),('0',1),('*',1),('5',3),('6',3),('5',3)],
+      [('*',1),('5',3),('6',3),('5',3),('0',1),('9',3),('2',1)],
+      [('*',1),('5',1),('8',2),('7',4),('8',1),('0',1),('6',1),('2',1),('5',2),('4',3),('6',2),('4',1),('0',1),('7',4),('8',2),('7',3),('3',2),('0',1),('7',3),('6',3),('3',3),('5',3),('0',1),('8',2),('7',3),('0',1),('8',1),('8',2),('7',3),('6',2)]]
+      #+END_EXAMPLE
+
+   3. How many times do digits need to be pressed for each message?
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<add-current-chapter-directory-in-path()>>
+      :load Phone
+
+      :{
+      <<conversations>>
+      :}
+
+      map (fingerTaps . toTaps phone) conversations
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      [49,5,17,71,15,49,58,15,60]
+      #+END_EXAMPLE
+
+   4. What was the most popular letter for each message? What was its
+      cost?
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<add-current-chapter-directory-in-path()>>
+      :load Phone
+
+      :{
+      <<conversations>>
+      :}
+
+      -- What was the most popular letter for each message?
+      map mostPopularLetter conversations
+
+      -- What was its cost?
+      map (costOfMostPopularLetter phone) conversations
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      nah y  y
+      [6,1,4,6,3,5,7,3,5]
+      #+END_EXAMPLE
+
+   5. What was the most popular letter overall? What was the most
+      popular word?
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<add-current-chapter-directory-in-path()>>
+      :load Phone
+
+      :{
+      <<conversations>>
+      :}
+
+      -- What was the most popular letter overall?
+      mostPopularLetter (concat conversations)
+
+      -- What was the most popular word?
+      mostPopularWord (concat conversations)
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      ' '
+      ur
+      #+END_EXAMPLE
+
+** Hutton's Razor
+   Given the type
+
+   #+NAME: hutton
+   #+BEGIN_SRC haskell :eval never
+   data Expr
+     = Lit Integer
+     | Add Expr Expr
+   #+END_SRC
+
+   1. Your first task is to write the “eval” function which reduces an
+      expression to a final sum.
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      <<hutton>>
+      :}
+
+      :{
+      eval :: Expr -> Integer
+      eval (Lit n) = n
+      eval (Add e1 e2) = (eval e1) + (eval e2)
+      :}
+
+      eval (Add (Lit 1) (Lit 9001))
+      eval (Add (Lit 1) (Lit 9001)) == 9002
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      9002
+      True
+      #+END_EXAMPLE
+
+   2. Write a printer for the expressions.
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      <<hutton>>
+      :}
+
+      :{
+      printExpr :: Expr -> String
+      printExpr (Lit n) = show n
+      printExpr (Add e1 e2) = concat [(printExpr e1), " + ", (printExpr e2)]
+      :}
+
+      printExpr (Add (Lit 1) (Lit 9001))
+      printExpr (Add (Lit 1) (Lit 9001)) == "1 + 9001"
+
+      let a1 = Add (Lit 9001) (Lit 1)
+      let a2 = Add a1 (Lit 20001)
+      let a3 = Add (Lit 1) a2
+      printExpr a3
+      printExpr a3 == "1 + 9001 + 1 + 20001"
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      1 + 9001
+      True
+      1 + 9001 + 1 + 20001
+      True
+      #+END_EXAMPLE
