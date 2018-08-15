@@ -1,0 +1,865 @@
+#+TITLE: Signaling Adversity
+
+* 12.01 Signaling Adversity
+  When a function is not total, eg. cannot produce an output for every
+  possible input values then we use explicit datatypes to represent
+  this like: ~Maybe~ and ~Either~
+
+* 12.02 How I learned to Stop Worrying and Started to Love Nothing
+  ~Maybe~ it is used when you don't always have a sensible value to
+  return for your intended type ~a~from your function
+
+  #+BEGIN_SRC haskell :eval never
+  data Maybe a = Just a | Nothing
+  #+END_SRC
+
+  ~Maybe~ can be used also in smart constructors
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  data Age = Age Integer deriving (Eq, Show)
+
+  :{
+  makeAge :: Integer -> Maybe Age
+  makeAge n
+    | n >= 0 && n < 160 = Just (Age n)
+    | otherwise = Nothing
+  :}
+
+  makeAge 42
+  makeAge 442
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  Just (Age 42)
+  Nothing
+  #+END_EXAMPLE
+
+* 12.03 Bleating Either
+  ~Either~ it is used when you want to express why somehing went wrong
+
+  #+BEGIN_SRC haskell :eval never
+  data Either a b = Left a | Right b
+  #+END_SRC
+
+  It is a good idea to start by defining types to enumerate all the
+  possible failures
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  data Age = Age Integer deriving (Eq, Show)
+
+  data InvalidAge = AgeTooLow | AgeTooHigh deriving Show
+
+  :{
+  makeAge :: Integer -> Either InvalidAge Age
+  makeAge n
+    | n < 0 = Left AgeTooLow
+    | n > 160 = Left AgeTooHigh
+    | otherwise = Right (Age n)
+  :}
+
+  makeAge 42
+  makeAge (-1)
+  makeAge 442
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  Right (Age 42)
+  Left AgeTooLow
+  Left AgeTooHigh
+  #+END_EXAMPLE
+
+  Why do we use ~Left~ as a data constructor for the failures?
+  - Because it is a convention
+  - Because it can be partially applied with the error type and then
+    it can admit a /Functor/ instance on the success type that matter
+    most
+
+* 12.04 Kinds, a thousand stars in your types
+  - Kinds are used to describe the types of type constructors
+  - We say that Haskell has "Higher-Kinded Types" because you can have
+    type constructors that take other types as parameter
+  - We use /type constant/ to refer to types that take no arguments
+    and are already types (ex. ~Int~, ~Char~, ~Bool~)
+  - We use /type constructor/ to refer to types which must have
+    arguments applied to become a type. (ex. ~Maybe~, ~Either~, ~(,)~)
+  - The kind ~*~ is the kind of all standard /lifted types/, the
+    types that can be defined by the user, are all the types that can
+    be inhabited by /bottom/
+  - The kind ~#~ is the kind of the /unlifted types/, the types that
+    cannot be inhabited by /bottom/ (native machine types or raw
+    pointers)
+  - Newtypes are special because are of kind ~*~ but they are
+    unlifted, they representation is identical to that of the type
+    they contain so the newtype itself cannot contain /bottom/, only
+    the thing it contain can contain /bottom/ (⊥)
+
+  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  -- type constructor
+  :k Maybe
+  -- type constructor applied to a type becomes constant type (concrete type)
+  :k Maybe Int
+  :k Int
+  :k (,)
+  :k (,) Char
+  :k (,) Char Bool
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  Maybe :: * -> *
+  Maybe Int :: *
+  Int :: *
+  (,) :: * -> * -> *
+  (,) Char :: * -> *
+  (,) Char Bool :: *
+  #+END_EXAMPLE
+
+* Exercises
+
+  #+NAME: ghci-clean
+  #+BEGIN_SRC emacs-lisp :var content="" :results raw
+  (defun report-compiling-module-p (line)
+    (string-match-p "\\[[0-9]+ of [0-9]+\\] Compiling" line))
+
+  (defun report-loaded-module-p (line)
+    (string-match-p "Ok, .+ modules? loaded\\." line))
+
+  (defun report-eoe-p (line)
+    (string-match-p "org-babel-haskell-eoe" line))
+
+  (defun clean-line (line)
+    (->> line remove-prompt unquote))
+
+  (defun remove-prompt (line)
+    (let ((current-prompt (current-prompt line)))
+      (if (string-empty-p current-prompt)
+          line
+        (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
+
+  (defun current-prompt (line)
+    (if (string-match "\\(^[^|>]+\\)[|>]" line)
+        (match-string 1 line)
+      ""))
+
+  (defun unquote (line)
+    (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" line))
+
+  (string-join
+   (seq-map #'clean-line
+            (seq-filter
+             (lambda (line)
+               (and
+                (not (string-empty-p line))
+                (not (report-eoe-p line))
+                (not (report-compiling-module-p line))
+                (not (report-loaded-module-p line))))
+             (split-string content "\n")))
+   "\n")
+  #+END_SRC
+
+  #+NAME: add-current-chapter-directory-in-path
+  #+BEGIN_SRC emacs-lisp :output raw
+  (concat
+   ":set -i"
+   (file-name-as-directory (file-name-directory (buffer-file-name)))
+   (file-name-base (buffer-file-name)))
+  #+END_SRC
+
+** Determine the Kinds
+
+   1. Given
+      #+BEGIN_SRC haskell :eval never
+      id :: a -> a
+      #+END_SRC
+      What is the kind of ~a~?
+      ~*~
+
+   2. Given
+      #+BEGIN_SRC haskell :eval never
+      r :: a -> f a
+      #+END_SRC
+
+      1. What is the kind of ~a~?
+         ~*~
+
+      2. What is the kind of ~f a~?  Note that ~(->)~ is a type
+         constructor with kind ~* -> * -> *~ so the types ~a~ and
+         ~f a~ must have both kind ~*~, since ~f a~ is ~f~ applied
+         to ~a~ it means that ~f~ must have kind ~* -> *~
+
+** String Processing
+
+   1. Write a recursive function named ~replaceThe~ which takes a
+      string, breaks it into words and replaces each instance of "the"
+      with "a".
+
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      notThe :: String -> Maybe String
+      notThe s
+        | s == "the" = Nothing
+        | otherwise = Just s
+      :}
+
+      notThe "the"
+      notThe "woot"
+
+      :{
+      replaceThe :: String -> String
+      replaceThe = unwords . map replaceThe' . words
+        where replaceThe' s = case (notThe s) of
+                                Just s -> s
+                                Nothing -> "a"
+      :}
+
+      replaceThe "the cow loves us"
+      replaceThe "the cow loves us" == "a cow loves us"
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Nothing
+      Just "woot"
+      a cow loves us
+      True
+      #+END_EXAMPLE
+
+   2. Write a recursive function that takes a string, breaks it into
+      words, and counts the number of instances of "the" followed by a
+      vowel-initial word.
+
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      countTheBeforeVowel :: String -> Integer
+      countTheBeforeVowel s =
+        case (words s) of
+          [] -> 0
+          "the" : (c:_) : t | isVowel c -> 1 + (countTheBeforeVowel $ unwords t)
+          _ : t -> (countTheBeforeVowel $ unwords t)
+        where isVowel c = elem c ['a', 'e', 'i', 'o', 'u']
+      :}
+
+      countTheBeforeVowel "the cow"
+      countTheBeforeVowel "the cow" == 0
+      countTheBeforeVowel "the evil cow"
+      countTheBeforeVowel "the evil cow" == 1
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      0
+      True
+      1
+      True
+      #+END_EXAMPLE
+
+   3. Return the number of letters that are vowels in a word (assuming
+      the exercise is to revise the recursion).
+
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      countVowels :: String -> Integer
+      countVowels "" = 0
+      countVowels (c:s)
+        | isVowel c = 1 + countVowels s
+        | otherwise = 0 + countVowels s
+        where isVowel c = elem c ['a', 'e', 'i', 'o', 'u']
+      :}
+
+      countVowels "the cow"
+      countVowels "the cow" == 2
+      countVowels "Mikolajczak"
+      countVowels "Mikolajczak" == 4
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      2
+      True
+      4
+      True
+      #+END_EXAMPLE
+
+      An alternative implementation
+
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      isVowel = (flip elem) ['a', 'e', 'i', 'o', 'u']
+
+      :{
+      countVowels :: String -> Integer
+      countVowels = toInteger . length . (filter isVowel)
+      :}
+
+      countVowels "the cow"
+      countVowels "the cow" == 2
+      countVowels "Mikolajczak"
+      countVowels "Mikolajczak" == 4
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      2
+      True
+      4
+      True
+      #+END_EXAMPLE
+
+** Validate the Word
+   Use the Maybe type to write a function that counts the number of
+   vowels in a string and the number of consonants. If the number of
+   vowels exceeds the number of consonants, the function returns
+   Nothing.
+
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   newtype Word' = Word' String deriving (Eq, Show)
+
+   vowels = "aeiou"
+
+   isVowel = (flip elem) vowels
+
+   :{
+   countCharsWhere :: (Char -> Bool) -> String -> Integer
+   countCharsWhere p = toInteger . length . (filter p)
+   :}
+
+   countVowels = countCharsWhere isVowel
+
+   countConsonants = countCharsWhere (not . isVowel)
+
+   :{
+   mkWord :: String -> Maybe Word'
+   mkWord s =
+     case (countVowels s, countConsonants s) of
+       (n, m) | n > m -> Nothing
+       otherwise -> Just (Word' s)
+   :}
+
+   countVowels "the cow"
+   countConsonants "the cow"
+   mkWord "aaaa"
+   mkWord "abba"
+   mkWord "hello"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   2
+   5
+   Nothing
+   Just (Word' "abba")
+   Just (Word' "hello")
+   #+END_EXAMPLE
+
+** It's only Natural
+   Your task will be to implement functions to convert Naturals to
+   Integers and Integers to Naturals.
+
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   data Nat = Zero | Succ Nat deriving (Eq, Show)
+
+   :{
+   natToInteger :: Nat -> Integer
+   natToInteger Zero = 0
+   natToInteger (Succ n) = 1 + (natToInteger n)
+   :}
+
+   natToInteger Zero
+   natToInteger (Succ Zero)
+   natToInteger (Succ (Succ Zero))
+
+   :{
+   integerToNat :: Integer -> Maybe Nat
+   integerToNat 0 = Just Zero
+   integerToNat n
+     | n < 0 = Nothing
+     | otherwise =
+         case (integerToNat (n - 1)) of
+           Nothing -> Nothing
+           (Just x) -> Just (Succ x)
+   :}
+
+   integerToNat 0
+   integerToNat 1
+   integerToNat 2
+   integerToNat (-1)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   0
+   1
+   2
+   Just Zero
+   Just (Succ Zero)
+   Just (Succ (Succ Zero))
+   Nothing
+   #+END_EXAMPLE
+
+   An alternative implementation
+
+   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   data Nat = Zero | Succ Nat deriving (Eq, Show)
+
+   :{
+   integerToNat :: Integer -> Maybe Nat
+   integerToNat 0 = Just Zero
+   integerToNat n
+     | n < 0 = Nothing
+     | otherwise = fmap Succ (integerToNat (n - 1))
+   :}
+
+   integerToNat 0
+   integerToNat 1
+   integerToNat 2
+   integerToNat (-1)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Just Zero
+   Just (Succ Zero)
+   Just (Succ (Succ Zero))
+   Nothing
+   #+END_EXAMPLE
+
+** Small Library for Maybe
+   Write the following functions.
+
+   1. Simple boolean checks for Maybe values.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      isJust :: Maybe a -> Bool
+      isJust Nothing = False
+      isJust _ = True
+      :}
+
+      :{
+      isNothing :: Maybe a -> Bool
+      isNothing = not . isJust
+      :}
+
+      isJust (Just 1)
+      isJust Nothing
+      isNothing (Just 1)
+      isNothing Nothing
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      True
+      False
+      False
+      True
+      #+END_EXAMPLE
+
+   2. The following is the Maybe catamorphism.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      mayybee :: b -> (a -> b) -> Maybe a -> b
+      mayybee b _ Nothing = b
+      mayybee _ a2b (Just a) = a2b a
+      :}
+
+      mayybee 0 (+1) Nothing
+      mayybee 0 (+1) (Just 1)
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      0
+      2
+      #+END_EXAMPLE
+
+   3. In case you want to provide a fallback value.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      fromMaybe :: a -> Maybe a -> a
+      fromMaybe a Nothing = a
+      fromMaybe _ (Just a) = a
+      :}
+
+      fromMaybe 0 Nothing
+      fromMaybe 0 (Just 1)
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      0
+      1
+      #+END_EXAMPLE
+
+   4. Converting between List and Maybe.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      listToMaybe :: [a] -> Maybe a
+      listToMaybe [] = Nothing
+      listToMaybe (a : _) = Just a
+      :}
+
+      listToMaybe [1, 2, 3]
+      listToMaybe [1, 2, 3] == (Just 1)
+      listToMaybe []
+      listToMaybe [] == Nothing
+
+      :{
+      maybeToList :: Maybe a -> [a]
+      maybeToList Nothing = []
+      maybeToList (Just a) = [a]
+      :}
+
+      maybeToList (Just 1)
+      maybeToList (Just 1) == [1]
+      maybeToList Nothing
+      maybeToList Nothing == []
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Just 1
+      True
+      Nothing
+      True
+      [1]
+      True
+      []
+      True
+      #+END_EXAMPLE
+
+   5. For when we want to drop the Nothing values from our list.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      catMaybes :: [Maybe a] -> [a]
+      catMaybes [] = []
+      catMaybes (Nothing : as) = catMaybes as
+      catMaybes ((Just a) : as) = a : (catMaybes as)
+      :}
+
+      catMaybes [Just 1, Nothing, Just 2]
+      catMaybes [Just 1, Nothing, Just 2] == [1, 2]
+      catMaybes [Nothing, Nothing, Nothing]
+      catMaybes [Nothing, Nothing, Nothing] == []
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      [1,2]
+      True
+      []
+      True
+      #+END_EXAMPLE
+
+   6. You’ll see this called “sequence” later.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      flipMaybe :: [Maybe a] -> Maybe [a]
+      flipMaybe [] = Just []
+      flipMaybe (Nothing : as) = Nothing
+      flipMaybe ((Just a) : as) = fmap ((:) a) (flipMaybe as)
+      :}
+
+      flipMaybe [Just 1, Just 2, Just 3]
+      flipMaybe [Just 1, Just 2, Just 3] == Just [1, 2, 3]
+      flipMaybe [Just 1, Nothing, Just 3]
+      flipMaybe [Just 1, Nothing, Just 3] == Nothing
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Just [1,2,3]
+      True
+      Nothing
+      True
+      #+END_EXAMPLE
+
+** Small Library for Either
+   Write the following functions.
+
+   1. Implement it using ~foldr~ eventually
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      lefts :: [Either a b] -> [a]
+      lefts = foldr f []
+        where f (Left a) as = a : as
+              f (Right _) as = as
+      :}
+
+      lefts [Left 1, Left 2, Right True]
+      lefts [Right "hello"]
+      lefts []
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      [1,2]
+      []
+      []
+      #+END_EXAMPLE
+
+   2. Implement it using ~foldr~ eventually
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      rights :: [Either a b] -> [b]
+      rights = foldr f []
+        where f (Left _) bs = bs
+              f (Right b) bs = b:bs
+      :}
+
+      rights [Left 1, Left 2, Right True]
+      rights [Right "hello"]
+      rights []
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      [True]
+      ["hello"]
+      []
+      #+END_EXAMPLE
+
+   3. Implement it
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      partitionEithers :: [Either a b] -> ([a], [b])
+      partitionEithers = foldr f ([], [])
+        where f (Left a) (as, bs) = (a:as, bs)
+              f (Right b) (as, bs) = (as, b:bs)
+      :}
+
+      partitionEithers [Left 1, Right 'a', Left 2]
+      partitionEithers [Left 1, Left 2]
+      partitionEithers [Right 'a', Right 'b', Left 1]
+      partitionEithers []
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      ([1,2],"a")
+      ([1,2],[])
+      ([1],"ab")
+      ([],[])
+      #+END_EXAMPLE
+
+   4. Implement it
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      eitherMaybe :: (b -> c) -> Either a b -> Maybe c
+      eitherMaybe _ (Left _) = Nothing
+      eitherMaybe b2c (Right b) = Just (b2c b)
+      :}
+
+      eitherMaybe ((+) 2) (Left True)
+      eitherMaybe ((+) 2) (Right 1)
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Nothing
+      Just 3
+      #+END_EXAMPLE
+
+   5. This is a general catamorphism for Either values.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      either' :: (a -> c) -> (b -> c) -> Either a b -> c
+      either' a2c _ (Left a) = a2c a
+      either' _ b2c (Right b) = b2c b
+      :}
+
+      either' length (*2) (Left "foo")
+      either' length (*2) (Right 3)
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      3
+      6
+      #+END_EXAMPLE
+
+   6. Same as before, but use the ~either~ function.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      eitherMaybe :: (b -> c) -> Either a b -> Maybe c
+      eitherMaybe b2c = either (const Nothing) (Just . b2c)
+      :}
+
+      eitherMaybe ((+) 2) (Left True)
+      eitherMaybe ((+) 2) (Right 1)
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Nothing
+      Just 3
+      #+END_EXAMPLE
+
+** Write your own iterate and unfolds
+
+   1. Write the function ~iterate'~ use ~iterate~ to check correctness
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      iterate' :: (a -> a) -> a -> [a]
+      iterate' f a = a : (iterate' f (f a))
+      :}
+
+      take 10 $ iterate (+1) 0
+      take 10 $ iterate' (+1) 0
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      [0,1,2,3,4,5,6,7,8,9]
+      [0,1,2,3,4,5,6,7,8,9]
+      #+END_EXAMPLE
+
+   2. Write the function ~unfoldr'~ using direct recursion.
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      unfoldr' :: (b -> Maybe (a, b)) -> b -> [a]
+      unfoldr' f b =
+        case (f b) of
+          (Just (a, b)) -> a : (unfoldr' f b)
+          Nothing -> []
+      :}
+
+      unfoldr' (\b -> if b == 0 then Nothing else Just (b, b-1)) 10
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      [10,9,8,7,6,5,4,3,2,1]
+      #+END_EXAMPLE
+
+   3. Rewrite ~iterate'~ using ~unfoldr~
+      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      :{
+      iterate' :: (a -> a) -> a -> [a]
+      iterate' f = Data.List.unfoldr (\a -> Just (f a, f a))
+      :}
+
+      take 10 $ iterate' (+1) 0
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      [1,2,3,4,5,6,7,8,9,10]
+      #+END_EXAMPLE
+
+** Finally Something Different than a List
+   Given the BinaryTree from last chapter, complete the following
+   exercises.
+
+   #+NAME: binary-tree
+   #+BEGIN_SRC haskell :eval never
+   data BinaryTree a = Leaf | Node (BinaryTree a) a (BinaryTree a) deriving (Eq, Show)
+   #+END_SRC
+
+   1. Write ~unfold~ for BinaryTree.
+      #+NAME: unfold-binary-tree
+      #+BEGIN_SRC haskell :eval never :noweb yes
+      <<binary-tree>>
+
+      :{
+      unfold :: (a -> Maybe (a, b, a)) -> a -> BinaryTree b
+      unfold f a =
+        case (f a) of
+          (Just (al, b, ar)) -> Node (unfold f al) b (unfold f ar)
+          Nothing -> Leaf
+      :}
+      #+END_SRC
+
+   2. Make a tree builder to crate something like the following structure
+      #+BEGIN_EXAMPLE
+          0
+
+          0
+         1 1
+
+          0
+        1   1
+       2 2 2 2
+      #+END_EXAMPLE
+
+      #+NAME: build-binary-tree
+      #+BEGIN_SRC haskell :eval never :noweb yes
+      <<unfold-binary-tree>>
+
+      :{
+      treeBuild :: Integer -> BinaryTree Integer
+      treeBuild h = unfold f (0, h)
+        where f (n, h) | n == h = Nothing
+              f (n, h) = Just ((n + 1, h), n, (n + 1, h))
+      :}
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<build-binary-tree>>
+
+      treeBuild 0
+      treeBuild 1
+      treeBuild 2
+      treeBuild 3
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Leaf
+      Node Leaf 0 Leaf
+      Node (Node Leaf 1 Leaf) 0 (Node Leaf 1 Leaf)
+      Node (Node (Node Leaf 2 Leaf) 1 (Node Leaf 2 Leaf)) 0 (Node (Node Leaf 2 Leaf) 1 (Node Leaf 2 Leaf))
+      #+END_EXAMPLE
+
+   3. Bonus: write a function ~draw~ that will draw the tree
+      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<build-binary-tree>>
+
+      :{
+      width :: Show a => BinaryTree a -> Int
+      width Leaf = 0
+      width (Node l v r) = (width l) + (length (show v)) + (width r)
+      :}
+
+      :{
+      draw :: Show a => BinaryTree a -> [String]
+      draw Leaf = []
+      draw (Node l v r) = drawHead : drawTrees
+        where drawHead = (replicate wl ' ') ++ (show v) ++ (replicate wr ' ')
+              drawTrees = zipWith joinTrees (draw l) (draw r)
+              joinTrees l r = l ++ (replicate wv ' ') ++ r
+              wl = (width l)
+              wr = (width r)
+              wv = (length (show v))
+      :}
+
+      putStr $ unlines $ ("-" : draw (treeBuild 1))
+      putStr $ unlines $ ("-" : draw (treeBuild 2))
+      putStr $ unlines $ ("-" : draw (treeBuild 3))
+      putStr $ unlines $ ("-" : draw (treeBuild 4))
+      putStr $ unlines $ ("-" : draw (treeBuild 6))
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      -
+      0
+      -
+       0
+      1 1
+      -
+         0
+       1   1
+      2 2 2 2
+      -
+             0
+         1       1
+       2   2   2   2
+      3 3 3 3 3 3 3 3
+      -
+                                     0
+                     1                               1
+             2               2               2               2
+         3       3       3       3       3       3       3       3
+       4   4   4   4   4   4   4   4   4   4   4   4   4   4   4   4
+      5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5
+      #+END_EXAMPLE
