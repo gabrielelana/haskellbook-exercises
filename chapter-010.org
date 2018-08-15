@@ -1,10 +1,10 @@
-* 10.1 Folds
+* 10.01 Folds
   - Folds as a general concept are called catamorphisms (/cata/ means
     /down/ and /morphism/ means /transformation/)
   - If the spine of a list is the structure of a list then a fold is
     what reduce that structure
 
-* 10.2 Bringing you into the fold
+* 10.02 Bringing you into the fold
   Before GHC 7.6 ~foldr~ (fold right) was defined as
   #+BEGIN_SRC haskell :eval never
   foldr :: (a -> b -> b) -> b -> [a] -> b
@@ -18,7 +18,7 @@
   With which we can implement the list version using ~[]~ as a type
   constructor, because ~[]~ is ~Foldable~ along with many others.
 
-* 10.3 Recursive pattern
+* 10.03 Recursive pattern
   We have seen the same pattern, over and over again to reduce lists
   #+BEGIN_SRC haskell :eval never
   sum :: [a] -> a
@@ -31,7 +31,7 @@
     to the right (~x + (sum xs)~ the parentheses groups items on the
     right)
 
-* 10.4 Fold right
+* 10.04 Fold right
   We call ~foldr~ "Fold right" because the fold is right associative
   #+BEGIN_SRC haskell :eval never
   foldr :: (a -> b -> b) -> b -> [a] -> b
@@ -103,7 +103,7 @@
     2
     #+END_EXAMPLE
 
-* 10.5 Fold left
+* 10.05 Fold left
   We call ~foldl~ "Fold left" because the fold is left associative
   #+BEGIN_SRC haskell :eval never
   foldl :: (b -> a -> b) -> b -> [a] -> b
@@ -317,7 +317,7 @@
          foldl (flip const) 0 [1..5]
          #+END_SRC
 
-* 10.6 How to write fold functions
+* 10.06 How to write fold functions
   Nothing much.
 
 ** Exercise: Database Processing
@@ -444,10 +444,10 @@
       9001.0
       #+END_EXAMPLE
 
-* 10.7 Folding and evaluation
+* 10.07 Folding and evaluation
   Nothing much
 
-* 10.8 Summary
+* 10.08 Summary
   - ~foldr~
     - Associates to the right
     - Works on infinite lists
@@ -457,7 +457,7 @@
     - Cannot be used with infinite lists
     - Probably you want to use ~foldl'~ instead
 
-* 10.9 Scans
+* 10.09 Scans
 
   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load"
   :t foldr

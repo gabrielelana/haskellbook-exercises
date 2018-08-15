@@ -1,7 +1,7 @@
-* 7.1 Make it func-y
+* 7.01 Make it func-y
   Nothing much
 
-* 7.2 Arguments and parameters
+* 7.02 Arguments and parameters
   - How variables get /bound/ to values?
     - Apply arguments values to function parameters
     - ~let ... in~ expressions
@@ -11,7 +11,7 @@
   - Haskell is /lexically scoped/ language
   - Variable /shadowing/, always wins the more nested scope
 
-* 7.3 Anonymous functions
+* 7.03 Anonymous functions
   - Anonymous functions syntax
     #+BEGIN_SRC haskell :results none
     let triple = \x -> x * 3
@@ -37,7 +37,7 @@
     - When it gets passed to another function.
     - When it not called anywhere else.
 
-* 7.4 Pattern matching
+* 7.04 Pattern matching
   - What is /pattern matching/?
     - A way of matching values against patterns.
   - What /pattern matching/ does?
@@ -63,7 +63,7 @@
     flip f x y = f y x
     #+END_SRC
 
-* 7.5 Case expressions
+* 7.05 Case expressions
   - Syntax
     #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
     case 5 > 7 of
@@ -71,13 +71,13 @@
       True -> "Run!"
     #+END_SRC
 
-* 7.6 High-order functions
+* 7.06 High-order functions
   - Higher-order functions are functions which themselves take func-
     tions as arguments or return functions as results. Due to cur-
     rying, technically any function that appears to take more than one
     argument is higher order in Haskell.
 
-* 7.7 Guards
+* 7.07 Guards
   - Guards relies on the truth value to decide between two or more
     possible results.
     #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
@@ -101,7 +101,7 @@
       where y = x / 100
     #+END_SRC
 
-* 7.8 Function composition
+* 7.08 Function composition
   - /Function composition/ is a type of /high-order function/ that
     allow us to combine functions such that the result of applying one
     function gets passed to the next function as an argument.
@@ -114,7 +114,7 @@
     (.) :: (b -> c) -> (a -> b) -> a -> c
     #+END_EXAMPLE
 
-* 7.9 Pointfree style
+* 7.09 Pointfree style
   Pointfree refers to a style of composing functions without
   specifying their arguments. Derives from topology where there're
   spaces made of points and functions between those points, specifying

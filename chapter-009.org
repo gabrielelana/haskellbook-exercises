@@ -1,7 +1,7 @@
-* 9.1 Lists
+* 9.01 Lists
   Nothing much
 
-* 9.2 The list datatype
+* 9.02 The list datatype
   The list datatype is defined like this:
 
   #+BEGIN_EXAMPLE
@@ -21,7 +21,7 @@
   As a whole is a sum type (~|~) but the second /data constructor/
   it's a product type because it take two arguments.
 
-* 9.3 Pattern matching
+* 9.03 Pattern matching
   We can match on /data constructors/ and /data constructors/ of lists
   is not an exception.
 
@@ -41,7 +41,7 @@
   should be exaustive we always need to take care of the empty list,
   for this it can be useful to use the type ~Maybe~
 
-* 9.4 List’s syntactic sugar
+* 9.04 List’s syntactic sugar
   We don't have tu use the ~:~ /data constructor/
 
   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
@@ -76,7 +76,7 @@
   there). The second list is complete from the value point of view but
   the /spine/ is broken because it doesn't end with an empty list.
 
-* 9.5 Using ranges to construct lists
+* 9.05 Using ranges to construct lists
 
   With syntax sugar
   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load"
@@ -186,7 +186,7 @@
    [LT,EQ,GT]
    #+END_EXAMPLE
 
-* 9.6 Extracting portions of lists
+* 9.06 Extracting portions of lists
 
   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load"
   take 5 [1..10]
@@ -324,7 +324,7 @@
       ["aaa","bbb"]
       #+END_EXAMPLE
 
-* 9.7 List Comprehensions
+* 9.07 List Comprehensions
   A kind of expression meant to create a new list starting from one or more lists
 
   #+BEGIN_EXAMPLE
@@ -436,7 +436,7 @@
       length [(x, y) | x <- mySqr, y <- myCube, x < 50 && y < 50]
       #+END_SRC
 
-* 9.8 Spines and non strict evaluation
+* 9.08 Spines and non strict evaluation
   The /spine/ is the connective structure that holds the values
   together in a data structure.
 
@@ -593,7 +593,7 @@
       #+END_SRC
       WHNF
 
-* 9.9 Transforming lists of values
+* 9.09 Transforming lists of values
   If we have to turn a list in another list with the same number of
   elements but different values, instead of coding the transformation
   by hand recursively, we can use an higher-order function like ~map~

@@ -1,11 +1,11 @@
-* 6.1 Typeclasses
+* 6.01 Typeclasses
 In this chapter
 - Typeclasses ~Eq~, ~Num~, ~Ord~, ~Enum~ and ~Show~
 - What is type-defaulting typeclasses?
 - What is Typeclass inheritance?
 - Common but often implicit functions that creates side effects
 
-* 6.2 What are typeclasses?
+* 6.02 What are typeclasses?
 Types and Typeclasses are in a sense opposite
 - Declaration of a datatype defines how that type is created.
 - Declaration of a typeclasses defines how a set of types are consumed
@@ -22,7 +22,7 @@ type of data, as long as our type *implements* or *instantiates* the
 - *Instances* supply implementation for operations declared in
   typeclasses
 
-* 6.3 Back to Bool
+* 6.03 Back to Bool
 Look at the typeclasses of ~Bool~. Each of these instances is a
 typeclass that ~Bool~ implements, and the instances are unique
 implementations of the functions defined in the typeclass.
@@ -53,7 +53,7 @@ Typeclasses have a *hierarchy*, all members of ~Ord~ must be members of
 for equality), all members of ~Enum~ must be members of ~Ord~ (to put
 something in an enumerated list you need to be able to sort them).
 
-* 6.4 Eq
+* 6.04 Eq
 In Haskell equality is implemented with ~Eq~.
 
 #+NAME: head
@@ -110,7 +110,7 @@ second ~a~ it's the same type
       In the expression: (1, 2) == "puppies"
       In an equation for ‘it’: it = (1, 2) == "puppies"
 #+END_EXAMPLE
-* 6.5 Writing typeclass instances
+* 6.05 Writing typeclass instances
 We will define ~Eq~ for our own datatype without deriving anything,
 first thing look at the [[http://hackage.haskell.org/package/base/docs/Data-Eq.html][definition of the typeclass you need to
 implement]], for ~Eq~ we need to implment either ~==~ or ~/=~ (the other
@@ -496,7 +496,7 @@ Write the ~Eq~ instance for the datatype provided
    False
    #+END_EXAMPLE
 
-* 6.6 Num
+* 6.06 Num
 Is a typeclass implemented by most of the number datatype
 
 #+BEGIN_SRC haskell :results raw replace :wrap EXAMPLE
@@ -571,7 +571,7 @@ div (-9) 4 -- round towards -∞
 -3
 #+END_EXAMPLE
 
-* 6.7 Type-defaulting Typeclasses
+* 6.07 Type-defaulting Typeclasses
 When you have a typeclass-constrained (ad hoc) polymorphic value and
 need to evaluate it then the polymorphism must be resolved, sometimes
 it will be because declared so or because of type inference, when it
@@ -590,7 +590,7 @@ default RealFloat Double
 
 This is called =Type Defaulting=
 
-* 6.8 Ord
+* 6.08 Ord
 Typeclass ~Ord~ is for things that can be put in order
 
 #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post head(n="16", content=*this*) :epilogue "0"
@@ -680,7 +680,7 @@ True
    (5 + 3) > (3 + 6)
    #+END_SRC
 
-* 6.9 Enum
+* 6.09 Enum
 Typeclass ~Enum~ is for things that have a =predecessor= and a =successor=
 
 #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue "0"

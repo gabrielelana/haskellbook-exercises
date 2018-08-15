@@ -1,11 +1,11 @@
-* 4.1 Basic Datatypes
+* 4.01 Basic Datatypes
 
-* 4.2 What Are Types?
+* 4.02 What Are Types?
 - =What Are Types?= Expressions, when evaluated, reduce to
   values. Every value has a type. Types are how we group a set of
   values togheter that share something in common.
 
-* 4.3 Anatomy of a Data Declaration
+* 4.03 Anatomy of a Data Declaration
 - =Data Declaration= Are how datatypes are defined.
   - =Type Constructor= Is the name of the type and is capitalized.
   - =Data Constructor= Are the values that inhabit the type they are defined In.
@@ -47,7 +47,7 @@
       : Blah
       : Woot
 
-* 4.4 Numeric Types
+* 4.04 Numeric Types
 - All the following numeric datatypes all have a typeclass ~Num~
   - =Int= Fixed precision integer.
   - =Integer= Arbitrary precision integer numbers.
@@ -108,14 +108,14 @@
   #+END_EXAMPLE
 - The syntax ~Fracional a => a -> a -> a~ denotes a typeclass constraint. It tells us that the type variable ~a~ must implement the typeclass ~Fractional~
 
-* 4.5 Comparing Values
+* 4.05 Comparing Values
 - ~(==) :: Eq a => a -> a -> Bool~
 - ~(/=) :: Eq a => a -> a -> Bool~
 - ~(<) :: Ord a => a -> a -> Bool~
 - ~Eq~ is a typeclass that includes everything that can be compared and determined to be equal in value.
 - ~Org~ is a typeclass that includes everything that can be ordered.
 
-* 4.6 Go on and Bool me
+* 4.06 Go on and Bool me
 - ~data Bool :: True | False~
 - Note that we capitalize ~True~ and ~False~ because they are our data constructor.
 - Scope is a way to refer to where a named binding to an expression is valid. When we say that something is in scope it means that you can use that expression by its bound name.
@@ -163,7 +163,7 @@
       greetIfCool "downright frosty yo"
   #+END_SRC
 
-* 4.7 Tuples
+* 4.07 Tuples
 - Tuples is a type that allows you to store and pass around multiple value withing a single value.
 - Tuples have a distinctive, built-in syntax that is used at both type and term levels, and each tuple has a fixed number of constituents.
 - The values within a tuple do not have to be of the same type.
@@ -248,7 +248,7 @@
   #+RESULTS:
   : 2
 
-* 4.8 Lists
+* 4.08 Lists
 - Another type that contains multiple valus but they differ from tuples in three ways.
   - All elements of a list must be of the same type.
   - List have they own distinct ~[]~ syntax. Like for the tuples it is used both for the type constructor in type signatures and at the term level to express list values.
@@ -269,7 +269,7 @@ concat [l, ["A", "B"]]
 : ["Foo","Bar","Baz","Fuz"]
 : ["Foo","Bar","Baz","A","B"]
 
-* 4.9 Exercises
+* 4.09 Exercises
 #+BEGIN_SRC haskell :session exercise :results none
 awesome = ["Papuchon", "curry", ":)"]
 also = ["Quake", "The Simons"]

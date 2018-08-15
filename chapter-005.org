@@ -1,14 +1,14 @@
-* 5.1 Types
+* 5.01 Types
   Type systems in logic and mathematics have been designed to impose
   constraints that enforce correctness.
 
-* 5.2 What are types for?
+* 5.02 What are types for?
 - Reduces errors.
 - Enables optimizations.
 - Reduces number of trivial tests.
 - Serves as documentation.
 
-* 5.3 How to read type signatures
+* 5.03 How to read type signatures
 - The arrow is the type constructor for functions (~data (->) a b~)
 - Function type has no data constructors. The values that shows up at term level is the function. Functions are values.
 - ~(+) :: a -> a -> a~ right associative ~(->) a (a -> a)~ mean takes and ~a~ and returns a ~(a -> a)~
@@ -25,7 +25,7 @@
    4. d -> a
    5. e -> e
 
-* 5.4 Currying
+* 5.04 Currying
 - Partial Application
   #+BEGIN_SRC haskell :results output replace
   :{
@@ -83,7 +83,7 @@
 9. ~kessel :: (Ord a, Num b) => a -> b -> a~ what is the type of ~kessel (1 :: Integer) 2~
    c) ~Integer~
 
-* 5.5 Polymorphism
+* 5.05 Polymorphism
   - Polymorphic means "made of many forms"
   - Polymorphic type variables give us the ability to to implement expressions that can accept arguments of many types and return results of many types without rewriting the expression for every type
   - Type signatures may have three kind of types:
@@ -109,7 +109,7 @@
       only a b = b
       #+END_SRC
 
-* 5.6 Type Inference
+* 5.06 Type Inference
   - Type inference is an algorithm for determining the types of expressions.
 ** Exercise: Apply Yourself
    1. ~myConcat :: [Char] -> [Char]~
@@ -117,8 +117,8 @@
    3. ~myTake :: Int -> [Char]~
    4. ~myCom :: Int -> Bool~
    5. ~myAlph :: Char -> Bool~
-* 5.7 Asserting Types for Declaration
-* 5.8 Chapter Exercises
+* 5.07 Asserting Types for Declaration
+* 5.08 Chapter Exercises
 ** Multiple choice
    1. c
    2. a

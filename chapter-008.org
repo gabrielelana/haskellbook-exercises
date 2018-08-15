@@ -1,7 +1,7 @@
-* 8.1 Recusion
+* 8.01 Recusion
   Nothing much
 
-* 8.2 Factorial!
+* 8.02 Factorial!
   #+NAME: Factorial
   #+BEGIN_SRC haskell :results none :tangle chapter-008/Factorial.hs
   module Factorial where
@@ -57,7 +57,7 @@
    10
    #+END_EXAMPLE
 
-* 8.3 Bottom
+* 8.03 Bottom
   In type theory, a theory within mathematical logic, the bottom type
   is the type that has no values. It is also called the zero or empty
   type, and is sometimes denoted with falsum (⊥ aka "UP TACK" symbol).
@@ -86,7 +86,7 @@
   f _ = Nothing
   #+END_SRC
 
-* 8.4 Fibonacci
+* 8.04 Fibonacci
   #+NAME: Fibonacci
   #+BEGIN_SRC haskell :results none :tangle chapter-008/Fibonacci.hs
   module Fibonacci where
@@ -115,7 +115,7 @@
   987
   #+END_EXAMPLE
 
-* 8.5 Integral division from scratch
+* 8.05 Integral division from scratch
   #+NAME: DivFromScratch
   #+BEGIN_SRC haskell :results none :tangle chapter-008/DivFromScratch.hs
   module DivFromScratch where
