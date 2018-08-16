@@ -1,0 +1,165 @@
+#+TITLE: Building Projects
+
+* 13.01 Modules
+  - Haskell programs are organized into module.
+  - Every file name must be the same as the module it contains.
+
+* 13.02 Making Packages with Stack
+  - A package is a collection of modules and its dependencies.
+  - *Cabal* (Common Architecture to Build Applications and Libraries) is
+    the Haskell package manager.
+  - Cabal exists to describe a single package with a Cabal file that
+    has the ~.cabal~ file extension.
+  - *Stack* is a tool for developing Haskell projects, it's built on
+    top of Cabal and it will help with with large projects with
+    multiple dependencies.
+  - Stack relies on a configuration file called ~stack.yaml~
+  - Stack relies on LTS (Long Time Support) snapshot of packages that
+    are guaranteed to work together, those packages are from [[https://www.stackage.org][Stackage]]
+    instead of from [[https://hackage.haskell.org/][Hackage]] which may have conflicting
+    dependencies. The snapshot can be configured in the ~resolver~
+    field of ~stack.yaml~ file
+
+* 13.03 Working with a Basic Project
+  Given a project already configured like [[https://github.com/haskellbook/hello][hello]]
+  - ~$ stack build~ to build the project
+  - ~$ stack setup~ if you don't have alredy setup the GHC verion
+    specified in the project's stack file
+  - ~$ stack ghci~ to load the project into the REPL
+  - ~$ stack exec -- hello~ to run the project's executable ~hello~
+
+  The executable above is created because in [[file:./chapter-13/hello/hello.cabal][hello.cabal]] there is a
+  /stanza/ (in the sense of /verse/ aka section of the configuration
+  file) like the following
+
+  #+BEGIN_EXAMPLE
+  executable hello
+          -- [1]
+    hs-source-dirs:      src
+    -- [2]
+    main-is:             Main.hs
+    -- [3]
+    default-language:    Haskell2010
+    -- [4]
+    build-depends:       base >= 4.7 && < 5
+    -- [5]
+  #+END_EXAMPLE
+
+  1. The name of the executable
+  2. Where to find the source of the modules
+  3. Version of the Haskell standard to expect
+  4. List of dependencies
+
+* 13.04 Making our Project a Library
+  We need to create a /library/ /stanza/ in the cabal file
+
+  #+BEGIN_EXAMPLE
+  library
+    hs-source-dirs:       src
+    exposed-modules:      Hello
+    default-language:     Haskell2010
+    build-depends:        base >= 4.7 && < 5
+  #+END_EXAMPLE
+
+  The only exposed module of our library is ~Hello~ se we need to create
+  one in ~src/Hello.hs~ file
+
+  If we had our ~Main~ module in another directory (ex. ~./bin~) using
+  the ~Hello~ module in ~./src~ directory then the project wont
+  compile because in the ~executable~ stanza we must tell Cabal where
+  is the ~Hello~ module, there are two ways
+  - Add ~./src~ to the list of ~hs-source-dirs~ in the ~executable~ stanza
+  - Add ~hello~ to the list of ~build-depends~ in the ~executable~ stanza
+
+* 13.05 Exposing Modules
+  - By default every top level binding are exported from a module and
+    can be imported/used from another module
+  - We can specify an /export list/ when defining a module, ex. ~module
+    XXX (a, b) where~ exporting only ~a~ and ~b~ from the ~XXX~ module
+  - Remember to add ~XXX~ to the list of ~exposed-modules~ in the
+    cabal file
+
+* 13.06 More on Importing Modules
+  - In GHCi ~:browse Data.List~ will list all the exposed symbols of
+    the module ~Data.List~
+  - We can specify an /import list/ when importing a module,
+    ex. ~import Data.Bool (bool)~ importing only the symbol ~bool~
+    from ~Data.List~
+  - We can keep a prefix on imported symbols with a /qualified/ import
+    when importing a module, ex. ~import qualified Data.Bool~ will
+    import all the symbols from ~Data.Bool~ preserving the prefix
+    ~Data.Bool~
+  - With qualified imports we can customize the prefix with the ~as~
+    keyword, ex. ~import qualified Data.Bool as B~ will import all the
+    symbols from ~Data.Bool~ but with the prefix ~B~ so that to use
+    the ~bool~ function we should use ~B.bool~
+  - We can mix an /import list/ with a /qualified import/
+    ex. importing only the ~bool~ symbol from ~Data.Bool~ with the
+    prefix ~B~ with: ~import qualified Data.Bool as B (bool)~
+  - In GHCi when you import something the prompt changes we can reset
+    the imports and hence the prompt with ~:m~
+
+** Exercise: Check your Understanding
+   Here is the import list from one of the modules of the ~blacktip~
+   library
+
+   #+BEGIN_SRC haskell :eval never
+   import qualified Control.Concurrent as CC
+   import qualified Control.Concurrent.MVar as MV
+   import qualified Data.ByteString.Char8 as B
+   import qualified Data.Locator as DL
+   import qualified Data.Time.Clock.POSIX as PSX
+   import qualified Filesystem as FS
+   import qualified Filesystem.Path.CurrentOS as FPC
+   import qualified Network.Info as NI
+   import qualified Safe
+   import Control.Exception (mask, try)
+   import Control.Monad (forever, when)
+   import Data.Bits
+   import Data.Bits.Bitwise (fromListBE)
+   import Data.List.Split (chunksOf)
+   import Database.Blacktip.Types
+   import System.IO.Unsafe (unsafePerformIO)
+   #+END_SRC
+
+   1. What functions are being imported from Control.Monad?
+      ~forever~ and ~when~
+
+   2. Which imports are both unqualified and imported in their
+      entirety?
+      ~Data.Bits~ and ~Database.Blacktip.Types~
+
+   3. From the name, what do you suppose importing blacktip’s Types
+      module brings in?
+      All the types of the library
+
+   4. Now let’s compare a small part of blacktip’s code to the above
+      import list
+      #+BEGIN_SRC haskell :eval never
+      writeTimestamp :: MV.MVar ServerState
+                     -> FPC.FilePath
+                     -> IO CC.ThreadId
+      writeTimestamp s path = do
+         CC.forkIO go
+         where go = forever $ do
+           ss <- MV.readMVar s
+           mask $ \_ -> do
+             FS.writeFile path
+             (B.pack (show (ssTime ss)))
+           -- sleep for 1 second
+           CC.threadDelay 1000000
+      #+END_SRC
+
+      1. The type signature refers to three aliased imports. What
+         modules are named in those aliases?
+         ~Control.Concurrent.MVar~, ~Filesystem.Path.CurrentOS~ and
+         ~Control.Concurrent~
+
+      2. Which import does FS.writeFile refer to?
+         ~import qualified Filesystem as FS~
+
+      3. Which import did forever come from?
+         ~import Control.Monad (forever, when)~
+
+* 13.07 Making our Program Interactive
+  ...
