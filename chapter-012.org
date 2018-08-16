@@ -265,7 +265,7 @@
       countVowels (c:s)
         | isVowel c = 1 + countVowels s
         | otherwise = 0 + countVowels s
-        where isVowel c = elem c ['a', 'e', 'i', 'o', 'u']
+        where isVowel = flip elem "aeiou"
       :}
 
       countVowels "the cow"
@@ -285,7 +285,7 @@
       An alternative implementation
 
       #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      isVowel = (flip elem) ['a', 'e', 'i', 'o', 'u']
+      isVowel = flip elem "aeiou"
 
       :{
       countVowels :: String -> Integer
@@ -315,9 +315,7 @@
    #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
    newtype Word' = Word' String deriving (Eq, Show)
 
-   vowels = "aeiou"
-
-   isVowel = (flip elem) vowels
+   isVowel = flip elem "aeiou"
 
    :{
    countCharsWhere :: (Char -> Bool) -> String -> Integer
@@ -787,9 +785,7 @@
 
       :{
       treeBuild :: Integer -> BinaryTree Integer
-      treeBuild h = unfold f (0, h)
-        where f (n, h) | n == h = Nothing
-              f (n, h) = Just ((n + 1, h), n, (n + 1, h))
+      treeBuild n = unfold (\x -> if x < n then Just (x + 1, x, x + 1) else Nothing) 0
       :}
       #+END_SRC
 
@@ -821,22 +817,27 @@
       :}
 
       :{
-      draw :: Show a => BinaryTree a -> [String]
-      draw Leaf = []
-      draw (Node l v r) = drawHead : drawTrees
+      drawTree :: Show a => BinaryTree a -> [String]
+      drawTree Leaf = []
+      drawTree (Node l v r) = drawHead : drawTrees
         where drawHead = (replicate wl ' ') ++ (show v) ++ (replicate wr ' ')
-              drawTrees = zipWith joinTrees (draw l) (draw r)
+              drawTrees = zipWith joinTrees (drawTree l) (drawTree r)
               joinTrees l r = l ++ (replicate wv ' ') ++ r
               wl = (width l)
               wr = (width r)
               wv = (length (show v))
       :}
 
-      putStr $ unlines $ ("-" : draw (treeBuild 1))
-      putStr $ unlines $ ("-" : draw (treeBuild 2))
-      putStr $ unlines $ ("-" : draw (treeBuild 3))
-      putStr $ unlines $ ("-" : draw (treeBuild 4))
-      putStr $ unlines $ ("-" : draw (treeBuild 6))
+      :{
+      printTree :: Show a => BinaryTree a -> IO ()
+      printTree t = putStr $ unlines $ "-" : drawTree t
+      :}
+
+      printTree (treeBuild 1)
+      printTree (treeBuild 2)
+      printTree (treeBuild 3)
+      printTree (treeBuild 4)
+      printTree (treeBuild 6)
       #+END_SRC
 
       #+RESULTS:
