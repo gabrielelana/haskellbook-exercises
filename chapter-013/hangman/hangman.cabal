@@ -1,0 +1,23 @@
+name:                hangman
+version:             0.1.0.0
+synopsis:            Playing Hangman
+description:         Playing Hangman
+homepage:            https://github.com/gabrielelana/hangman#readme
+license:             BSD3
+license-file:        LICENSE
+author:              Gabriele Lana
+maintainer:          gabriele.lana@gmail.com
+copyright:           2018 Gabriele Lana
+category:            Command Line Game
+build-type:          Simple
+cabal-version:       >=1.10
+extra-source-files:  README.md
+                   , data/dict.txt
+
+executable hangman
+  hs-source-dirs:      src
+  main-is:             Main.hs
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5
+                     , random
+                     , split
