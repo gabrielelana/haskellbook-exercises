@@ -1,0 +1,29 @@
+#+TITLE: Testing
+
+* 14.01 Testing
+  Nothing much
+
+* 14.02 A Quick Tour of Testing for the Uninitiated
+  - Testing to support the compiler and prevent (still occurring)
+    runtime errors.
+  - State expectations and verify that the result meets the
+    expectations.
+  - /Unit Testing/ example driven tests that tests the smallest
+    independent units of software. The rerence libray is (/HUnit/)
+  - /Specification Testing/ kind of like unit tests but with
+    assertions that are more human readable (hence the term
+    specification). The reference library is (HSpec)
+  - Both /Unit Testing/ and /Specification Testing/ they are not meant
+    to tests the interaction between the units.
+  - /Property Testing/ you must provide truth-valued, universally
+    quantified functions which will be checked on the result of the
+    application of the function to a randomly generated input.
+
+* 14.03 Conventional Testing
+  Create and empty project [[file:chapter-014/addition/][addition]] and add some /HSpec/ tests
+
+  - /HSpec/ heavily uses /do notation/, /do notation/ allows to
+    sequence monadic actions, here the monad is not ~IO~ but a more
+    specific ~SpecWith~
+  - ~shouldBe :: (Show a, Eq a) => a -> a -> Expectation~
+  - ~shouldBe~ is an augmented ~==~
