@@ -3,7 +3,7 @@ version:             0.1.0.0
 synopsis:            HSpec sandbox
 description:         HSpec sandbox
 homepage:            https://github.com/gabrielelana/addition#readme
--- license:             BSD3
+license:             BSD3
 license-file:        LICENSE
 author:              Gabriele Lana
 maintainer:          gabriele.lana@gmail.com
@@ -18,3 +18,4 @@ executable addition
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
                      , hspec
+                     , QuickCheck

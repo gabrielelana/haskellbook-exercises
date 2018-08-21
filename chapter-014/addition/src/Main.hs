@@ -1,6 +1,7 @@
 module Main where
 
 import Test.Hspec
+import Test.QuickCheck
 
 dividedBy :: Integral a => a -> a -> (a, a)
 dividedBy n d = go n d 0
@@ -34,3 +35,5 @@ main = hspec $ do
       recursiveMul 2 2 `shouldBe` 4
     it "2 * 4 is 8" $ do
       recursiveMul 2 4 `shouldBe` 8
+    it "x + 1 will always be greater than x" $ do
+      property $ \x -> x + 1 > (x :: Int)

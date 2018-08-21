@@ -27,3 +27,204 @@
     specific ~SpecWith~
   - ~shouldBe :: (Show a, Eq a) => a -> a -> Expectation~
   - ~shouldBe~ is an augmented ~==~
+
+* 14.04 Enter QuickCheck
+  Allows to tests for laws or properties of the code. /HSpec/ has
+  /QuickCheck/ integration so we can write code as follows
+
+  #+BEGIN_SRC haskell :eval never
+  it "x + 1 is alwasy greater than x" $ do
+    property $ \x -> x + 1 > (x :: Int)
+  #+END_SRC
+
+  /QuickCheck/ relies on a /typeclass/ ~Arbitrary~ to provide a
+  generator which is /newtype/ ~Gen~
+  #+BEGIN_SRC haskell :eval never
+  class Arbitrary a where
+    arbitrary :: Gen a
+    shrink :: a -> [a]
+  #+END_SRC
+
+  We can use ~sample~ to get some random data
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  import Test.QuickCheck
+  :t sample
+  :t sample'
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  sample :: Show a => Gen a -> IO ()
+  sample' :: Gen a -> IO [a]
+  #+END_EXAMPLE
+
+  We can use ~arbitrary~ to provide a ~Gen a~ for ~sample~
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  import Test.QuickCheck
+  sample (arbitrary :: Gen Int)
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  0
+  1
+  0
+  6
+  -3
+  -1
+  -5
+  3
+  3
+  -12
+  12
+  #+END_EXAMPLE
+
+  We can create a simple generator with the use of ~return~. The
+  ~return~ will put our value in a ~Monad~ in this case the ~m~ is
+  ~Gen~.
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  import Test.QuickCheck
+  :t return
+  :{
+  trivialInt :: Gen Int
+  trivialInt = return 1
+  :}
+  sample' trivialInt
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  return :: Monad m => a -> m a
+  [1,1,1,1,1,1,1,1,1,1,1]
+  #+END_EXAMPLE
+
+  We can create another kind generator generating values from a
+  predefined set of values with ~elements~
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  import Test.QuickCheck
+  :t elements
+  :{
+  oneTwoOrThree :: Gen Int
+  oneTwoOrThree = elements [1, 2, 3]
+  :}
+  sample' oneTwoOrThree
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  elements :: [a] -> Gen a
+  [1,2,3,2,1,2,3,1,2,3,3]
+  #+END_EXAMPLE
+
+  There's also ~choose~ which will choose an element in a tuple of two
+  elements.
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  import Test.QuickCheck
+  :t choose
+  :{
+  generateBool :: Gen Bool
+  generateBool = choose (True, False)
+  :}
+  sample' generateBool
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  choose :: System.Random.Random a => (a, a) -> Gen a
+  [False,False,False,False,True,True,True,True,False,True,False]
+  #+END_EXAMPLE
+
+  A more complex example
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  import Test.QuickCheck
+  :{
+  generateTuple :: (Arbitrary a, Arbitrary b) => Gen (a, b)
+  generateTuple = do
+    a <- arbitrary
+    b <- arbitrary
+    return (a, b)
+  :}
+  sample' (generateTuple :: Gen (Int, Int))
+  sample' (generateTuple :: Gen (Float, Int))
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  [(0,0),(1,-1),(-2,3),(1,5),(-5,5),(3,4),(-10,8),(-12,-6),(-13,-14),(-18,-14),(15,11)]
+  [(0.0,0),(-0.4536861,0),(0.9048592,-1),(12.537433,-5),(-0.27819198,-4),(11.777202,-8),(-2.6961212,-5),(-5.017473,-13),(-49.398586,2),(-7.6933117,-3),(-29.489338,10)]
+  #+END_EXAMPLE
+
+  We can ask for everything that has an instance of ~Arbitrary~ type
+  class. We can also generate ~Maybe~
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  import Test.QuickCheck
+  :t frequency
+  :{
+  generateMaybe :: (Arbitrary a) => Gen (Maybe a)
+  generateMaybe = do
+    a <- arbitrary
+    frequency [(1, return Nothing), (3, return (Just a))]
+  :}
+  sample' (generateMaybe :: (Gen (Maybe Int)))
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  frequency :: [(Int, Gen a)] -> Gen a
+  [Just 0,Just 2,Just 0,Just 0,Nothing,Just (-7),Nothing,Just 2,Just (-15),Just 0,Just 2]
+  #+END_EXAMPLE
+
+* 14.05 Morse Code
+  ...
+
+* Exercises
+
+  #+NAME: ghci-clean
+  #+BEGIN_SRC emacs-lisp :var content="" :results raw
+  (defun report-compiling-module-p (line)
+    (string-match-p "\\[[0-9]+ of [0-9]+\\] Compiling" line))
+
+  (defun report-loaded-module-p (line)
+    (string-match-p "Ok, .+ modules? loaded\\." line))
+
+  (defun report-eoe-p (line)
+    (string-match-p "org-babel-haskell-eoe" line))
+
+  (defun clean-line (line)
+    (->> line remove-prompt unquote))
+
+  (defun remove-prompt (line)
+    (let ((current-prompt (current-prompt line)))
+      (message "current prompt: %S" current-prompt)
+      (if (string-empty-p current-prompt)
+          line
+        (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
+
+  (defun current-prompt (line)
+    (if (string-match "\\(^[^|:>]+\\)[|>]" line)
+        (match-string 1 line)
+      ""))
+
+  (defun unquote (line)
+    (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" line))
+
+  (string-join
+   (seq-map #'clean-line
+            (seq-filter
+             (lambda (line)
+               (and
+                (not (string-empty-p line))
+                (not (report-eoe-p line))
+                (not (report-compiling-module-p line))
+                (not (report-loaded-module-p line))))
+             (split-string content "\n")))
+   "\n")
+  #+END_SRC
+
+  #+NAME: add-current-chapter-directory-in-path
+  #+BEGIN_SRC emacs-lisp :output raw
+  (concat
+   ":set -i"
+   (file-name-as-directory (file-name-directory (buffer-file-name)))
+   (file-name-base (buffer-file-name)))
+  #+END_SRC
