@@ -1,3 +1,5 @@
+#+TITLE: Algebraic Datatypes
+
 * 11.01 Algebraic datatypes
 
   #+BEGIN_QUOTE

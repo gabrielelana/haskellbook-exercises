@@ -1,3 +1,5 @@
+#+TITLE: Folding Lists
+
 * 10.01 Folds
   - Folds as a general concept are called catamorphisms (/cata/ means
     /down/ and /morphism/ means /transformation/)

@@ -1,3 +1,5 @@
+#+TITLE: Types
+
 * 5.01 Types
   Type systems in logic and mathematics have been designed to impose
   constraints that enforce correctness.

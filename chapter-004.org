@@ -1,3 +1,5 @@
+#+TITLE: Basic Datatypes
+
 * 4.01 Basic Datatypes
 
 * 4.02 What Are Types?

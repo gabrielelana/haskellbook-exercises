@@ -1,3 +1,5 @@
+#+TITLE: More Functional Patterns
+
 * 7.01 Make it func-y
   Nothing much
 

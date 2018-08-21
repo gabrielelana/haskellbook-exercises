@@ -1,3 +1,5 @@
+#+TITLE: Typeclasses
+
 * 6.01 Typeclasses
 In this chapter
 - Typeclasses ~Eq~, ~Num~, ~Ord~, ~Enum~ and ~Show~
