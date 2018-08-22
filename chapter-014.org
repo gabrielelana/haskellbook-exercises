@@ -175,6 +175,24 @@
   #+END_EXAMPLE
 
 * 14.05 Morse Code
+  See the implementation [[./chapter-014/morse-code][here]]
+
+  #+BEGIN_SRC bash :results output :wrap EXAMPLE
+  cd ./chapter-014/morse-code
+  echo "main" | stack ghci -- morse-code:tests
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  GHCi, version 8.4.3: http://www.haskell.org/ghc/  :? for help
+  [1 of 1] Compiling Main             ( /home/coder/code/haskellbook-exercises/chapter-014/morse-code/tests/tests.hs, interpreted ) [flags changed]
+  Ok, one module loaded.
+  Loaded GHCi configuration from /tmp/haskell-stack-ghci/786931a3/ghci-script
+  ,*Main> +++ OK, passed 100 tests.
+  ,*Main> Leaving GHCi.
+  #+END_EXAMPLE
+
+* 14.06 Arbitrary instances
   ...
 
 * Exercises
