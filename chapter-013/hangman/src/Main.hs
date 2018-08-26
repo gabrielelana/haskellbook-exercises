@@ -34,7 +34,7 @@ randomWord wl = do
 randomWord' :: IO String
 randomWord' = gameWords >>= randomWord
 
-data Puzzle = Puzzle String [Maybe Char] [Char]
+data Puzzle = Puzzle String [Maybe Char] [Char] deriving (Eq)
 
 createPuzzle :: String -> Puzzle
 createPuzzle s = Puzzle s (hidden s) []
