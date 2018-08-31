@@ -336,8 +336,8 @@
    An orphan instance is when an instance of a typeclass is defined
    for a datatype but the definition of the typeclass and the
    definition of the datatype are not in the same module of the
-   instance (FC). If you don't "own" the datatype or the typeclass then
-   newtype the datatype (FC).
+   instance (FC). If you don't "own" the datatype or the typeclass
+   then use a newtype around the datatype (FC).
 
    To avoid problems: (FC)
    1. Define types and instances of typeclasses in the same file.
@@ -682,3 +682,797 @@
    (file-name-as-directory (file-name-directory (buffer-file-name)))
    chapter)
   #+END_SRC
+
+** Semigroup Exercises
+   Given a type implement the ~Semigroup~ instance. Add ~Semigroup~
+   constraints to type variables when needed. Use
+   ~Data.Semigroup~. Validate all the instances with ~QuickCheck~
+
+   1. Implement the ~Semigroup~ instance for the following type
+      #+NAME: semigroup-trivial
+      #+BEGIN_SRC haskell :eval never
+      import Data.Semigroup
+      import Test.QuickCheck
+
+      data Trivial = Trivial deriving (Eq, Show)
+
+      :{
+      instance Arbitrary Trivial where
+        arbitrary = return Trivial
+      :}
+
+      :{
+      instance Semigroup Trivial where
+        (<>) _ _ = Trivial
+      :}
+
+      :{
+      semigroupAssociativity :: (Eq m, Semigroup m) => m -> m -> m -> Bool
+      semigroupAssociativity x y z = (x <> y) <> z == x <> (y <> z)
+      :}
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<semigroup-trivial>>
+
+      type TrivialAssociativitySignature = Trivial -> Trivial -> Trivial -> Bool
+
+      quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary (semigroupAssociativity :: TrivialAssociativitySignature))
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   2. Implement the ~Semigroup~ instance for the following type
+      #+NAME: semigroup-identity
+      #+BEGIN_SRC haskell :eval never
+      import Data.Semigroup
+      import Test.QuickCheck
+
+      newtype Identity a = Identity a deriving (Eq, Show)
+
+      :{
+      instance (Arbitrary a) => Arbitrary (Identity a) where
+        arbitrary = do
+          x <- arbitrary
+          return $ Identity x
+      :}
+
+      :{
+      instance (Semigroup a) => Semigroup (Identity a) where
+        (<>) (Identity x) (Identity y) = Identity (x <> y)
+      :}
+
+      :{
+      semigroupAssociativity :: (Eq a, Semigroup a) => (Identity a) -> (Identity a) -> (Identity a) -> Bool
+      semigroupAssociativity x y z = (x <> y) <> z == x <> (y <> z)
+      :}
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<semigroup-identity>>
+
+      :{
+      quickCheckWithResult (stdArgs {chatty=False})
+                           (semigroupAssociativity :: (Identity String) ->
+                                                      (Identity String) ->
+                                                      (Identity String) ->
+                                                      Bool)
+      :}
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   3. Implement the ~Semigroup~ instance for the following type
+      #+NAME: semigroup-two
+      #+BEGIN_SRC haskell :eval never
+      import Data.Semigroup
+      import Test.QuickCheck
+
+      data Two a b = Two a b deriving (Eq, Show)
+
+      :{
+      instance (Arbitrary a, Arbitrary b) => Arbitrary (Two a b) where
+        arbitrary = do
+          a <- arbitrary
+          b <- arbitrary
+          return $ Two a b
+      :}
+
+      :{
+      instance (Semigroup a, Semigroup b) => Semigroup (Two a b) where
+        (<>) (Two a1 b1) (Two a2 b2) = Two (a1 <> a2) (b1 <> b2)
+      :}
+
+      :{
+      semigroupAssociativity :: (Eq a, Semigroup a, Eq b, Semigroup b) => (Two a b) -> (Two a b) -> (Two a b) -> Bool
+      semigroupAssociativity x y z = (x <> y) <> z == x <> (y <> z)
+      :}
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<semigroup-two>>
+
+      :{
+      quickCheckWithResult (stdArgs {chatty=False})
+                           (semigroupAssociativity :: (Two Any String) ->
+                                                      (Two Any String) ->
+                                                      (Two Any String) ->
+                                                      Bool)
+      :}
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   4. Implement the ~Semigroup~ instance for the following type
+      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      import Data.Semigroup
+      import Test.QuickCheck
+
+      data Three a b c = Three a b c deriving (Eq, Show)
+
+      :{
+      instance (Arbitrary a, Arbitrary b, Arbitrary c) => Arbitrary (Three a b c) where
+        arbitrary = do
+          a <- arbitrary
+          b <- arbitrary
+          c <- arbitrary
+          return $ Three a b c
+      :}
+
+      :{
+      instance (Semigroup a, Semigroup b, Semigroup c) => Semigroup (Three a b c) where
+        (<>) (Three a1 b1 c1) (Three a2 b2 c2) =
+          Three (a1 <> a2) (b1 <> b2) (c1 <> c2)
+      :}
+
+      :{
+      semigroupAssociativity :: (Eq a, Eq b, Eq c, Semigroup a, Semigroup b, Semigroup c) =>
+                                (Three a b c) -> (Three a b c) -> (Three a b c) -> Bool
+      semigroupAssociativity x y z = (x <> y) <> z == x <> (y <> z)
+      :}
+
+      :{
+      quickCheckWithResult (stdArgs {chatty=False})
+                           (semigroupAssociativity :: (Three String (Sum Int) All) ->
+                                                      (Three String (Sum Int) All) ->
+                                                      (Three String (Sum Int) All) ->
+                                                      Bool)
+      :}
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   5. Implement the ~Semigroup~ instance for the following type
+      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      import Data.Semigroup
+      import Test.QuickCheck
+
+      data Four a b c d = Four a b c d deriving (Eq, Show)
+
+      :{
+      instance (Arbitrary a, Arbitrary b, Arbitrary c, Arbitrary d) => Arbitrary (Four a b c d) where
+        arbitrary = do
+          a <- arbitrary
+          b <- arbitrary
+          c <- arbitrary
+          d <- arbitrary
+          return $ Four a b c d
+      :}
+
+      :{
+      instance (Semigroup a, Semigroup b, Semigroup c, Semigroup d) => Semigroup (Four a b c d) where
+        (<>) (Four a1 b1 c1 d1) (Four a2 b2 c2 d2) = Four (a1 <> a2) (b1 <> b2) (c1 <> c2) (d1 <> d2)
+      :}
+
+      :{
+      semigroupAssociativity :: (Eq a, Semigroup a, Eq b, Semigroup b, Eq c, Semigroup c, Eq d, Semigroup d) =>
+                                (Four a b c d) -> (Four a b c d) -> (Four a b c d) -> Bool
+      semigroupAssociativity x y z = (x <> y) <> z == x <> (y <> z)
+      :}
+
+      :{
+      quickCheckWithResult (stdArgs {chatty=False})
+                           (semigroupAssociativity :: (Four String (Sum Int) (Product Int) String) ->
+                                                      (Four String (Sum Int) (Product Int) String) ->
+                                                      (Four String (Sum Int) (Product Int) String) ->
+                                                      Bool)
+      :}
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   6. Implement the ~Semigroup~ instance for the following type
+      #+NAME: semigroup-boolean-conjunction
+      #+BEGIN_SRC haskell :eval never
+      import Data.Semigroup
+      import Test.QuickCheck
+
+      data BoolConjunction = BoolConjunction Bool deriving (Eq, Show)
+      -- (BoolConjunction True) <> (BoolConjunction True) => (BoolConjunction True)
+      -- (BoolConjunction True) <> (BoolConjunction Fale) => (BoolConjunction False)
+
+      :{
+      instance Arbitrary BoolConjunction where
+        arbitrary = elements [BoolConjunction True, BoolConjunction False]
+      :}
+
+      :{
+      instance Semigroup BoolConjunction where
+        (<>) (BoolConjunction True) (BoolConjunction True) = (BoolConjunction True)
+        (<>) _ _ = (BoolConjunction False)
+      :}
+
+      :{
+      semigroupAssociativity :: BoolConjunction -> BoolConjunction -> BoolConjunction -> Bool
+      semigroupAssociativity x y z = (x <> y) <> z == x <> (y <> z)
+      :}
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<semigroup-boolean-conjunction>>
+
+      quickCheckWithResult (stdArgs {chatty=False}) semigroupAssociativity
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   7. Implement the ~Semigroup~ instance for the following type
+      #+NAME: semigroup-boolean-disjunction
+      #+BEGIN_SRC haskell :eval never
+      import Data.Semigroup
+      import Test.QuickCheck
+
+      data BoolDisjunction = BoolDisjunction Bool deriving (Eq, Show)
+      -- (BoolDisjunction True) <> (BoolDisjunction False) => (BoolDisjunction True)
+      -- (BoolDisjunction False) <> (BoolDisjunction False) => (BoolDisjunction False)
+
+      :{
+      instance Arbitrary BoolDisjunction where
+        arbitrary = elements [BoolDisjunction True, BoolDisjunction False]
+      :}
+
+      :{
+      instance Semigroup BoolDisjunction where
+        (<>) (BoolDisjunction False) (BoolDisjunction False) = BoolDisjunction False
+        (<>) _ _ = BoolDisjunction True
+      :}
+
+      :{
+      semigroupAssociativity :: BoolDisjunction -> BoolDisjunction -> BoolDisjunction -> Bool
+      semigroupAssociativity x y z = (x <> y) <> z == x <> (y <> z)
+      :}
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<semigroup-boolean-disjunction>>
+
+      quickCheckWithResult (stdArgs {chatty=False}) semigroupAssociativity
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   8. Implement the ~Semigroup~ instance for the following type
+      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      import Data.Semigroup
+      import Test.QuickCheck
+
+      data Or a b = Fst a | Snd b deriving (Eq, Show)
+
+      :{
+      instance (Arbitrary a, Arbitrary b) => Arbitrary (Or a b) where
+        arbitrary = do
+          a <- arbitrary
+          b <- arbitrary
+          elements [Fst a, Snd b]
+      :}
+
+      :{
+      -- Expected behaviour
+      -- Fst 1 <> Snd 2 == Snd 2
+      -- Fst 1 <> Fst 2 == Fst 2
+      -- Snd 1 <> Fst 2 == Snd 1
+      -- Snd 1 <> Snd 2 == Snd 1
+      instance Semigroup (Or a b) where
+        (<>) x@(Snd _) _ = x
+        (<>) _ x@(Snd _) = x
+        (<>) _ x@(Fst _) = x
+      :}
+
+      Fst 1 <> Snd 2 == Snd 2
+      Fst 1 <> Fst 2 == Fst 2
+      Snd 1 <> Fst 2 == Snd 1
+      Snd 1 <> Snd 2 == Snd 1
+
+      :{
+      semigroupAssociativity :: (Eq a, Eq b) => (Or a b) -> (Or a b) -> (Or a b) -> Bool
+      semigroupAssociativity x y z = (x <> y) <> z == x <> (y <> z)
+      :}
+
+      :{
+      quickCheckWithResult (stdArgs {chatty=False})
+                           (semigroupAssociativity :: (Or Int Bool) ->
+                                                      (Or Int Bool) ->
+                                                      (Or Int Bool) ->
+                                                      Bool)
+      :}
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      True
+      True
+      True
+      True
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   9. Implement the ~Semigroup~ instance for the following type
+      #+NAME: semigroup-combine-fab
+      #+BEGIN_SRC haskell :eval never
+      import Data.Semigroup
+      import Test.QuickCheck
+
+      newtype Combine a b = Combine {unCombine :: (a -> b)}
+
+      let f = Combine $ \n -> Sum (n + 1)
+      let g = Combine $ \n -> Sum (n - 1)
+
+
+      :{
+      instance (CoArbitrary a, Arbitrary b) => Arbitrary (Combine a b) where
+        arbitrary = do
+          f <- arbitrary
+          return $ Combine f
+      :}
+
+      :{
+      instance (Semigroup b) => Semigroup (Combine a b) where
+        (<>) (Combine {unCombine=f}) (Combine {unCombine=g}) =
+          Combine $ \n -> (f n) <> (g n)
+      :}
+
+      :{
+      semigroupAssociativity :: (Eq b, Semigroup b) => Blind (a -> b) -> Blind (a -> b) -> Blind (a -> b) -> a -> Bool
+      semigroupAssociativity (Blind f) (Blind g) (Blind h) a =
+        (unCombine ((x <> y) <> z) $ a) == (unCombine (x <> (y <> z)) $ a)
+          where x = Combine f
+                y = Combine g
+                z = Combine h
+      :}
+      #+END_SRC
+
+      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<semigroup-combine-fab>>
+
+      :t f
+      :t g
+
+      -- Expected behaviour
+      -- (unCombine (f <> g) $ 0) == Sum {getSum = 0}
+      -- (unCombine (f <> g) $ 1) == Sum {getSum = 2}
+      -- (unCombine (f <> f) $ 1) == Sum {getSum = 4}
+      -- (unCombine (g <> f) $ 1) == Sum {getSum = 2}
+
+      (unCombine (f <> g) $ 0) == Sum {getSum = 0}
+      (unCombine (f <> g) $ 1) == Sum {getSum = 2}
+      (unCombine (f <> f) $ 1) == Sum {getSum = 4}
+      (unCombine (g <> f) $ 1) == Sum {getSum = 2}
+
+      :{
+      quickCheckWithResult (stdArgs {chatty=False})
+                           (semigroupAssociativity :: Blind (Int -> String) ->
+                                                      Blind (Int -> String) ->
+                                                      Blind (Int -> String) ->
+                                                      Int ->
+                                                      Bool)
+      :}
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      f :: Num a => Combine a (Sum a)
+      g :: Num a => Combine a (Sum a)
+      True
+      True
+      True
+      True
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   10. Implement the ~Semigroup~ instance for the following type
+       #+NAME: semigroup-combine-faa
+       #+BEGIN_SRC haskell :eval never
+       import Data.Semigroup
+       import Test.QuickCheck
+
+       newtype Combine a = Combine {unCombine :: (a -> a)}
+
+       -- Hint: do something more intuitive to combine the inner functions since domain and codomain are the same
+
+       :{
+       instance (CoArbitrary a, Arbitrary a) => Arbitrary (Combine a) where
+         arbitrary = do
+           f <- arbitrary
+           return $ Combine f
+       :}
+
+       :{
+       instance Semigroup (Combine a) where
+         (<>) (Combine {unCombine=f}) (Combine {unCombine=g}) =
+           Combine $ f . g
+       :}
+
+       :{
+       semigroupAssociativity :: (Eq a) => Blind (a -> a) -> Blind (a -> a) -> Blind (a -> a) -> a -> Bool
+       semigroupAssociativity (Blind f) (Blind g) (Blind h) a =
+         (unCombine ((x <> y) <> z) $ a) == (unCombine (x <> (y <> z)) $ a)
+           where x = Combine f
+                 y = Combine g
+                 z = Combine h
+       :}
+       #+END_SRC
+
+       #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+       <<semigroup-combine-faa>>
+
+       :{
+       quickCheckWithResult (stdArgs {chatty=False})
+                            (semigroupAssociativity :: Blind (String -> String) ->
+                                                       Blind (String -> String) ->
+                                                       Blind (String -> String) ->
+                                                       String ->
+                                                       Bool)
+       :}
+       #+END_SRC
+
+       #+RESULTS:
+       #+BEGIN_EXAMPLE
+       Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+       #+END_EXAMPLE
+
+   11. Given the following code we expect a certain output (commented at the end)
+       #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+       import Data.Semigroup
+       import Test.QuickCheck
+       import Control.Monad
+
+       data Validation a b = Failure a | Success b deriving (Eq, Show)
+
+       :{
+       instance Semigroup a => Semigroup (Validation a b) where
+         (<>) x@(Success _) _ = x
+         (<>) _ x@(Success _) = x
+         (<>) (Failure a1) (Failure a2) = Failure (a1 <> a2)
+       :}
+
+       :{
+       main = do
+         let failure :: String -> Validation String Int
+             failure = Failure
+             success :: Int -> Validation String Int
+             success = Success
+         print $ success 1 <> failure "blah"
+         print $ failure "woot" <> failure "blah"
+         print $ success 1 <> success 2
+         print $ failure "woot" <> success 2
+       :}
+
+       main
+       -- Should output the following
+       -- Success 1
+       -- Failure "wootblah"
+       -- Success 1
+       -- Success 2
+       #+END_SRC
+
+       #+RESULTS:
+       #+BEGIN_EXAMPLE
+       Success 1
+       Failure "wootblah"
+       Success 1
+       Success 2
+       #+END_EXAMPLE
+
+** Monoid Exercises
+   Given a datatype, implement the Monoid instance. Add Monoid con-
+   straints to type variables where needed. For the datatypes you’ve
+   already implemented Semigroup instances for, you need to figure out
+   what the identity value is.
+
+   1. Implement the ~Monoid~ instance for the following type
+      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<semigroup-trivial>>
+
+      :{
+      instance Monoid Trivial where
+         mempty = Trivial
+         mappend = (<>)
+      :}
+
+      :{
+      monoidLeftIdentity :: Trivial -> Bool
+      monoidLeftIdentity x = mempty <> x == x
+      :}
+
+      :{
+      monoidRightIdentity :: Trivial -> Bool
+      monoidRightIdentity x = x <> mempty == x
+      :}
+
+      quickCheckWithResult (stdArgs {chatty=False}) semigroupAssociativity
+      quickCheckWithResult (stdArgs {chatty=False}) monoidLeftIdentity
+      quickCheckWithResult (stdArgs {chatty=False}) monoidRightIdentity
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   2. Implement the ~Monoid~ instance for the following type
+      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<semigroup-identity>>
+
+      :{
+      instance (Semigroup a, Monoid a) => Monoid (Identity a) where
+        mempty = (Identity mempty)
+        mappend = (<>)
+      :}
+
+      :{
+      monoidLeftIdentity :: (Eq a, Semigroup a, Monoid a) => Identity a -> Bool
+      monoidLeftIdentity x = mempty <> x == x
+      :}
+
+      :{
+      monoidRightIdentity :: (Eq a, Semigroup a, Monoid a) => Identity a -> Bool
+      monoidRightIdentity x = x <> mempty == x
+      :}
+
+      quickCheckWithResult (stdArgs {chatty=False}) semigroupAssociativity
+      quickCheckWithResult (stdArgs {chatty=False}) monoidLeftIdentity
+      quickCheckWithResult (stdArgs {chatty=False}) monoidRightIdentity
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   3. Implement the ~Monoid~ instance for the following type
+      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<semigroup-two>>
+
+      :{
+      instance (Semigroup a, Semigroup b, Monoid a, Monoid b) => Monoid (Two a b) where
+        mempty = Two (mempty) (mempty)
+        mappend = (<>)
+      :}
+
+      :{
+      monoidLeftIdentity :: (Eq a, Eq b, Semigroup a, Semigroup b, Monoid a, Monoid b) => Two a b -> Bool
+      monoidLeftIdentity x = mempty <> x == x
+      :}
+
+      :{
+      monoidRightIdentity :: (Eq a, Eq b, Semigroup a, Semigroup b, Monoid a, Monoid b) => Two a b -> Bool
+      monoidRightIdentity x = x <> mempty == x
+      :}
+
+      quickCheckWithResult (stdArgs {chatty=False}) semigroupAssociativity
+      quickCheckWithResult (stdArgs {chatty=False}) monoidLeftIdentity
+      quickCheckWithResult (stdArgs {chatty=False}) monoidRightIdentity
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   4. Implement the ~Monoid~ instance for the following type
+      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<semigroup-boolean-conjunction>>
+
+      :{
+      instance Monoid BoolConjunction where
+        mempty = BoolConjunction True
+        mappend = (<>)
+      :}
+
+      :{
+      monoidLeftIdentity :: BoolConjunction -> Bool
+      monoidLeftIdentity x = mempty <> x == x
+      :}
+
+      :{
+      monoidRightIdentity :: BoolConjunction -> Bool
+      monoidRightIdentity x = mempty <> x == x
+      :}
+
+      quickCheckWithResult (stdArgs {chatty=False}) semigroupAssociativity
+      quickCheckWithResult (stdArgs {chatty=False}) monoidLeftIdentity
+      quickCheckWithResult (stdArgs {chatty=False}) monoidRightIdentity
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   5. Implement the ~Monoid~ instance for the following type
+      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<semigroup-boolean-disjunction>>
+
+      :{
+      instance Monoid BoolDisjunction where
+        mempty = BoolDisjunction False
+        mappend = (<>)
+      :}
+
+      :{
+      monoidLeftIdentity :: BoolDisjunction -> Bool
+      monoidLeftIdentity x = mempty <> x == x
+      :}
+
+      :{
+      monoidRightIdentity :: BoolDisjunction -> Bool
+      monoidRightIdentity x = mempty <> x == x
+      :}
+
+      quickCheckWithResult (stdArgs {chatty=False}) semigroupAssociativity
+      quickCheckWithResult (stdArgs {chatty=False}) monoidLeftIdentity
+      quickCheckWithResult (stdArgs {chatty=False}) monoidRightIdentity
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   6. Implement the ~Monoid~ instance for the following type
+      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<semigroup-combine-fab>>
+
+      :{
+      instance (Semigroup b, Monoid b) => Monoid (Combine a b) where
+        mempty = Combine $ \_ -> mempty
+        mappend = (<>)
+      :}
+
+      :{
+      monoidLeftIdentity :: (Eq b, Semigroup b, Monoid b) => Blind (a -> b) -> a -> Bool
+      monoidLeftIdentity (Blind f) x = unCombine (mempty <> (Combine f)) x == f x
+      :}
+
+      :{
+      monoidRightIdentity :: (Eq b, Semigroup b, Monoid b) => Blind (a -> b) -> a -> Bool
+      monoidRightIdentity (Blind f) x = unCombine ((Combine f) <> mempty) x == f x
+      :}
+
+      -- Expected behaviour
+      let f = Combine $ \n -> Sum (n + 1)
+      (unCombine (mappend f mempty) $ 1) == Sum {getSum = 2}
+
+      quickCheckWithResult (stdArgs {chatty=False}) semigroupAssociativity
+      quickCheckWithResult (stdArgs {chatty=False}) monoidLeftIdentity
+      quickCheckWithResult (stdArgs {chatty=False}) monoidRightIdentity
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      True
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   7. Implement the ~Monoid~ instance for the following type
+      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      <<semigroup-combine-faa>>
+
+      :{
+      instance (Semigroup a, Monoid a) => Monoid (Combine a) where
+        mempty = Combine $ \_ -> mempty
+        mappend = (<>)
+      :}
+
+      :{
+      monoidLeftIdentity :: (Eq a, Semigroup a, Monoid a) => Blind (a -> a) -> a -> Bool
+      monoidLeftIdentity (Blind f) x = unCombine (mempty <> (Combine f)) x == f x
+      :}
+
+      :{
+      monoidRightIdentity :: (Eq a, Semigroup a, Monoid a) => Blind (a -> a) -> a -> Bool
+      monoidRightIdentity (Blind f) x = unCombine ((Combine f) <> mempty) x == f x
+      :}
+
+      quickCheckWithResult (stdArgs {chatty=False}) semigroupAssociativity
+      quickCheckWithResult (stdArgs {chatty=False}) monoidLeftIdentity
+      quickCheckWithResult (stdArgs {chatty=False}) monoidRightIdentity
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+      #+END_EXAMPLE
+
+   8. Implement the ~Monoid~ instance for the following type
+      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      import Data.Monoid
+      import Control.Monad
+
+      newtype Mem s a = Mem {runMem :: s -> (a, s)}
+
+      :{
+      instance Monoid a => Monoid (Mem s a) where
+         mempty = Mem $ \s -> (mempty, s)
+         mappend (Mem {runMem=f}) (Mem {runMem=g}) =
+           Mem $ \s0 -> let (a1, s1) = f s0
+                            (a2, s2) = g s1
+                        in (a1 <> a2, s2)
+      :}
+
+      f' = Mem $ \s -> ("hi", s + 1)
+
+      :{
+      main = do
+        let rmzero = runMem mempty 0
+            rmleft = runMem (f' <> mempty) 0
+            rmright = runMem (mempty <> f') 0
+        print $ rmleft
+        print $ rmright
+        print $ (rmzero :: (String, Int))
+        print $ rmleft == runMem f' 0
+        print $ rmright == runMem f' 0
+      :}
+
+      main
+      -- Expected behaviour
+      -- ("hi",1)
+      -- ("hi",1)
+      -- ("",0)
+      -- True
+      -- True
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      ("hi",1)
+      ("hi",1)
+      ("",0)
+      True
+      True
+      #+END_EXAMPLE
