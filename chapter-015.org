@@ -96,10 +96,10 @@
 
 * 15.06 Why Integer doesn't have an instance of Monoid
   Because it will not be possible to choose between two monoidal
-  operations ~*~ and ~+~. To avoid the conflic, to avoid the use of
-  scoping tricks and to abide by the rule that typeclass instances are
-  unique to the types they are for, Haskell uses the /newtype/
-  ~Product~ and ~Sum~ defined in ~Data.Monoid~ to disambiguate.
+  operations ~*~ and ~+~. To avoid the conflict and to abide by the
+  rule that typeclass instances are unique to the types they are for,
+  Haskell uses the /newtype/ ~Product~ and ~Sum~ defined in
+  ~Data.Monoid~ to disambiguate.
 
   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
   import Data.Monoid
@@ -577,7 +577,7 @@
    #+END_EXAMPLE
 
 * 15.13 Semigroup
-  The definition of ~Semigroup~ is the following (FC) aka a binary
+  The definition of ~Semigroup~ is the following aka a binary
   associative operation. A ~Monoid~ is also a ~Semigroup~
   #+BEGIN_SRC haskell :eval never
   class Semigroup where
@@ -616,7 +616,7 @@
 * 15.14 Strength can be Weakness
   An /algebra/ is /stronger/ than another when it provides more
   operations aka it is stronger when you can do more without knowing
-  the specific type you are working with. (FC)
+  the specific type you are working with.
 
   Not always stronger is better because there are useful datatypes
   that cannot satisfy certain laws.
@@ -995,8 +995,7 @@
       -- Snd 1 <> Snd 2 == Snd 1
       instance Semigroup (Or a b) where
         (<>) x@(Snd _) _ = x
-        (<>) _ x@(Snd _) = x
-        (<>) _ x@(Fst _) = x
+        (<>) _ x = x
       :}
 
       Fst 1 <> Snd 2 == Snd 2
@@ -1048,8 +1047,8 @@
 
       :{
       instance (Semigroup b) => Semigroup (Combine a b) where
-        (<>) (Combine {unCombine=f}) (Combine {unCombine=g}) =
-          Combine $ \n -> (f n) <> (g n)
+        (<>) (Combine f) (Combine g) =
+          Combine $ f <> g
       :}
 
       :{
@@ -1100,6 +1099,7 @@
       Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
       #+END_EXAMPLE
 
+
    10. Implement the ~Semigroup~ instance for the following type
        #+NAME: semigroup-combine-faa
        #+BEGIN_SRC haskell :eval never
@@ -1119,7 +1119,7 @@
 
        :{
        instance Semigroup (Combine a) where
-         (<>) (Combine {unCombine=f}) (Combine {unCombine=g}) =
+         (<>) (Combine f) (Combine g) =
            Combine $ f . g
        :}
 
