@@ -1,0 +1,307 @@
+#+TITLE: Functor
+
+* 16.01 Functor
+  - We abstract out a common pattern, make certain it follows some
+    laws, give it an awesome name, and wonder how we ever lived
+    without it.
+  - /Functor/ is all about a pattern mapping over a structure.
+  - ~map~ is defined only for lists.
+  - ~fmap~ works on more things other than lists.
+
+* 16.02 What's a Functor
+  It's a way to apply a function over a structure without altering the
+  structure but reaching to the value inside the structure.
+
+  #+BEGIN_SRC haskell :eval never
+  class Functor f where
+  --           [1]
+    fmap :: (a -> b) -> f a -> f b
+  --                    [2]   [3]
+  #+END_SRC
+
+  1. Refers to a generic type ~f~ (conventional letter) that have
+     functorial structure.
+  2. The argument ~f a~ is a functor ~f~ that takes a type argument
+     ~a~. The ~f~ is a type that has an instance of the ~Functor~
+     typeclass.
+  3. The result ~f b~ is the same ~f~ from ~f a~ while the argument
+     ~b~ /may/ refer to a different type.
+  4. The type ~f~ must therefore have king ~* -> *~
+
+* 16.03 There's a Lot of ~fmap~ Going Around
+  List (~[]~) implements the ~Functor~ typeclass, it does the same
+  thing as ~map~ which is a specific function over lists
+
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  fmap (+1) [1..10]
+  map (+1) [1..10]
+  :t fmap
+  :t map
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  [2,3,4,5,6,7,8,9,10,11]
+  [2,3,4,5,6,7,8,9,10,11]
+  fmap :: Functor f => (a -> b) -> f a -> f b
+  map :: (a -> b) -> [a] -> [b]
+  #+END_EXAMPLE
+
+  You cannot ~map~ over a ~Maybe a~ but you can ~fmap~ over it,
+  because ~Maybe~ has an instance of ~Functor~
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  fmap (+1) (Just 1)
+  map (+1) (Just 1)
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  Just 2
+  <interactive>:107:11: error:
+      • Couldn't match expected type ‘[b]’
+                    with actual type ‘Maybe Integer’
+      • In the second argument of ‘map’, namely ‘(Just 1)’
+        In the expression: map (+ 1) (Just 1)
+        In an equation for ‘it’: it = map (+ 1) (Just 1)
+      • Relevant bindings include
+          it :: [b] (bound at <interactive>:107:1)
+  #+END_EXAMPLE
+
+  We can apply ~fmap~ to a bunch of types
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  import Data.Functor
+  fmap (+1) (Right 1)
+  fmap (+1) (Left 1)
+  fmap (+1) (Identity 1)
+  fmap (+1) (1, 2)
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  Right 2
+  Left 1
+  Identity 2
+  (1,3)
+  #+END_EXAMPLE
+
+* 16.04 Let's Talk About ~f~
+  In the definition of ~Functor~
+  #+BEGIN_SRC haskell :eval never
+  class Functor f where
+    fmap :: (a -> b) -> f a -> f b
+  #+END_SRC
+
+  - Reminder: a type constant or fully applied have kind ~*~
+  - The type ~f~ must have kind ~* -> *~
+  - Each argument (and result) of a function must be fully applied
+    and inhabitable type and so must have kind ~*~
+    #+BEGIN_SRC haskell :eval never
+    Prelude> :k (->)
+    (->) :: * -> * -> *
+    #+END_SRC
+  - The type ~f~ was always applied to a single argument like ~f a~,
+    since ~f a~ in ~(a -> b) -> f a -> f b~ must have kind ~*~ then
+    ~f~ must have kind ~* -> *~
+
+  #+BEGIN_SRC haskell :eval never
+  class Something a where
+    s :: a -> a
+         [1]
+  #+END_SRC
+  1. Is used as argument of ~->~ type constructor and therefore
+     must have kind ~*~
+
+  #+BEGIN_SRC haskell :eval never
+  class Else where
+    e :: b -> f (g a b c)
+        [1]  [2][3]
+  #+END_SRC
+  1. Is used as argument of ~->~ type constructor and so has kind ~*~
+  2. Is applied to a single argument, wrapped by parentheses, and so
+     has kind ~* -> *~
+  3. Is applied to three arguments and so has kind ~* -> * -> * -> *~
+
+  #+BEGIN_SRC haskell :eval never
+  class Biffy where
+    slayer :: e a b
+           -> (a -> c)
+           -> (b -> d)
+           -> e c d
+  #+END_SRC
+  - ~e~ is applied to two arguments and so has kind ~* -> * -> *~
+  - ~a~ has kind ~*~
+  - ~b~ has kind ~*~
+  - ~c~ has kind ~*~
+  - ~d~ has kind ~*~
+
+  The following wont compile
+  #+BEGIN_SRC haskell :results silent
+  class WontCompile v where
+    impossible :: v -> v a
+  #+END_SRC
+
+** Exercise: Be Kind
+
+   1. What’s the kind of ~a~? ~*~
+      #+BEGIN_SRC haskell :eval never
+      a -> a
+      #+END_SRC
+
+   2. What's the kind of ~b~ and ~T~? ~* -> *~
+      #+BEGIN_SRC haskell :eval never
+      a -> b a -> T (b a)
+      #+END_SRC
+
+   3. What's the kind of ~c~? ~* -> * -> *~
+      #+BEGIN_SRC haskell :eval never
+      c a b -> c b a
+      #+END_SRC
+
+** A shining star
+   ~Functor~ wants a type parameter of kind ~* -> *~
+
+   #+BEGIN_SRC haskell :eval never
+   class Functor f where
+     fmap :: (a -> b) -> f a -> f b
+   #+END_SRC
+
+   So if we try to define an instance of ~Functor~ for the following
+   type it doesn't work
+   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   data FixMePls = FixMe | Pls deriving (Eq, Show)
+
+   :{
+   instance Functor FixMePls where
+     fmap = error "Don't worry it won't compile"
+   :}
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   <interactive>:366:18: error:
+       • Expected kind ‘* -> *’, but ‘FixMePls’ has kind ‘*’
+       • In the first argument of ‘Functor’, namely ‘FixMePls’
+         In the instance declaration for ‘Functor FixMePls’
+   #+END_EXAMPLE
+
+** Functor is function application
+   ~<$>~ is the infix alias for ~fmap~
+
+   Functor is a typeclass for function application “over”, or
+   “through”, some structure f that we want to ignore and leave
+   untouched
+   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   :t ($)
+   :t (<$>)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   ($) :: (a -> b) -> a -> b
+   (<$>) :: Functor f => (a -> b) -> f a -> f b
+   #+END_EXAMPLE
+
+** A shining star for you to see what your ~f~ can truly be
+   Let's fix ~FixMePls~
+   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   data FixMePls a = FixMe | Pls a deriving (Eq, Show)
+
+   :{
+   instance Functor FixMePls where
+     fmap _ FixMe = FixMe
+     fmap f (Pls x) = Pls (f x)
+   :}
+
+   (+1) <$> (Pls 1)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Pls 2
+   #+END_EXAMPLE
+
+   This on the other end doesn't work! We didn't change the type,
+   ~FixMePls~ takes a type parameter but using ~(FixMePls a)~ in the
+   instance definition we put the type parameter in the ~f~ structure,
+   leaving it with kind ~*~
+   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   data FixMePls a = FixMe | Pls a deriving (Eq, Show)
+
+   :{
+   instance Functor (FixMePls a) where
+     fmap _ FixMe = FixMe
+     fmap f (Pls x) = Pls (f x)
+   :}
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   <interactive>:405:19: error:
+       • Expecting one fewer arguments to ‘FixMePls a’
+         Expected kind ‘* -> *’, but ‘FixMePls a’ has kind ‘*’
+       • In the first argument of ‘Functor’, namely ‘(FixMePls a)’
+         In the instance declaration for ‘Functor (FixMePls a)’
+   #+END_EXAMPLE
+
+* 16.05 Functor Laws
+  ...
+
+* Exercises
+
+  #+NAME: ghci-clean
+  #+BEGIN_SRC emacs-lisp :var content="" :results raw
+  (defun report-compiling-module-p (line)
+    (string-match-p "\\[[0-9]+ of [0-9]+\\] Compiling" line))
+
+  (defun report-loaded-module-p (line)
+    (string-match-p "Ok, .+ modules? loaded\\." line))
+
+  (defun report-eoe-p (line)
+    (string-match-p "org-babel-haskell-eoe" line))
+
+  (defun clean-line (line)
+    (->> line remove-prompt unquote))
+
+  (defun remove-prompt (line)
+    (let ((current-prompt (current-prompt line)))
+      (message "current prompt: %S" current-prompt)
+      (if (string-empty-p current-prompt)
+          line
+        (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
+
+  (defun current-prompt (line)
+    (if (string-match "\\(^[^|:>]+\\)[|>]" line)
+        (match-string 1 line)
+      ""))
+
+  (defun unquote (line)
+    (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" line))
+
+  (string-join
+   (seq-map #'clean-line
+            (seq-filter
+             (lambda (line)
+               (and
+                (not (string-empty-p line))
+                (not (report-eoe-p line))
+                (not (report-compiling-module-p line))
+                (not (report-loaded-module-p line))))
+             (split-string content "\n")))
+   "\n")
+  #+END_SRC
+
+  #+NAME: add-current-chapter-directory-in-path
+  #+BEGIN_SRC emacs-lisp :output raw
+  (concat
+   ":set -i"
+   (file-name-as-directory (file-name-directory (buffer-file-name)))
+   (file-name-base (buffer-file-name)))
+  #+END_SRC
+
+  #+NAME: add-chapter-directory-in-path
+  #+BEGIN_SRC emacs-lisp :var chapter="" :output raw
+  (concat
+   ":set -i"
+   (file-name-as-directory (file-name-directory (buffer-file-name)))
+   chapter)
+  #+END_SRC
