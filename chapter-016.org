@@ -516,6 +516,458 @@
       #+END_EXAMPLE
 
 * 16.08 Transforming the Unapplied Type Argument
+  In ~Functor~ definition ~f~ is a type with kind ~* -> *~. How can we
+  define a ~Functor~ instance for a type with higher kind? (We already
+  saw that you cannot write an instance of ~Functor~ for a type with
+  kind ~*~).
+
+  A type constructor with kind ~* -> * -> *~ can be turned into a type
+  constructor of kind ~* -> *~ by partially applying the type
+  constructor with a concrete type or with a type variable.
+
+  #+NAME: two-definition
+  #+BEGIN_SRC haskell :eval never
+  data Two a b = Two a b deriving (Eq, Show)
+  #+END_SRC
+
+  With a concrete type ~Integer~ we can turn ~Two~ from kind
+  ~* -> * -> *~ to kind ~* -> *~ required by ~Functor~
+  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  <<two-definition>>
+
+  :{
+  instance Functor (Two Integer) where
+    fmap f (Two n a) = Two n (f a)
+  :}
+
+  fmap (+1) (Two 1 2)
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  Two 1 3
+  #+END_EXAMPLE
+
+  With a type variable ~a~ we can turn ~Two~ from kind
+  ~* -> * -> *~ to kind ~* -> *~ required by ~Functor~
+  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  <<two-definition>>
+
+  :{
+  instance Functor (Two a) where
+    fmap f (Two a x) = Two a (f x)
+  :}
+
+  fmap (+1) (Two 1 2)
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  Two 1 3
+  #+END_EXAMPLE
+
+  Everything that is part of the functorial structure must be
+  preserved otherwise we will break the functor laws and so we will
+  not going to have a functor at all.
+
+  Everything that is between the ~Functor~ and ~where~ in the instance
+  definition is part of the functorial structure, in the case above
+  ~(Two Integer)~ and ~(Two a)~ must not be touched in the ~fmap~.
+
+* 16.09 QuickChecking Functor instances
+  Functor laws as properties
+  #+NAME: functor-laws-as-properties
+  #+BEGIN_SRC haskell :results silent
+  :{
+  functorIdentity :: (Functor f, Eq (f a)) => f a -> Bool
+  functorIdentity f = fmap id f == id f
+  :}
+
+  :{
+  functorComposition :: (Functor f, Eq (f c)) => f a -> (b -> c) -> (a -> b) -> Bool
+  functorComposition f u v = fmap (u . v) f == ((fmap u) . (fmap v)) f
+  :}
+  #+END_SRC
+
+  Let's choose some types so that QuickCheck can generate some meaningful data
+  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  <<functor-laws-as-properties>>
+
+  :{
+  f :: [Int] -> Bool
+  f = functorIdentity
+  :}
+
+  :{
+  g :: [Int] -> (Int -> Int) -> (Int -> Int) -> Bool
+  g = functorComposition
+  :}
+
+  import Test.QuickCheck
+
+  quickCheckWithResult (stdArgs {chatty=False}) f
+  quickCheckWithResult (stdArgs {chatty=False}) (flip ((flip g) (+1)) (+2))
+
+  -- More comfortably
+  :{
+  g' :: (Int -> Int) -> (Int -> Int) -> [Int] -> Bool
+  g' u v f = functorComposition f u v
+  :}
+
+  quickCheckWithResult (stdArgs {chatty=False}) (g' (+1) (+2))
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+  #+END_EXAMPLE
+
+  Making QuickCheck generate functions
+  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  <<functor-laws-as-properties>>
+
+  import Test.QuickCheck
+  import Test.QuickCheck.Function
+
+  :{
+  functorComposition' :: (Functor f, Eq (f c)) => f a -> Fun b c -> Fun a b -> Bool
+  functorComposition' f (Fun _ u) (Fun _ v) = fmap (u . v) f == ((fmap u) . (fmap v)) f
+  :}
+
+  :{
+  f :: [Int] -> (Fun Int Int) -> (Fun Int Int) -> Bool
+  f = functorComposition'
+  :}
+
+  quickCheckWithResult (stdArgs {chatty=False}) f
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+  #+END_EXAMPLE
+
+  Making QuickCheck generate functions that can be printed?
+  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  <<functor-laws-as-properties>>
+
+  import Test.QuickCheck
+  import Test.QuickCheck.Function
+
+  :{
+  functorComposition' :: (Functor f, Eq (f c)) => f a -> Blind (Fun b c) -> Blind (Fun a b) -> Bool
+  functorComposition' f (Blind (Fun _ u)) (Blind (Fun _ v)) = fmap (u . v) f == ((fmap u) . (fmap v)) f
+  :}
+
+  :{
+  f :: [Int] -> (Blind (Fun Int Int)) -> (Blind (Fun Int Int)) -> Bool
+  f = functorComposition'
+  :}
+
+  quickCheckWithResult (stdArgs {chatty=False}) f
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+  #+END_EXAMPLE
+
+* 16.10 Exercises: Instances of Functor
+
+  1. Implement ~Functor~ instance for the following datatatype
+     #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+     <<functor-laws-as-properties>>
+
+     newtype Identity a = Identity a deriving (Eq, Show)
+
+     :{
+     instance Functor Identity where
+       fmap f (Identity x) = Identity (f x)
+     :}
+
+     import Test.QuickCheck
+     import Test.QuickCheck.Function
+
+     :{
+     f :: Int -> Bool
+     f x = functorIdentity (Identity x)
+     :}
+
+     :{
+     g :: Int -> Fun Int Int -> Fun Int Int -> Bool
+     g x (Fun _ u) (Fun _ v) = functorComposition (Identity x) u v
+     :}
+
+     quickCheckWithResult (stdArgs {chatty=False}) f
+     quickCheckWithResult (stdArgs {chatty=False}) g
+     #+END_SRC
+
+     #+RESULTS:
+     #+BEGIN_EXAMPLE
+     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+     #+END_EXAMPLE
+
+  2. Implement ~Functor~ instance for the following datataype
+     #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+     <<functor-laws-as-properties>>
+
+     data Pair a = Pair a a deriving (Eq, Show)
+
+     :{
+     instance Functor Pair where
+       fmap f (Pair x y) = Pair (f x) (f y)
+     :}
+
+     import Test.QuickCheck
+     import Test.QuickCheck.Function
+
+     :{
+     f :: Int -> Int -> Bool
+     f x y = functorIdentity (Pair x y)
+     :}
+
+     :{
+     g :: Int -> Int -> Fun Int Int -> Fun Int Int -> Bool
+     g x y (Fun _ u) (Fun _ v) = functorComposition (Pair x y) u v
+     :}
+
+     quickCheckWithResult (stdArgs {chatty=False}) f
+     quickCheckWithResult (stdArgs {chatty=False}) g
+     #+END_SRC
+
+     #+RESULTS:
+     #+BEGIN_EXAMPLE
+     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+     #+END_EXAMPLE
+
+  3. Implement ~Functor~ instance for the following datatype
+     #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+     <<functor-laws-as-properties>>
+
+     data Two a b = Two a b deriving (Eq, Show)
+
+     :{
+     instance Functor (Two a) where
+       fmap f (Two x y) = Two x (f y)
+     :}
+
+     import Test.QuickCheck
+     import Test.QuickCheck.Function
+
+     :{
+     f :: String -> Int -> Bool
+     f s n = functorIdentity (Two s n)
+     :}
+
+     :{
+     g :: String -> Int -> (Fun Int Int) -> (Fun Int Int) -> Bool
+     g s n (Fun _ u) (Fun _ v) = functorComposition (Two s n) u v
+     :}
+
+     quickCheckWithResult (stdArgs {chatty=False}) f
+     quickCheckWithResult (stdArgs {chatty=False}) g
+     #+END_SRC
+
+     #+RESULTS:
+     #+BEGIN_EXAMPLE
+     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+     #+END_EXAMPLE
+
+  4. Implement ~Functor~ instance for the following datatype
+     #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+     <<functor-laws-as-properties>>
+
+     data Three a b c = Three a b c deriving (Eq, Show)
+
+     :{
+     instance Functor (Three a b) where
+       fmap f (Three x y z) = Three x y (f z)
+     :}
+
+     import Test.QuickCheck
+     import Test.QuickCheck.Function
+
+     :{
+     f :: String -> Bool -> Int -> Bool
+     f x y z = functorIdentity (Three x y z)
+     :}
+
+     :{
+     g :: String -> Bool -> Int -> Fun Int Int -> Fun Int Int -> Bool
+     g x y z (Fun _ u) (Fun _ v) = functorComposition (Three x y z) u v
+     :}
+
+     quickCheckWithResult (stdArgs {chatty=False}) f
+     quickCheckWithResult (stdArgs {chatty=False}) g
+     #+END_SRC
+
+     #+RESULTS:
+     #+BEGIN_EXAMPLE
+     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+     #+END_EXAMPLE
+
+  5. Implement ~Functor~ instance for the following datatype
+     #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+     <<functor-laws-as-properties>>
+
+     data Three' a b = Three' a b b deriving (Eq, Show)
+
+     :{
+     instance Functor (Three' a) where
+       fmap f (Three' x y z) = Three' x (f y) (f z)
+     :}
+
+     import Test.QuickCheck
+     import Test.QuickCheck.Function
+
+     :{
+     f :: String -> Int -> Int -> Bool
+     f s x y = functorIdentity (Three' s x y)
+     :}
+
+     :{
+     g :: String -> Int -> Int -> Fun Int Int -> Fun Int Int -> Bool
+     g s x y (Fun _ u) (Fun _ v) = functorComposition (Three' s x y) u v
+     :}
+
+     quickCheckWithResult (stdArgs {chatty=False}) f
+     quickCheckWithResult (stdArgs {chatty=False}) g
+     #+END_SRC
+
+     #+RESULTS:
+     #+BEGIN_EXAMPLE
+     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+     #+END_EXAMPLE
+
+  6. Implement ~Functor~ instance for the following datatype
+     #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+     <<functor-laws-as-properties>>
+
+     data Four a b c d = Four a b c d deriving (Eq, Show)
+
+     :{
+     instance Functor (Four a b c) where
+       fmap f (Four x y z w) = Four x y z (f w)
+     :}
+
+     import Test.QuickCheck
+     import Test.QuickCheck.Function
+
+     :{
+     f :: String -> Int -> String -> Int -> Bool
+     f x y z w = functorIdentity (Four x y z w)
+     :}
+
+     :{
+     g :: String -> Int -> String -> Int -> Fun Int Int -> Fun Int Int -> Bool
+     g x y z w (Fun _ u) (Fun _ v) = functorComposition (Four x y z w) u v
+     :}
+
+     quickCheckWithResult (stdArgs {chatty=False}) f
+     quickCheckWithResult (stdArgs {chatty=False}) g
+     #+END_SRC
+
+     #+RESULTS:
+     #+BEGIN_EXAMPLE
+     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+     #+END_EXAMPLE
+
+  7. Implement ~Functor~ instance for the following datatype
+     #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+     <<functor-laws-as-properties>>
+
+     data Four' a b = Four' a a a b deriving (Eq, Show)
+
+     :{
+     instance Functor (Four' a) where
+       fmap f (Four' x y z w) = Four' x y z (f w)
+     :}
+
+     import Test.QuickCheck
+     import Test.QuickCheck.Function
+
+     :{
+     f :: String -> String -> String -> Int -> Bool
+     f x y z w = functorIdentity (Four' x y z w)
+     :}
+
+     :{
+     g :: String -> String -> String -> Int -> Fun Int Int -> Fun Int Int -> Bool
+     g x y z w (Fun _ u) (Fun _ v) = functorComposition (Four' x y z w) u v
+     :}
+
+     quickCheckWithResult (stdArgs {chatty=False}) f
+     quickCheckWithResult (stdArgs {chatty=False}) g
+     #+END_SRC
+
+     #+RESULTS:
+     #+BEGIN_EXAMPLE
+     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+     #+END_EXAMPLE
+
+  8. Can you implement one for this type? Why? Why not? No because the
+     type required by ~Functor~ must have kind equal or greater than
+     ~* -> *~ and ~Trivial~ is a constant type with kind ~*~
+     #+BEGIN_SRC haskell :eval never
+     data Trivial = Trivial
+     #+END_SRC
+
+
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  :{
+  functorIdentity :: (Functor f, Eq (f a)) => f a -> Bool
+  functorIdentity f = fmap id f == id f
+  :}
+
+  :{
+  functorComposition :: (Functor f, Eq (f c)) => f a -> Fun b c -> Fun a b -> Bool
+  functorComposition f (Fun _ u) (Fun _ v) = fmap (u . v) f == ((fmap u) . (fmap v)) f
+  :}
+
+  data Two a b = Two a b deriving (Eq, Show)
+
+  :{
+  instance Functor (Two a) where
+    fmap f (Two x y) = Two x (f y)
+  :}
+
+  :{
+  instance (Arbitrary a, Arbitrary b) => Arbitrary (Two a b) where
+    arbitrary = do
+      a <- arbitrary
+      b <- arbitrary
+      return $ Two a b
+  :}
+
+  quickCheckWithResult (stdArgs {chatty=False}) (functorIdentity :: Two Int Int -> Bool)
+  quickCheckWithResult (stdArgs {chatty=False}) (functorIdentity :: Two String Int -> Bool)
+  quickCheckWithResult (stdArgs {chatty=False}) (functorIdentity :: Two Int String -> Bool)
+
+  quickCheckWithResult (stdArgs {chatty=False}) (functorComposition :: Two Int Int -> Fun Int Int -> Fun Int Int -> Bool)
+  quickCheckWithResult (stdArgs {chatty=False}) (functorComposition :: Two String Int -> Fun Int Int -> Fun Int Int -> Bool)
+  quickCheckWithResult (stdArgs {chatty=False}) (functorComposition :: Two String Int -> Fun String Bool -> Fun Int String -> Bool)
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
+  #+END_EXAMPLE
+
+* 16.11 Ignoring Possibility
   ...
 
 * Exercises
