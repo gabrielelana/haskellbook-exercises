@@ -1,0 +1,599 @@
+#+TITLE: Applicative
+
+* 17.01 Applicative
+  - ~Monoid~ -> ~mappend~ -> joining structure with some logic
+  - ~Functor~ -> ~fmap~ -> changing content with a function and leaving the structure alone
+  - ~Applicative~ -> ??? -> monoidal functor ???
+
+* 17.02 Defining Applicative
+  #+BEGIN_SRC haskell :eval never
+  class Functor f => Applicative f where
+    pure :: a -> f a
+    (<*>) :: f (a -> b) -> f a -> f b
+  #+END_SRC
+
+  - Every type that can have an instance of ~Applicative~ must also an
+    instance of ~Functor~
+  - The ~pure~ function lifts something into the functorial
+    (applicative) structure
+  - The ~<*>~ (called /apply/ or /app/ or /tie fighter/) lets see it
+    compared with the functorial ~fmap~
+    #+BEGIN_SRC haskell :eval never
+    fmap :: Functor f => (a -> b) -> f a -> f b
+    (<*>) :: Applicative f => f (a -> b) -> f a -> f b
+    #+END_SRC
+  - Along with these ~Control.Applicative~ provides useful ~liftA~,
+    ~liftA2~ and ~liftA3~
+    #+BEGIN_SRC haskell :eval never
+    liftA :: Applicative f
+          -> (a -> b)
+          -> f a
+          -> f b
+
+    liftA2 :: Applicative f
+           -> (a -> b -> c)
+           -> f a
+           -> f b
+           -> f c
+
+    liftA3 :: Applicative f
+           -> (a -> b -> c -> d)
+           -> f a
+           -> f b
+           -> f c
+           -> f d
+    #+END_SRC
+
+* 17.03 Fuctor Vs Applicative
+  The functorial ~fmap~ can be implemented with what we get with ~Applicative~
+  #+BEGIN_SRC haskell :eval never
+  fmap f x = (pure f) <*> x
+  #+END_SRC
+
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  fmap (+1) [1, 2, 3]
+  pure (+1) <*> [1, 2, 3]
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  [2,3,4]
+  [2,3,4]
+  #+END_EXAMPLE
+
+  The applicative ~pure~ is able to lift everything in the applicative
+  context, as always the right part of ~Either~ and ~(,)~ is not
+  touched because it is part of the structure like for ~Functor~
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  pure 1 :: [Int]
+  pure 1 :: Maybe Int
+  pure 1 :: Either a Int
+  pure 1 :: ([a], Int)
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  [1]
+  Just 1
+  Right 1
+  ([],1)
+  #+END_EXAMPLE
+
+* 17.04 Applicative Functors are Monoidal Functors
+  #+BEGIN_SRC haskell :eval never
+   $  ::   (a -> b) ->   a ->   b
+  <$> ::   (a -> b) -> f a -> f b
+  <*> :: f (a -> b) -> f a -> f b
+  #+END_SRC
+
+  In ~Functor~ we have only one piece of structure (~f a~) that we
+  need to preserve. In ~Applicative~ we have two piece of structure:
+  ~f (a -> b)~ and ~f a~ that we need to combine somehow
+
+  #+BEGIN_SRC haskell :eval never
+  <*> :: f (a -> b) -> f a -> f b
+  --     f             f      f
+  --    [1]           [2]    [3]
+  --       (a -> b)      a      b
+  #+END_SRC
+
+  The ~f~ must be of the same type by construction, /[1]/ and /[2]/
+  must be combined to provide /[3]/, we know what combines two things
+  of the same type in another thing of the same type, ~mappend~ from
+  ~Monoid~
+
+  #+BEGIN_SRC haskell :eval never
+  mappend :: f ->          f ->   f
+  $ ::         (a -> b) ->   a ->   b
+  <*> ::     f (a -> b) -> f a -> f b
+  #+END_SRC
+
+  Examples
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  [(*2), (+5)] <*> [4, 5]
+  Just (*2) <*> Just 5
+  Just (*2) <*> Nothing
+  Nothing <*> Nothing
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  [8,10,9,10]
+  Just 10
+  Nothing
+  Nothing
+  #+END_EXAMPLE
+
+  The monoidal behaviour is evident with tuples, with ~fmap~ we can
+  ignore the first element of the tuple and preserve it but with ~<*>~
+  we cannot, we need to combine it in some way
+
+  #+BEGIN_SRC haskell :eval
+     ("Hello", (+1)) <*> ("World", 5)
+  --           (+1)   $            5    => 6
+  --  "Hello"        ???  "World"       => ???
+  #+END_SRC
+
+  If we constrain the type of the first element of the tuple to have
+  an instance of ~Monoid~ then we can use it
+
+  #+BEGIN_SRC haskell :eval
+     ("Hello", (+1)) <*> ("World", 5)
+  --           (+1)   $            5    => 6
+  --  "Hello"        <>   "World"       => "HelloWorld"
+  #+END_SRC
+
+  And that's exactly how it works
+
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  ("Hello", (+1)) <*> ("World", 5)   -- [Char] have an instance of Monoid
+  (Sum 1, (+1)) <*> (Sum 2, 5)   -- Num a => Sum a, have an instance of Monoid
+  (All True, (+1)) <*> (All False, 5)   -- All Bool, have an instance of Monoid
+  (Any True, (+1)) <*> (Any False, 5)   -- All Bool, have an instance of Monoid
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  ("HelloWorld",6)
+  (Sum {getSum = 3},6)
+  (All {getAll = False},6)
+  (Any {getAny = True},6)
+  #+END_EXAMPLE
+
+  It is not guaranteed that the monoidal behaviour of the applicative
+  instance is the same as the monoid instance of the involved type.
+
+* 17.05 Applicative in Use
+
+** List Applicative
+   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   [(+1), (*3)] <*> [3, 2]
+   -- [(+1) 3, (+1) 2, (*3) 3, (*3) 2]
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [4,3,9,6]
+   #+END_EXAMPLE
+
+   - It returns one list, not two lists or a nested list, this is the
+     monoidal behaviour.
+   - It returns one list with the function applied to the values and
+     not functions concatened with values, this is the functorial
+     behaviour.
+
+   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   import Control.Applicative (liftA2)
+
+   (,) <$> [1, 2] <*> [3, 4]
+   (+) <$> [1, 2] <*> [3, 4]
+   (max) <$> [1, 2] <*> [3, 4]
+
+   -- same as
+   liftA2 (,) [1, 2] [3, 4]
+   liftA2 (+) [1, 2] [3, 4]
+   liftA2 (max) [1, 2] [3, 4]
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [(1,3),(1,4),(2,3),(2,4)]
+   [4,5,5,6]
+   [3,4,3,4]
+   [(1,3),(1,4),(2,3),(2,4)]
+   [4,5,5,6]
+   [3,4,3,4]
+   #+END_EXAMPLE
+
+   Considering the ~lookup~ function
+   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   import Control.Applicative (liftA2)
+
+   :t lookup
+   lookup 1 [(1, "hello"), (2, "world")]
+   lookup 3 [(1, "hello"), (2, "world")]
+
+   f x = lookup x [(3, "hello"), (4, "julie"), (5, "kbai")]
+   g y = lookup y [(7, "sup?"), (8, "chris"), (9, "aloha")]
+   h z = lookup z [(2, 3), (5, 6), (7, 8)]
+   m x = lookup x [(4, 10), (8, 13), (1, 9001)]
+
+   f 3
+   g 8
+   :t (++) <$> f 3
+   (++) <$> f 3 <*> g 8
+   (+) <$> h 5 <*> m 1
+
+   -- same as
+   liftA2 (++) (f 3) (g 8)
+   liftA2 (+) (h 5) (m 1)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   lookup :: Eq a => a -> [(a, b)] -> Maybe b
+   Just "hello"
+   Nothing
+   Just "hello"
+   Just "chris"
+   (++) <$> f 3 :: Maybe ([Char] -> [Char])
+   Just "hellochris"
+   Just 9007
+   Just "hellochris"
+   Just 9007
+   #+END_EXAMPLE
+
+** Exercise: Lookup
+   Use ~pure~, ~<$>~ and ~<*>~ to make the following code to typecheck
+
+   1. Make the following code to typecheck
+      #+BEGIN_SRC haskell :results silent
+      -- was
+      -- added :: Maybe Integer
+      -- added = (+3) (lookup 3 $ zip [1, 2, 3] [4, 5, 6])
+      :{
+      added :: Maybe Integer
+      added = (+3) <$> (lookup 3 $ zip [1, 2, 3] [4, 5, 6])
+      :}
+      #+END_SRC
+
+   2. Make the following code to typecheck
+      #+BEGIN_SRC haskell :results silent
+      :{
+      y :: Maybe Integer
+      y = lookup 3 $ zip [1, 2, 3] [4, 5, 6]
+      :}
+
+      :{
+      z :: Maybe Integer
+      z = lookup 2 $ zip [1, 2, 3] [4, 5, 6]
+      :}
+
+      -- tupled :: Maybe (Integer, Integer)
+      -- tupled = (,) y z
+      :{
+      tupled :: Maybe (Integer, Integer)
+      tupled = (,) <$> y <*> z
+      -- or
+      -- tupled = Control.Applicative.liftA2 (,) y z
+      :}
+      #+END_SRC
+
+   3. Make the following code to typecheck
+      #+BEGIN_SRC haskell :results silent
+      import Data.List (elemIndex)
+
+      :{
+      x :: Maybe Int
+      x = elemIndex 3 [1, 2, 3, 4, 5]
+      :}
+
+      :{
+      y :: Maybe Int
+      y = elemIndex 4 [1, 2, 3, 4, 5]
+      :}
+
+      :{
+      max' :: Int -> Int -> Int
+      max' = max
+      :}
+
+      -- was
+      -- maxed :: Maybe Int
+      -- maxed = max' x y
+
+      :{
+      maxed :: Maybe Int
+      maxed = max' <$> x <*> y
+      -- or
+      -- maxed = Control.Applicative.liftA2 max' x y
+      :}
+      #+END_SRC
+
+   4. Make the following code to typecheck
+      #+BEGIN_SRC haskell :results silent
+      xs = [1, 2, 3]
+      ys = [4, 5, 6]
+
+      :{
+      x :: Maybe Integer
+      x = lookup 3 $ zip xs ys
+      :}
+
+      :{
+      y :: Maybe Integer
+      y = lookup 2 $ zip xs ys
+      :}
+
+      -- was
+      -- summed :: Maybe Integer
+      -- summed = sum $ (,) x y
+
+      :{
+      summed :: Maybe Integer
+      summed = sum <$> ((fmap (,) x) <*> y)
+      -- or
+      -- summed = sum <$> Control.Applicative.liftA2 (,) x y
+      :}
+      #+END_SRC
+
+** Identity
+   #+BEGIN_SRC haskell :eval never
+   (<*>) :: f        (a -> b) -> f        a -> f        b
+   (<*>) :: Identity (a -> b) -> Identity a -> Identity b
+
+   pure :: a -> f        a
+   pure :: a -> Identity a
+   #+END_SRC
+
+   What's the meaning of having only a little bit of structure around
+   our values? To lift ~const~ to map over ~Identity~
+   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   import Data.Functor.Identity
+
+   xs = [1, 2, 3]
+   ys = [9, 9, 9]
+   -- here ~const~ will map over the list structure
+   const <$> xs <*> ys
+
+   Identity xs
+   :t const <$> (Identity xs)
+   -- here const will map over the Identity structure
+   -- const will preserve the content, in this case xs
+   const <$> (Identity xs) <*> Identity ys
+   -- whatever you give it's fine because const (const :: a -> b -> a) the second argument of type b
+   const <$> (Identity xs) <*> Identity "Hello"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1,1,1,2,2,2,3,3,3]
+   [1,2,3]
+   Identity [1,2,3]
+   (Identity xs) :: Num a => Identity (b -> [a])
+   Identity [1,2,3]
+   Identity [1,2,3]
+   #+END_EXAMPLE
+
+** Exercise: Identity Instance
+   Write an ~Applicative~ instance for ~Identity~
+   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   newtype Identity a = Identity a deriving (Eq, Ord, Show)
+
+   :{
+   instance Functor Identity where
+     fmap f (Identity a) = Identity (f a)
+   :}
+
+   :{
+   instance Applicative Identity where
+     pure a = Identity a
+     (<*>) (Identity f) (Identity a) = Identity (f a)
+   :}
+
+   xs = [1, 2, 3]
+   const <$> (Identity xs) <*> Identity "Hello"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Identity [1,2,3]
+   #+END_EXAMPLE
+
+** Constant
+   It can only hold a value, it can't do anything, the function
+   doesn't exists and so it cannot be applied
+
+** Exercise: Constant Instance
+   Write an ~Applicative~ instance for ~Constant~
+   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   newtype Constant a b = Constant {getConstant :: a} deriving (Eq, Ord, Show)
+
+   :{
+   instance Functor (Constant a) where
+     fmap _ (Constant a) = Constant a
+   :}
+
+   :{
+   instance Monoid a => Applicative (Constant a) where
+     pure _ = Constant (mempty)
+     (<*>) (Constant x) (Constant y) = Constant (x <> y)
+   :}
+
+   let f = Constant (Sum 1)
+   let g = Constant (Sum 2)
+   f <*> g
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Constant {getConstant = Sum {getSum = 3}}
+   #+END_EXAMPLE
+
+** Maybe (Applicative)
+   #+BEGIN_SRC haskell :eval never
+   (<*>) :: f     (a -> b) -> f     a -> f     b
+   (<*>) :: Maybe (a -> b) -> Maybe a -> Maybe b
+
+   pure :: a -> f     a
+   pure :: a -> Maybe a
+   #+END_SRC
+
+   Here we are saying that not only the value but also the function
+   may not exists aka can be ~Nothing~. Consider the following code to
+   validate some input to create a value of type ~Person~
+
+   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   newtype Name = Name String deriving (Eq, Show)
+
+   newtype Address = Address String deriving (Eq, Show)
+
+   data Person = Person Name Address deriving (Eq, Show)
+
+   :{
+   validateLength :: Int -> String -> Maybe String
+   validateLength n s
+     | length s > n = Nothing
+     | otherwise    = Just s
+   :}
+
+   :{
+   mkName :: String -> Maybe Name
+   mkName s = Name <$> (validateLength 25 s)
+   :}
+
+   :{
+   mkAddress :: String -> Maybe Address
+   mkAddress s = Address <$> (validateLength 100 s)
+   :}
+
+   -- this is what we can do on a first attempt
+   :{
+   mkPerson :: String -> String -> Maybe Person
+   mkPerson name address =
+     case mkName name of
+       Just name' ->
+         case mkAddress address of
+           Just address' ->
+             Just (Person name' address')
+           Nothing ->
+             Nothing
+       Nothing ->
+         Nothing
+   :}
+
+   :{
+   mkPerson' :: String -> String -> Maybe Person
+   mkPerson' name address =
+     Person <$> (mkName name) <*> (mkAddress address)
+   :}
+
+   :{
+   mkPerson'' :: String -> String -> Maybe Person
+   mkPerson'' name address =
+     Control.Applicative.liftA2 Person (mkName name) (mkAddress address)
+   :}
+
+   mkPerson "Gabriele" "piazza la bomba e scappa, 1"
+   mkPerson' "Gabriele" "piazza la bomba e scappa, 1"
+   mkPerson'' "Gabriele" "piazza la bomba e scappa, 1"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Just (Person (Name "Gabriele") (Address "piazza la bomba e scappa, 1"))
+   Just (Person (Name "Gabriele") (Address "piazza la bomba e scappa, 1"))
+   Just (Person (Name "Gabriele") (Address "piazza la bomba e scappa, 1"))
+   #+END_EXAMPLE
+
+** Exercise: Fixer Upper
+
+   1. Make the following code to typecheck using ~(<$>)~, ~(<*>)~ and ~pure~.
+      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      -- was
+      -- const <$> Just "Hello" <*> "World"
+
+      const <$> Just "Hello" <*> Just "World"
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Just "Hello"
+      #+END_EXAMPLE
+
+   2. Make the following code to typecheck using ~(<$>)~, ~(<*>)~ and ~pure~.
+      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      -- was
+      -- (,,,) Just 90 <*> Just 10 Just "Tierness" [1, 2, 3]
+
+      (,,,) <$> Just 90 <*> Just 10 <*> Just "Tierness" <*> Just [1, 2, 3]
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Just (90,10,"Tierness",[1,2,3])
+      #+END_EXAMPLE
+
+* 17.06 Applicative Laws
+  ...
+
+
+* Exercises
+
+  #+NAME: ghci-clean
+  #+BEGIN_SRC emacs-lisp :var content="" :results raw
+  (defun report-compiling-module-p (line)
+    (string-match-p "\\[[0-9]+ of [0-9]+\\] Compiling" line))
+
+  (defun report-loaded-module-p (line)
+    (string-match-p "Ok, .+ modules? loaded\\." line))
+
+  (defun report-eoe-p (line)
+    (string-match-p "org-babel-haskell-eoe" line))
+
+  (defun clean-line (line)
+    (->> line remove-prompt unquote))
+
+  (defun remove-prompt (line)
+    (let ((current-prompt (current-prompt line)))
+      (message "current prompt: %S" current-prompt)
+      (if (string-empty-p current-prompt)
+          line
+        (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
+
+  (defun current-prompt (line)
+    (if (string-match "\\(^[^|:>]+\\)[|>]" line)
+        (match-string 1 line)
+      ""))
+
+  (defun unquote (line)
+    (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" line))
+
+  (string-join
+   (seq-map #'clean-line
+            (seq-filter
+             (lambda (line)
+               (and
+                (not (string-empty-p line))
+                (not (report-eoe-p line))
+                (not (report-compiling-module-p line))
+                (not (report-loaded-module-p line))))
+             (split-string content "\n")))
+   "\n")
+  #+END_SRC
+
+  #+NAME: add-current-chapter-directory-in-path
+  #+BEGIN_SRC emacs-lisp :output raw
+  (concat
+   ":set -i"
+   (file-name-as-directory (file-name-directory (buffer-file-name)))
+   (file-name-base (buffer-file-name)))
+  #+END_SRC
+
+  #+NAME: add-chapter-directory-in-path
+  #+BEGIN_SRC emacs-lisp :var chapter="" :output raw
+  (concat
+   ":set -i"
+   (file-name-as-directory (file-name-directory (buffer-file-name)))
+   chapter)
+  #+END_SRC
