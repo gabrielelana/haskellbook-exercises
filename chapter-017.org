@@ -535,8 +535,148 @@
       #+END_EXAMPLE
 
 * 17.06 Applicative Laws
-  ...
+  1. Identity
+     #+BEGIN_SRC haskell :eval never
+     pure id <*> v = v
+     #+END_SRC
 
+     Compare with other identities
+     #+BEGIN_SRC haskell :eval never
+     id [1, 2, 3]
+     fmap id [1, 2, 3]
+     pure id <*> [1, 2, 3]
+     #+END_SRC
+
+     Examples
+     #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+     pure id <*> [1, 2, 3]
+     pure id <*> "Hello Everybody"
+     pure id <*> Just "Hello Everybody"
+     pure id <*> Nothing
+     pure id <*> Left "Error"
+     pure id <*> Right 42
+     #+END_SRC
+
+     #+RESULTS:
+     #+BEGIN_EXAMPLE
+     [1,2,3]
+     Hello Everybody
+     Just "Hello Everybody"
+     Nothing
+     Left "Error"
+     Right 42
+     #+END_EXAMPLE
+
+  2. Composition
+     #+BEGIN_SRC haskell :eval never
+     pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
+     #+END_SRC
+
+     Composition functions first and the applying the resulting
+     function
+     #+BEGIN_SRC haskell :eval never
+     pure (.) <*> [(+1)]
+     -- Num c => [(a -> c) -> a -> c]
+     -- [(.)(+1)]
+
+     pure (.) <*> [(+1)] <*> [(*2)]
+     -- Num c => [c -> c]
+     -- [(.)(+1)(*2)]
+
+     pure (.) <*> [(+1)] <*> [(*2)] <*> [1, 2, 3]
+     -- Num c => [c]
+     -- [3, 5, 7]
+     #+END_SRC
+
+     Application of the functions sequentially
+     #+BEGIN_SRC haskell :eval never
+     [(*2)] <*> [1, 2, 3]
+     -- Num c => [c]
+     -- [2, 4, 6]
+
+     [(+1)] <*> ([(*2)] <*> [1, 2, 3])
+     -- Num c => [c]
+     -- [(+1)] <*> [2, 4, 6]
+     -- [3, 5, 7]
+     #+END_SRC
+
+     Are the same. This law ensure that ~(<*>)~ is transparent to
+     function composition. If the functions compose outside of
+     functorial structure ~(.)(+1)(*2)~ then they compose in the same
+     one inside of functorial structure ~pure (.) <*> [(+1)] <*> [(*2)]~
+
+  3. Homomorphism
+     #+BEGIN_SRC haskell :eval never
+     pure f <*> pure x = pure (f x)
+     #+END_SRC
+
+     An /homomorphism/ is a structure preserving map between two
+     algebraic structure. This law ensure that the effect of applying
+     a function embedded in some functorial structure to a value that
+     is embedded in the same functorial structure will be the same as
+     applying the function to the value and then wrapping the result
+     in the functorial structure.
+
+     #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+     pure (+1) <*> pure 1
+
+     pure ((+1) 1)
+
+     -- We cannot write ~== 2~ because ~pure~ works for every functorial
+     -- structure that is not stated yet, we need to state it, ~2~ has no
+     -- structure
+     (pure (+1) <*> pure 1) == Just 2
+
+     pure ((+1) 1) == Just 2
+
+     -- Same as
+     ((pure (+1) <*> pure 1) :: Maybe Int) == pure ((+1) 1)
+     #+END_SRC
+
+     #+RESULTS:
+     #+BEGIN_EXAMPLE
+     2
+     2
+     True
+     True
+     True
+     #+END_EXAMPLE
+
+     It is like with ~fmap~, the structure must be preserved but with
+     ~<*>~ also the function is in the structure so the structure must
+     be /monoidal/ aka the structure itself must be composable in some
+     sense.
+
+  4. Commutative
+     #+BEGIN_SRC haskell :eval never
+     u <*> pure y = pure ($ y) <*> u
+     #+END_SRC
+
+     To the left of ~(<*>)~ must be a function embedded in some
+     structrure. To be able to swap the operands we need to transform
+     a value into a function ~($ y)~ it's a function that will take a
+     function and returns the application of the function to the given
+     value ~y~.
+
+     Examples
+     #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+     x1 = Just (+2) <*> pure 3
+     x2 = pure ($ 3) <*> Just (+2)
+
+     x1
+     x2
+     x1 == x2
+     #+END_SRC
+
+     #+RESULTS:
+     #+BEGIN_EXAMPLE
+     Just 5
+     Just 5
+     True
+     #+END_EXAMPLE
+
+* 17.07 You Knew This Was Coming
+  ...
 
 * Exercises
 
