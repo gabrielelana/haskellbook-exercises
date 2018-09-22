@@ -676,9 +676,372 @@
      #+END_EXAMPLE
 
 * 17.07 You Knew This Was Coming
-  ...
+  We want to check the compliance to the laws with /QuickCheck/. We
+  are gonna use an help, a package written to check this laws:
+  /checkers/.
 
-* Exercises
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  import Data.Monoid
+  import Test.QuickCheck
+  import Test.QuickCheck.Checkers
+  import Test.QuickCheck.Classes
+
+  data Bull = Fools | Twoo deriving (Eq, Show)
+
+  :{
+  instance Arbitrary Bull where
+    arbitrary = frequency [(1, return Fools), (1, return Twoo)]
+  :}
+
+  -- Bad instance of Monoid so that tests will fail
+  :{
+  instance Monoid Bull where
+    mempty = Fools
+    mappend _ _ = Fools
+  :}
+
+  -- Needed by checkers
+  :{
+  instance EqProp Bull where
+    (=-=) = eq
+  :}
+
+  -- TODO: silenced until I'm able to process escape ansi codes in output
+  -- quickBatch $ (monoid Twoo)
+  checkBatch (stdArgs {chatty=False}) (monoid Twoo)
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  #+END_EXAMPLE
+
+  To verify the applicative laws we need to generate a ~TestBatch~ for
+  ~Applicative~ like we did for ~Monoid~ with the /checkers/ library
+  function ~monoid~
+
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  import Test.QuickCheck.Checkers
+
+  :t applicative
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  applicative
+    :: (EqProp (m c), EqProp (m b), EqProp (m a), Show (m (a -> b)),
+  c)), Show (m a), Show a, Arbitrary (m (a -> b)),
+  c)), Arbitrary (m a), Arbitrary b, Arbitrary a,
+        CoArbitrary a, Applicative m) =>
+  m (a, b, c) -> TestBatch
+  #+END_EXAMPLE
+
+  So we need to provide a value for the applicative structure (~m~)
+  and three values of possibly different types ~(a, b, c)~
+
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  import Test.QuickCheck.Checkers
+
+  -- TODO: silenced until I'm able to process escape ansi codes in output
+  -- quickBatch (applicative [("b", "w", 1)])
+  checkBatch (stdArgs {chatty=False}) (applicative [("b", "w", 1)])
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  #+END_EXAMPLE
+
+  Values are given only to provide types, an alternative way would be
+
+  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  import Test.QuickCheck.Checkers
+
+  :{
+  xs :: (String, String, Int)
+  xs = undefined
+  :}
+
+  -- TODO: silenced until I'm able to process escape ansi codes in output
+  -- quickBatch $ applicative [xs]
+  checkBatch (stdArgs {chatty=False}) $ applicative [xs]
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  #+END_EXAMPLE
+
+* 17.08 ZipList Monoid
+  The default monoidal behavior of lists is to concatenate, so that
+  ~[1, 2, 3] <> [4, 5, 6]~ is equal to ~[1, 2, 3] ++ [4, 5, 6]~
+
+  An alternative would be to rely on the monoidal behavior of the
+  types contained in the list and to obtain something like
+  ~[x, y] <> [u, w]~ to be equal to ~[x <> u, y <> w]~
+
+  We are going to define an instance of ~Monoid~ for ~ZipList~
+  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  <<add-current-chapter-directory-in-path()>>
+  :load ZipListMonoid
+
+  -- TODO: silenced until I'm able to process escape ansi codes in output
+  -- quickBatch $ monoid (ZipList [Sum 1])
+  checkBatch (stdArgs {chatty=False}) $ monoid (ZipList [Sum 1])
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  #+END_EXAMPLE
+
+  It fails because the empty ~ZipList~ (~ZipList []~) is not the zero,
+  is the identity, the ~mempty~ of ~Monoid~ must be the identity so
+  that ~memtpy <> a == a <> mempty~
+
+  We can exploit the monoid instance of the content of the ~ZipList~
+  that we required and use its ~mempty~
+
+  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  <<add-current-chapter-directory-in-path()>>
+  :load ZipListMonoid2
+
+  -- mempty = pure mempty
+  -- we are gonna se what pure does when we are gonna implement Applicative for ZipList
+
+  -- TODO: silenced until I'm able to process escape ansi codes in output
+  -- quickBatch $ monoid (ZipList [Sum 1])
+  checkBatch (stdArgs {chatty=False}) $ monoid (ZipList [Sum 1])
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  #+END_EXAMPLE
+
+** Exercise: List Applicative
+   Implement ~Applicative~ for ~List~
+
+   #+NAME: list-applicative
+   #+BEGIN_SRC haskell :eval never
+   data List a = Nil | Cons a (List a) deriving (Eq, Show)
+
+   :{
+   instance Monoid (List a) where
+     -- mempty :: a
+     mempty = Nil
+     -- mappend :: a -> a -> a
+     mappend Nil x = x
+     mappend x Nil = x
+     mappend (Cons x ll) lr = Cons x (ll <> lr)
+   :}
+
+   :{
+   instance Functor List where
+     -- fmap :: (a -> b) -> f a -> f b
+     fmap _ Nil = Nil
+     fmap f (Cons a fa) = Cons (f a) (fmap f fa)
+   :}
+
+   -- identity
+   -- pure id <*> v = v
+
+   -- composition (preserve function composition)
+   -- pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
+
+   -- homomorphism (structure preserving transformation)
+   -- pure f <*> pure x = pure (f x)
+
+   -- interchange
+   -- u <*> pure y = pure ($ y) <*> u
+
+   :{
+   instance Applicative List where
+     -- pure :: a -> f a
+     pure x = Cons x Nil
+     -- (<*>) :: f (a -> b) -> f a -> f b
+     (<*>) Nil _ = Nil
+     (<*>) _ Nil = Nil
+     (<*>) (Cons f ll) lr@(Cons a tr) = (Cons (f a) (f <$> tr)) <> (ll <*> lr)
+   :}
+
+   import Test.QuickCheck
+   import Test.QuickCheck.Checkers
+   import Test.QuickCheck.Classes
+
+   :{
+   instance Arbitrary a => Arbitrary (List a) where
+     arbitrary = do
+       a <- arbitrary
+       l <- arbitrary
+       frequency [(1, return Nil), (2, return (Cons a l))]
+   :}
+
+   :{
+   instance Eq a => EqProp (List a) where
+     (=-=) = eq
+   :}
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results silent :noweb yes
+   <<list-applicative>>
+
+   :{
+   xs :: (String, String, Int)
+   xs = undefined
+   :}
+
+   -- TODO: silenced until I'm able to process escape ansi codes in output
+   -- quickBatch $ monoid (Cons "foo" Nil)
+   -- quickBatch $ functor (Cons xs Nil)
+   -- quickBatch $ applicative (Cons xs Nil)
+   checkBatch (stdArgs {chatty=True}) $ monoid (Cons "foo" Nil)
+   checkBatch (stdArgs {chatty=True}) $ functor (Cons xs Nil)
+   checkBatch (stdArgs {chatty=True}) $ applicative (Cons xs Nil)
+   #+END_SRC
+
+** Exercise: ZipList Applicative
+   Implement ~Applicative~ for ~ZipList~
+
+   #+BEGIN_SRC haskell :results silent :noweb yes
+   <<list-applicative>>
+
+   -- Need to implement for later
+   :{
+   take' :: Int -> List a -> List a
+   take' 0 _ = Nil
+   take' _ Nil = Nil
+   take' n (Cons x xs) = (Cons x (take' (n - 1) xs))
+   :}
+
+   :{
+   repeat' :: a -> List a
+   repeat' x = Cons x (repeat' x)
+   :}
+
+   newtype ZipList' a = ZipList' (List a) deriving (Eq, Show)
+
+   :{
+   instance Functor ZipList' where
+   -- fmap :: (a -> b) -> f a -> f b
+     fmap f (ZipList' l) = ZipList' $ f <$> l
+   :}
+
+   -- identity
+   -- pure id <*> v = v
+
+   -- composition
+   -- pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
+
+   -- homomorphism (structure preserving transformation)
+   -- pure f <*> pure x = pure (f x)
+
+   -- interchange
+   -- u <*> pure v = pure ($ v) <*> u
+
+   :{
+   instance Applicative ZipList' where
+     -- pure :: a -> f a
+     pure x = ZipList' $ repeat' x
+
+     -- (<*>) :: f (a -> b) -> f a -> f b
+     (<*>) (ZipList' Nil) _ = (ZipList' Nil)
+     (<*>) _ (ZipList' Nil) = (ZipList' Nil)
+     (<*>) (ZipList' (Cons f ll)) (ZipList' (Cons x lr)) = ZipList' (Cons (f x) xs)
+       where ZipList' xs = (ZipList' ll) <*> (ZipList' lr)
+   :}
+
+   -- To check that the behavior is as expected
+   fs = ZipList' (Cons (+9) (Cons (*2) (Cons (+8) Nil)))
+   xs = ZipList' (Cons 1 (Cons 2 (Cons 3 Nil)))
+
+   fs <*> xs
+   (fs <*> xs) == ZipList' (Cons 10 (Cons 4 (Cons 11 Nil)))
+
+   import Test.QuickCheck
+   import Test.QuickCheck.Checkers
+   import Test.QuickCheck.Classes
+
+   :{
+   instance Eq a => EqProp (ZipList' a) where
+     (=-=) xs ys = xs' `eq` ys'
+       where xs' = let (ZipList' l) = xs in take' 3000 l
+             ys' = let (ZipList' l) = ys in take' 3000 l
+   :}
+
+   :{
+   instance Arbitrary a => Arbitrary (ZipList' a) where
+     -- we can have a ~Gen (List a)~ but we need ~Gen (ZipList' (List a))~
+     -- fmap does exactly that :-)
+     arbitrary = ZipList' <$> arbitrary
+   :}
+
+   :{
+   xs :: (String, String, Int)
+   xs = undefined
+   :}
+
+   -- TODO: silenced until I'm able to process escape ansi codes in output
+   -- quickBatch $ applicative (Cons xs Nil)
+   checkBatch (stdArgs {chatty=True}) $ applicative (ZipList' (Cons xs Nil))
+   #+END_SRC
+
+   Unlike ~Functor~, ~Applicative~ can have more lawful instances for datatype (FC)
+
+** Exercise: Validation Applicative
+   Write an ~Applicative~ instance for ~Validation~. It's the same as
+   ~Either~ but the applicative composition must rely on the monoidal
+   composition (aka. append the errors)
+
+   #+BEGIN_SRC haskell :results silent
+   import Data.Monoid
+
+   data Validation e a = Failure e | Success a deriving (Eq, Show)
+
+   :{
+   instance Functor (Validation e) where
+     -- fmap :: (a -> b) -> f a -> f b
+     fmap f (Success x) = Success (f x)
+     fmap _ (Failure e) = Failure e
+   :}
+
+   -- identity
+   -- pure id <*> v = v
+
+   -- composition
+   -- pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
+
+   -- homomorphism
+   -- pure f <*> pure x = pure (f x)
+
+   -- interchange
+   -- u <*> pure y = pure ($ y) <*> u
+
+   :{
+   instance Monoid e => Applicative (Validation e) where
+     -- pure :: a -> f a
+     pure x = Success x
+     -- (<*>) :: f (a -> b) -> f a -> f b
+     (<*>) (Success _) (Failure e) = Failure e
+     (<*>) (Failure e) (Success _) = Failure e
+     (<*>) (Failure el) (Failure er) = Failure (el <> er)
+     (<*>) (Success f) (Success x) = Success (f x)
+   :}
+
+   import Test.QuickCheck
+   import Test.QuickCheck.Checkers
+   import Test.QuickCheck.Classes
+
+   :{
+   instance (Arbitrary e, Arbitrary a) => Arbitrary (Validation e a) where
+     arbitrary = oneof [Success <$> arbitrary, Failure <$> arbitrary]
+   :}
+
+   :{
+   instance (Eq e, Eq a) => EqProp (Validation e a) where
+     (=-=) = eq
+   :}
+
+   -- TODO: silenced until I'm able to process escape ansi codes in output
+   quickBatch $ applicative (Success ("foo", True, 3::Int))
+   #+END_SRC
+
+* 17.09 Exercises
 
   #+NAME: ghci-clean
   #+BEGIN_SRC emacs-lisp :var content="" :results raw
