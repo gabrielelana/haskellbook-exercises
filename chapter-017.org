@@ -819,6 +819,8 @@
 
    #+NAME: list-applicative
    #+BEGIN_SRC haskell :eval never
+   import Data.Monoid
+
    data List a = Nil | Cons a (List a) deriving (Eq, Show)
 
    :{
@@ -914,6 +916,13 @@
    repeat' x = Cons x (repeat' x)
    :}
 
+   :{
+   zipWith' :: (a -> b -> c) -> (List a) -> (List b) -> (List c)
+   zipWith' _ Nil _ = Nil
+   zipWith' _ _ Nil = Nil
+   zipWith' f (Cons x xs) (Cons y ys) = Cons (f x y) (zipWith' f xs ys)
+   :}
+
    newtype ZipList' a = ZipList' (List a) deriving (Eq, Show)
 
    :{
@@ -940,10 +949,7 @@
      pure x = ZipList' $ repeat' x
 
      -- (<*>) :: f (a -> b) -> f a -> f b
-     (<*>) (ZipList' Nil) _ = (ZipList' Nil)
-     (<*>) _ (ZipList' Nil) = (ZipList' Nil)
-     (<*>) (ZipList' (Cons f ll)) (ZipList' (Cons x lr)) = ZipList' (Cons (f x) xs)
-       where ZipList' xs = (ZipList' ll) <*> (ZipList' lr)
+     (<*>) (ZipList' xs) (ZipList' ys) = ZipList' (zipWith' ($) xs ys)
    :}
 
    -- To check that the behavior is as expected
