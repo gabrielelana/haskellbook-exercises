@@ -1106,3 +1106,354 @@
    (file-name-as-directory (file-name-directory (buffer-file-name)))
    chapter)
   #+END_SRC
+
+** Specializing Method Types
+   Given a type that has an instance of Applicative, specialize the
+   types of the methods.
+
+   1. Specialize method types for ~[]~
+      #+BEGIN_SRC haskell :results silent
+      :{
+      -- pure :: a -> ? a
+      pure' :: a -> [a]
+      pure' = undefined
+      :}
+
+      :{
+      -- (<*>) :: ? (a -> b) -> ? a -> ? b
+      applicative' :: [(a -> b)] -> [a] -> [b]
+      -- same thing as
+      -- applicative' :: [] (a -> b) -> [] a -> [] b
+      applicative' = undefined
+      :}
+      #+END_SRC
+
+   2. Specialize method types for ~IO~
+      #+BEGIN_SRC haskell :results silent
+      :{
+      -- pure :: a -> ? a
+      pure' :: a -> IO a
+      pure' = undefined
+      :}
+
+      :{
+      -- (<*>) :: ? (a -> b) -> ? a -> ? b
+      applicative' :: IO (a -> b) -> IO a -> IO b
+      applicative' = undefined
+      :}
+      #+END_SRC
+
+   3. Specialize method types for ~(,) a~
+      #+BEGIN_SRC haskell :results silent
+      :{
+      -- pure :: a -> ? a
+      pure' :: b -> (a, b)
+      pure' = undefined
+      :}
+
+      :{
+      -- (<*>) :: ? (a -> b) -> ? a -> ? b
+      applicative' :: (a, (b -> c)) -> (a, b) -> (a, c)
+      applicative' = undefined
+      :}
+      #+END_SRC
+
+   4. Specialize method types for ~(->) e~
+      #+BEGIN_SRC haskell :results silent
+      :{
+      -- pure :: a -> ? a
+      pure' :: b -> (e -> b)
+      pure' = undefined
+      :}
+
+      :{
+      -- (<*>) :: ? (a -> b) -> ? a -> ? b
+      applicative' :: (e -> (b -> c)) -> (e -> b) -> (e -> c)
+      applicative' = undefined
+      :}
+      #+END_SRC
+
+** Applicative Instances
+
+   1. Write an instance of ~Applicative~ for the following type
+      #+BEGIN_SRC haskell :results silent
+      data Pair a = Pair a a deriving (Eq, Show)
+
+      :{
+      instance Functor Pair where
+        -- fmap :: (a -> b) -> f a -> f b
+        fmap f (Pair x y) = Pair (f x) (f y)
+      :}
+
+      -- identity
+      -- pure id <*> v = v
+
+      -- composition
+      -- pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
+
+      -- homomorphism
+      -- pure f <*> pure x = pure (f x)
+
+      -- interchange
+      -- u <*> (pure y) = pure ($ y) <*> u
+
+      :{
+      instance Applicative Pair where
+        -- pure :: a -> f a
+        pure x = Pair x x
+
+        -- (<*>) :: f (a -> b) -> f a -> f b
+        (<*>) (Pair f g) (Pair x y) = Pair (f x) (g y)
+      :}
+
+      import Test.QuickCheck
+      import Test.QuickCheck.Checkers
+      import Test.QuickCheck.Classes
+      import Control.Applicative
+
+      :{
+      instance Arbitrary a => Arbitrary (Pair a) where
+        arbitrary = liftA2 Pair arbitrary arbitrary
+      :}
+
+      :{
+      instance Eq a => EqProp (Pair a) where
+        (=-=) = eq
+      :}
+
+      -- TODO: silenced until I'm able to process escape ansi codes in output
+      x :: (String, Int, Bool)
+      quickBatch $ applicative (Pair x x)
+      #+END_SRC
+
+   2. Write an instance of ~Applicative~ for the following type
+      #+BEGIN_SRC haskell :results silent
+      data Two a b = Two a b deriving (Eq, Show)
+
+      :{
+      instance Functor (Two a) where
+        -- fmap :: (a -> b) -> f a -> f b
+        fmap f (Two x y) = Two x (f y)
+      :}
+
+      import Data.Monoid
+
+      :{
+      instance Monoid a => Applicative (Two a) where
+        -- pure :: a -> f a
+        pure x = (Two mempty x)
+
+        -- (<*>) :: f (a -> b) -> f a -> f b
+        (<*>) (Two x1 f) (Two x2 y) = Two (x1 <> x2) (f y)
+      :}
+
+      import Test.QuickCheck
+      import Test.QuickCheck.Checkers
+      import Test.QuickCheck.Classes
+      import Control.Applicative
+
+      :{
+      instance (Arbitrary a, Arbitrary b) => Arbitrary (Two a b) where
+        arbitrary = liftA2 Two arbitrary arbitrary
+      :}
+
+      :{
+      instance (Eq a, Eq b) => EqProp (Two a b) where
+        (=-=) = eq
+      :}
+
+      -- TODO: silenced until I'm able to process escape ansi codes in output
+      x = undefined :: String
+      y = undefined :: (String, Int, Bool)
+      quickBatch $ applicative (Two x y)
+      #+END_SRC
+
+   3. Write an instance of ~Applicative~ for the following type
+      #+BEGIN_SRC haskell :results silent
+      data Three a b c = Three a b c deriving (Eq, Show)
+
+      :{
+      instance Functor (Three a b) where
+        -- fmap :: (a -> b) -> f a -> f b
+        fmap f (Three x y z) = Three x y (f z)
+      :}
+
+      import Data.Monoid
+
+      :{
+      instance (Monoid a, Monoid b) => Applicative (Three a b) where
+         -- pure :: a -> f a
+         pure x = Three mempty mempty x
+
+         -- (<*>) :: f (a -> b) -> f a -> f b
+         (<*>) (Three x1 y1 f) (Three x2 y2 z) = Three (x1 <> x2) (y1 <> y2) (f z)
+      :}
+
+      import Test.QuickCheck
+      import Test.QuickCheck.Checkers
+      import Test.QuickCheck.Classes
+      import Control.Applicative
+
+      :{
+      instance (Arbitrary a, Arbitrary b, Arbitrary c) => Arbitrary (Three a b c) where
+        arbitrary = liftA3 Three arbitrary arbitrary arbitrary
+      :}
+
+      :{
+      instance (Eq a, Eq b, Eq c) => EqProp (Three a b c) where
+        (=-=) = eq
+      :}
+
+      -- TODO: silenced until I'm able to process escape ansi codes in output
+      x = undefined :: String
+      y = undefined :: String
+      z = undefined :: (String, Int, Bool)
+      quickBatch $ applicative (Three x y z)
+      #+END_SRC
+
+   4. Write an instance of ~Applicative~ for the following type
+      #+BEGIN_SRC haskell :results silent
+      data Three' a b = Three' a b b deriving (Eq, Show)
+
+      :{
+      instance Functor (Three' a) where
+        -- fmap :: (a -> b) -> f a -> f b
+        fmap f (Three' x y z) = Three' x (f y) (f z)
+      :}
+
+      :{
+      instance Monoid a => Applicative (Three' a) where
+        -- pure :: a -> f a
+        pure x = Three' mempty x x
+
+        -- (<*>) :: f (a -> b) -> f a -> f b
+        (<*>) (Three' x1 f1 f2) (Three' x2 y1 y2) = Three' (x1 <> x2) (f1 y1) (f2 y2)
+      :}
+
+      import Test.QuickCheck
+      import Test.QuickCheck.Checkers
+      import Test.QuickCheck.Classes
+      import Control.Applicative
+
+      :{
+      instance (Arbitrary a, Arbitrary b) => Arbitrary (Three' a b) where
+        arbitrary = liftA3 Three' arbitrary arbitrary arbitrary
+      :}
+
+      :{
+      instance (Eq a, Eq b) => EqProp (Three' a b) where
+        (=-=) = eq
+      :}
+
+      x = undefined :: String
+      y = undefined :: (String, Int, Bool)
+      quickBatch $ applicative (Three' x y y)
+      #+END_SRC
+
+   5. Write an instance of ~Applicative~ for the following type
+      #+BEGIN_SRC haskell :results silent
+      data Four a b c d = Four a b c d deriving (Eq, Show)
+
+      :{
+      instance Functor (Four a b c) where
+        fmap f (Four x y z q) = Four x y z (f q)
+      :}
+
+      import Data.Monoid
+
+      :{
+      instance (Monoid a, Monoid b, Monoid c) => Applicative (Four a b c) where
+        pure x = Four mempty mempty mempty x
+        (<*>) (Four x1 y1 z1 f) (Four x2 y2 z2 q) = Four (x1 <> x2) (y1 <> y2) (z1 <> z2) (f q)
+      :}
+
+      import Test.QuickCheck
+      import Test.QuickCheck.Checkers
+      import Test.QuickCheck.Classes
+      import Control.Applicative
+
+      :{
+      instance (Arbitrary a, Arbitrary b, Arbitrary c, Arbitrary d) => Arbitrary (Four a b c d) where
+        arbitrary = (liftA3 Four arbitrary arbitrary arbitrary) <*> arbitrary
+      :}
+
+      :{
+      instance (Eq a, Eq b, Eq c, Eq d) => EqProp (Four a b c d) where
+        (=-=) = eq
+      :}
+
+      x = undefined :: String
+      y = undefined :: String
+      z = undefined :: String
+      q = undefined :: (String, Int, Bool)
+      quickBatch $ applicative (Four x y z q)
+      #+END_SRC
+
+   6. Write an instance of ~Applicative~ for the following type
+      #+BEGIN_SRC haskell :results silent
+      data Four' a b = Four' a a a b deriving (Eq, Show)
+
+      :{
+      instance Functor (Four' a) where
+        fmap f (Four' x y z q) = Four' x y z (f q)
+      :}
+
+      import Data.Monoid
+
+      :{
+      instance Monoid a => Applicative (Four' a) where
+        pure x = Four' mempty mempty mempty x
+        (<*>) (Four' x1 y1 z1 f) (Four' x2 y2 z2 q) = Four' (x1 <> x2) (y1 <> y2) (z1 <> z2) (f q)
+      :}
+
+      import Test.QuickCheck
+      import Test.QuickCheck.Checkers
+      import Test.QuickCheck.Classes
+      import Control.Applicative
+
+      :{
+      instance (Arbitrary a, Arbitrary b) => Arbitrary (Four' a b) where
+        arbitrary = (liftA3 Four' arbitrary arbitrary arbitrary) <*> arbitrary
+      :}
+
+      :{
+      instance (Eq a, Eq b) => EqProp (Four' a b) where
+        (=-=) = eq
+      :}
+
+      x = undefined :: String
+      y = undefined :: String
+      z = undefined :: String
+      q = undefined :: (String, Int, Bool)
+      quickBatch $ applicative (Four' x y z q)
+      #+END_SRC
+
+** Combinations
+   Write the function to generate the possible combinations of three
+   input lists using ~liftA3~ from ~Control.Applicative~.
+
+   #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   import Control.Applicative
+
+   :{
+   stops :: String
+   stops = "pbtdkg"
+   :}
+
+   :{
+   vowels :: String
+   vowels = "aeiou"
+   :}
+
+   :{
+   combos :: [a] -> [b] -> [c] -> [(a, b, c)]
+   combos l m r = liftA3 (,,) l m r
+   :}
+
+   combos stops vowels stops
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [('p','a','p'),('p','a','b'),('p','a','t'),('p','a','d'),('p','a','k'),('p','a','g'),('p','e','p'),('p','e','b'),('p','e','t'),('p','e','d'),('p','e','k'),('p','e','g'),('p','i','p'),('p','i','b'),('p','i','t'),('p','i','d'),('p','i','k'),('p','i','g'),('p','o','p'),('p','o','b'),('p','o','t'),('p','o','d'),('p','o','k'),('p','o','g'),('p','u','p'),('p','u','b'),('p','u','t'),('p','u','d'),('p','u','k'),('p','u','g'),('b','a','p'),('b','a','b'),('b','a','t'),('b','a','d'),('b','a','k'),('b','a','g'),('b','e','p'),('b','e','b'),('b','e','t'),('b','e','d'),('b','e','k'),('b','e','g'),('b','i','p'),('b','i','b'),('b','i','t'),('b','i','d'),('b','i','k'),('b','i','g'),('b','o','p'),('b','o','b'),('b','o','t'),('b','o','d'),('b','o','k'),('b','o','g'),('b','u','p'),('b','u','b'),('b','u','t'),('b','u','d'),('b','u','k'),('b','u','g'),('t','a','p'),('t','a','b'),('t','a','t'),('t','a','d'),('t','a','k'),('t','a','g'),('t','e','p'),('t','e','b'),('t','e','t'),('t','e','d'),('t','e','k'),('t','e','g'),('t','i','p'),('t','i','b'),('t','i','t'),('t','i','d'),('t','i','k'),('t','i','g'),('t','o','p'),('t','o','b'),('t','o','t'),('t','o','d'),('t','o','k'),('t','o','g'),('t','u','p'),('t','u','b'),('t','u','t'),('t','u','d'),('t','u','k'),('t','u','g'),('d','a','p'),('d','a','b'),('d','a','t'),('d','a','d'),('d','a','k'),('d','a','g'),('d','e','p'),('d','e','b'),('d','e','t'),('d','e','d'),('d','e','k'),('d','e','g'),('d','i','p'),('d','i','b'),('d','i','t'),('d','i','d'),('d','i','k'),('d','i','g'),('d','o','p'),('d','o','b'),('d','o','t'),('d','o','d'),('d','o','k'),('d','o','g'),('d','u','p'),('d','u','b'),('d','u','t'),('d','u','d'),('d','u','k'),('d','u','g'),('k','a','p'),('k','a','b'),('k','a','t'),('k','a','d'),('k','a','k'),('k','a','g'),('k','e','p'),('k','e','b'),('k','e','t'),('k','e','d'),('k','e','k'),('k','e','g'),('k','i','p'),('k','i','b'),('k','i','t'),('k','i','d'),('k','i','k'),('k','i','g'),('k','o','p'),('k','o','b'),('k','o','t'),('k','o','d'),('k','o','k'),('k','o','g'),('k','u','p'),('k','u','b'),('k','u','t'),('k','u','d'),('k','u','k'),('k','u','g'),('g','a','p'),('g','a','b'),('g','a','t'),('g','a','d'),('g','a','k'),('g','a','g'),('g','e','p'),('g','e','b'),('g','e','t'),('g','e','d'),('g','e','k'),('g','e','g'),('g','i','p'),('g','i','b'),('g','i','t'),('g','i','d'),('g','i','k'),('g','i','g'),('g','o','p'),('g','o','b'),('g','o','t'),('g','o','d'),('g','o','k'),('g','o','g'),('g','u','p'),('g','u','b'),('g','u','t'),('g','u','d'),('g','u','k'),('g','u','g')]
+   #+END_EXAMPLE
