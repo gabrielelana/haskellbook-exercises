@@ -1,0 +1,515 @@
+#+TITLE: Monad
+
+* 18.01 Monad
+  Monads are applicative functors with something that makes them
+  special and more powerful.
+
+* 18.02 A Monad is not a Burrito
+  #+BEGIN_SRC haskell :eval never
+  class Applicative m => Monad m where
+    (>>=) :: m a -> (a -> m b) -> m b
+    (>>) :: m a -> m b -> m b
+    return :: a -> m a
+  #+END_SRC
+
+  Whenever you have implemented an instance of ~Monad~ then you
+  necessarily have an instance of ~Applicative~ and ~Functor~ aka an
+  instance of ~Applicative~ and ~Functor~ can be derived directly from
+  an instance of ~Monad~
+  #+BEGIN_EXAMPLE
+  Functor -> Applicative -> Monad
+  #+END_EXAMPLE
+
+  - return :: works like the ~pure~ of ~Applicative~
+  - (>>) :: /sequencing operator/, sequence two actions and discard the
+            first result, works like the ~*>~ of ~Applicative~
+  - (>>=) :: /bind/, that's what make ~Monad~ special, see below
+
+  Let's see the type of ~bind~
+  #+BEGIN_SRC haskell :eval never
+  (>>=) :: m a -> (a -> m b) -> m b
+  #+END_SRC
+
+  When we want to use some function that adds structure ~(a -> m b)~
+  but we don't want an extra layer of structure at the end ~m (m b)~
+  then we need to have a means to flatten two layers of structrue into
+  one.
+
+  This is the job of ~Control.Monad.join~, the unique part of ~Monad~
+  #+BEGIN_SRC haskell :eval never
+  join :: Monad m => m (m a) -> m a
+  #+END_SRC
+
+  Until now we only have added structure, we never simplified
+  structure, this is what makes ~Monad~ special.
+
+  How do we get ~bind~ (~bind~ here is proposed as ~(>>=)~ flipped,
+  don't know why)?  Implement it in terms of ~fmap~ and ~join~
+  #+BEGIN_SRC haskell :results silent
+  import Control.Monad (join)
+
+  :{
+  bind :: Monad m => (a -> m b) -> m a -> m b
+  bind f ma = join $ f <$> ma
+  :}
+  #+END_SRC
+
+** Misconceptions
+   1. ~Monad~ are impure. There's nothing impure about ~Monad~,
+      ~Monad~ can be used to represent impure (effectful) actions.
+   2. ~Monad~ are used to obtain imperative programming. ~Monad~ are
+      used for sequencing actions but that's not what imperative
+      programming is.
+   3. ~Monad~ are values. Typeclasses define relationships between
+      elements of a domain and some operations over them, when we say
+      "a monad" we do not refer to a value.
+   4. ~Monad~ are strict. The monadic operations of ~bind~ and
+      ~return~ are non strict but they can be made strict.
+
+** Monads can Lift
+   There are ~liftM*~ functions in ~Control.Monad~ like there are
+   ~liftA*~ functions in ~Control.Applicative~, they do the same
+   thing, they exist only for retro compatibility (~Applicative~ have
+   been added later)
+
+* Do Syntax and Monads
+  Sequencing operations for ~Applicative~ and ~Monads~, same thing but
+  with different constraints.
+  #+BEGIN_SRC haskell :eval never
+  (*>) :: Applicative f => f a -> f b -> f b
+  (>>) :: Monad m => m a -> m b -> m b
+  #+END_SRC
+
+  We can express a sequence of operations in an applicative/monadic
+  context with sequencing operators or with a ~do~ notation
+  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+  :{
+  sequencing :: IO ()
+  sequencing = do
+    putStr "Hello"
+    putStr " "
+    putStrLn "World!"
+  :}
+
+  :{
+  sequencing' :: IO ()
+  sequencing' = putStr "Hello" *> putStr " " *> putStrLn "World!"
+  :}
+
+  :{
+  sequencing'' :: IO ()
+  sequencing'' = putStr "Hello" >> putStr " " >> putStrLn "World!"
+  :}
+
+  sequencing
+  sequencing'
+  sequencing''
+  #+END_SRC
+
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  Hello World!
+  Hello World!
+  Hello World!
+  #+END_EXAMPLE
+
+  The ~do~ notation provides also the possibility of /variable
+  bindings/ which can be desugared with the ~(>>=)~ /bind/ operator.
+  #+BEGIN_SRC haskell :eval never
+  binding :: IO ()
+  binding = do
+    name <- getLine
+    putStrLn name
+
+  binding' :: IO ()
+  binding' = getLine >>= putStrLn
+  #+END_SRC
+
+** When ~fmap~ is not enough
+   The following code will ask for input but the it does nothing, why
+   ~putStrLn~ doesn't work?
+   #+BEGIN_SRC haskell :eval never
+   putStrLn <$> getLine
+   #+END_SRC
+
+   Let's see the types
+   #+BEGIN_SRC haskell :eval never
+   getLine :: IO String
+   putStrLn :: String -> IO ()
+   (<$>) :: (a -> b) -> f a -> f b
+
+   -- using ~putStrLn~ as ~(a -> b)~ means that ~a~ is String~ and ~b~ is ~IO ()~
+   -- (<$>) :: (a      -> b    ) -> f a      -> f  b
+   --           String -> IO ()) -> f String -> f (IO ())
+
+   -- using ~getLine~ as ~f a~ means that ~f~ is ~IO~
+   --           String -> IO ()) -> f  String -> f  (IO ())
+   --           String -> IO ()) -> IO String -> IO (IO ())
+   #+END_SRC
+
+   So we end up with an ~IO~ inside another ~IO~, the outermost is the
+   ~getLine~ ~IO~ and it's the only one that gets resolved
+
+   Haskell can represent, compose and map over effectful computations
+   without performing them
+   #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   printOne = putStrLn "1"
+   printTwo = putStrLn "2"
+   twoActions = (printOne, printTwo)
+
+   :t twoActions
+   -- until now nothing happened
+
+   fst twoActions -- prints 1
+   snd twoActions -- prints 2
+   fst twoActions -- prints 1 again, we can run effectful computation more than once
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   twoActions :: (IO (), IO ())
+   1
+   2
+   1
+   #+END_EXAMPLE
+
+   When we have something like ~IO (IO ())~ we ca resolve the
+   outermost ~IO~ but not the innermost, we need to squash them in a
+   single ~IO~, that's what ~join~ of ~Monad~ is for
+
+   #+BEGIN_SRC haskell :eval never
+   -- join :: Monad m => m (m a) -> m a
+   join $ putStrLn <$> getLine
+
+   -- or more succinctly
+   getLine >>= putStrLn
+   #+END_SRC
+
+
+   #+BEGIN_SRC haskell :eval never
+   :{
+   bindingAndSequencing :: IO ()
+   bindingAndSequencing = do
+     putStrLn "What's your name?"
+     name <- getLine
+     putStrLn $ "Your name is " ++ name
+   :}
+
+   :{
+   bindingAndSequencing' :: IO ()
+   bindingAndSequencing' =
+     putStrLn "What's your name?" >>
+     getLine >>=
+       \name -> putStrLn $ "Your name is " ++ name"
+   :}
+
+   :{
+   twoBinds :: IO ()
+   twoBinds = do
+     putStrLn "What's your name?"
+     name <- getLine
+     putStrLn "What's your age?"
+     age <- getLine
+     putStrLn $ "Your name is " ++ name ++ " and you are " ++ age ++ " years old."
+   :}
+
+   :{
+   twoBinds' :: IO ()
+   twoBinds' =
+     putStrLn "What's your name?" >>
+     getLine >>=
+       \name ->
+         putStrLn "What's your age?" >>
+         getLine >>=
+           \age ->
+             putStrLn $ "Your name is " ++ name ++ " and you are " ++ age ++ " years old."
+   :}
+   #+END_SRC
+
+* 18.04 Examples of Monad Use
+** List Monad
+   #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   :{
+   twiceWhenEven :: [Integer] -> [Integer]
+   twiceWhenEven xs = do
+     -- ~x~ will take every value in ~xs~
+     x <- xs
+     if even x then [x*x, x*x] else [x*x]
+   :}
+
+   twiceWhenEven [1..3]
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1,4,4,9]
+   #+END_EXAMPLE
+
+** Maybe Monad
+   #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   data Cow = Cow {name :: String, age :: Int, weight :: Int} deriving (Eq, Show)
+
+   :{
+   noEmpty :: String -> Maybe String
+   noEmpty "" = Nothing
+   noEmpty s = Just s
+   :}
+
+   :{
+   noNegative :: Int -> Maybe Int
+   noNegative n | n >= 0 = Just n
+                | otherwise = Nothing
+   :}
+
+   :{
+   weightCheck :: Cow -> Maybe Cow
+   weightCheck c =
+     let w = weight c
+         n = name c
+     in if n == "Bess" && w > 499 then Nothing else Just c
+   :}
+
+   :{
+   mkCow :: String -> Int -> Int -> Maybe Cow
+   mkCow name age weight =
+     case noEmpty name of
+      Nothing ->
+        Nothing
+      Just name ->
+         case noNegative age of
+           Nothing ->
+             Nothing
+           Just age ->
+             case noNegative weight of
+               Nothing ->
+                 Nothing
+               Just weight ->
+                 weightCheck (Cow name age weight)
+   :}
+
+   mkCow "Bess" 5 499
+   mkCow "Bess" 5 500
+   mkCow "" 5 499
+
+   :{
+   mkCow' :: String -> Int -> Int -> Maybe Cow
+   mkCow' name' age' weight' = do
+     name <- noEmpty name'
+     age <- noNegative age'
+     weight <- noNegative weight'
+     weightCheck (Cow name age weight)
+   :}
+
+   mkCow' "Bess" 5 499
+   mkCow' "Bess" 5 500
+   mkCow' "" 5 499
+
+   :{
+   mkCow'' :: String -> Int -> Int -> Maybe Cow
+   mkCow'' name' age' weight' =
+     noEmpty name' >>=
+       \name -> noNegative age' >>=
+         \age -> noNegative weight' >>=
+           \weight -> weightCheck (Cow name age weight)
+   :}
+
+   mkCow'' "Bess" 5 499
+   mkCow'' "Bess" 5 500
+   mkCow'' "" 5 499
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Just (Cow {name = "Bess", age = 5, weight = 499})
+   Nothing
+   Nothing
+   Just (Cow {name = "Bess", age = 5, weight = 499})
+   Nothing
+   Nothing
+   Just (Cow {name = "Bess", age = 5, weight = 499})
+   Nothing
+   Nothing
+   #+END_EXAMPLE
+
+** Either Monad
+   #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+   type Founded = Int
+   type Coders = Int
+
+   data SoftwareShop = SoftwareShop {coders :: Coders, founded :: Founded} deriving (Eq, Show)
+
+   :{
+   data SoftwareShopError = NegativeYears Founded
+                          | TooManyYears Founded
+                          | NegativeCoders Coders
+                          | TooManyCoders Coders
+                          | TooManyCodersForYears Founded Coders
+                          deriving (Eq, Show)
+   :}
+
+   :{
+   validateFounded :: Int -> Either SoftwareShopError Founded
+   validateFounded n
+     | n < 0 = Left $ NegativeYears n
+     | n > 500 = Left $ TooManyYears n
+     | otherwise = Right n
+   :}
+
+   :{
+   validateCoders :: Int -> Either SoftwareShopError Coders
+   validateCoders n
+     | n < 0 = Left $ NegativeCoders n
+     | n > 5000 = Left $ TooManyCoders n
+     | otherwise = Right n
+   :}
+
+   :{
+   validateCodersForYears :: Founded -> Coders -> Either SoftwareShopError (Founded, Coders)
+   validateCodersForYears founded coders =
+     if coders > div founded 10 then
+       Left $ TooManyCodersForYears founded coders
+     else
+       Right $ (founded, coders)
+   :}
+
+   :{
+   mkSoftwareShop :: Int -> Int -> Either SoftwareShopError SoftwareShop
+   mkSoftwareShop founded coders = do
+     founded' <- validateFounded founded
+     coders' <- validateCoders coders
+     (founded'', coders'') <- validateCodersForYears founded' coders'
+     Right $ SoftwareShop founded'' coders''
+   :}
+
+   mkSoftwareShop 10 1
+   mkSoftwareShop 50 2
+   mkSoftwareShop 1 1
+   mkSoftwareShop 1 0
+   mkSoftwareShop (-1) 0
+   mkSoftwareShop 0 (-1)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Right (SoftwareShop {coders = 10, founded = 1})
+   Right (SoftwareShop {coders = 50, founded = 2})
+   Left (TooManyCodersForYears 1 1)
+   Right (SoftwareShop {coders = 1, founded = 0})
+   Left (NegativeYears (-1))
+   Left (NegativeCoders (-1))
+   #+END_EXAMPLE
+
+   Note that ~Either~ short-circuits on the first ~Left~, cannot
+   accumulate errors because ~Monads~ later values can depend of
+   previous values. So there's no ~Monad~ instance for ~Validation~
+
+** Exercise: Either Monad
+   #+BEGIN_SRC haskell :results silent
+   data Sum a b = First a | Second b deriving (Eq, Show)
+
+   :{
+   instance Functor (Sum a) where
+     -- fmap :: (b -> c) -> f b -> f c
+     fmap _ (First a) = First a
+     fmap f (Second b) = Second $ f b
+   :}
+
+   :{
+   instance Applicative (Sum a) where
+     -- pure :: b -> f b
+     pure b = Second b
+     -- (<*>) :: f (b -> c) -> f b -> f c
+     (<*>) (First a) _ = First a
+     (<*>) (Second f) b = f <$> b
+   :}
+
+   :{
+   instance Monad (Sum a) where
+     -- return :: b -> m b
+     return = pure
+     -- (>>=) :: m b -> (b -> m c) -> m c
+     (>>=) (First a) _ = First a
+     (>>=) (Second b) f = f b
+   :}
+
+   import Test.QuickCheck
+   import Test.QuickCheck.Checkers
+   import Test.QuickCheck.Classes
+
+   :{
+   instance (Arbitrary a, Arbitrary b) => Arbitrary (Sum a b) where
+     arbitrary = frequency [(1, First <$> arbitrary), (2, Second <$> arbitrary)]
+   :}
+
+   :{
+   instance (Eq a, Eq b) => EqProp (Sum a b) where
+     (=-=) = eq
+   :}
+
+   quickBatch $ functor (undefined :: Sum String (String, Maybe Bool, [Int]))
+   quickBatch $ applicative (undefined :: Sum String (String, Maybe Bool, [Int]))
+   quickBatch $ monad (undefined :: Sum String (String, Maybe Bool, [Int]))
+   #+END_SRC
+
+* 18.05 Monad Laws
+  ...
+
+
+* Exercises
+  #+NAME: ghci-clean
+  #+BEGIN_SRC emacs-lisp :var content="" :results raw
+  (defun report-compiling-module-p (line)
+    (string-match-p "\\[[0-9]+ of [0-9]+\\] Compiling" line))
+
+  (defun report-loaded-module-p (line)
+    (string-match-p "Ok, .+ modules? loaded\\." line))
+
+  (defun report-eoe-p (line)
+    (string-match-p "org-babel-haskell-eoe" line))
+
+  (defun clean-line (line)
+    (->> line remove-prompt unquote))
+
+  (defun remove-prompt (line)
+    (let ((current-prompt (current-prompt line)))
+      (message "current prompt: %S" current-prompt)
+      (if (string-empty-p current-prompt)
+          line
+        (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
+
+  (defun current-prompt (line)
+    (if (string-match "\\(^[^|:>]+\\)[|>]" line)
+        (match-string 1 line)
+      ""))
+
+  (defun unquote (line)
+    (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" line))
+
+  (string-join
+   (seq-map #'clean-line
+            (seq-filter
+             (lambda (line)
+               (and
+                (not (string-empty-p line))
+                (not (report-eoe-p line))
+                (not (report-compiling-module-p line))
+                (not (report-loaded-module-p line))))
+             (split-string content "\n")))
+   "\n")
+  #+END_SRC
+
+  #+NAME: add-current-chapter-directory-in-path
+  #+BEGIN_SRC emacs-lisp :output raw
+  (concat
+   ":set -i"
+   (file-name-as-directory (file-name-directory (buffer-file-name)))
+   (file-name-base (buffer-file-name)))
+  #+END_SRC
+
+  #+NAME: add-chapter-directory-in-path
+  #+BEGIN_SRC emacs-lisp :var chapter="" :output raw
+  (concat
+   ":set -i"
+   (file-name-as-directory (file-name-directory (buffer-file-name)))
+   chapter)
+  #+END_SRC
