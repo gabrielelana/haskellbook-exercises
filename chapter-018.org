@@ -452,8 +452,183 @@
    #+END_SRC
 
 * 18.05 Monad Laws
-  ...
+** Identity Laws
+   Left identity
+   #+BEGIN_SRC haskell :eval never
+   m >>= return = m
 
+   -- (>>=) :: Monad m => m a -> (a -> m b) -> m b
+
+   -- m a >>= (a -> m b) = m b
+   -- m   >>= return     = m
+
+   -- so ~return~ does not change the content of the structure
+   #+END_SRC
+
+   Right identity
+   #+BEGIN_SRC haskell :eval never
+   return x >>= f = f x
+
+   -- (>>=) :: Monad m => m a -> (a -> m b) -> m b
+
+   -- m a      >>= (a -> m b) = m b
+   -- return x >>= f          = f x
+
+   -- so ~return~ does not change the content of the structure
+   #+END_SRC
+
+** Associativity
+   #+BEGIN_SRC haskell :eval never
+   (m >>= f) >>= g = m >>= (\x -> f x >>= g)
+   #+END_SRC
+
+** Using Property Based Testing
+   #+BEGIN_SRC haskell :results silent
+   import Test.QuickCheck
+   import Test.QuickCheck.Checkers
+   import Test.QuickCheck.Classes
+
+   quickBatch (monad [(1, 2, 3)])
+   #+END_SRC
+
+** Example
+   Wrong
+   #+BEGIN_SRC haskell :results silent
+   data CountMe a = CountMe Integer a deriving (Eq, Show)
+
+   :{
+   instance Functor CountMe where
+     -- fmap :: (a -> b) -> f a -> f b
+     fmap f (CountMe i a) = CountMe (i + 1) (f a)
+   :}
+
+   :{
+   instance Applicative CountMe where
+     -- pure :: a -> f a
+     pure = CountMe 0
+     -- (<*>) :: f (a -> b) -> f a -> f b
+     (<*>) (CountMe n1 f) (CountMe n2 a) = CountMe (n1 + n2) (f a)
+   :}
+
+   :{
+   instance Monad CountMe where
+     -- return :: a -> m a
+     return = pure
+     -- (>>=) :: m a -> (a -> m b) -> m b
+     (>>=) (CountMe n a) f = CountMe (n + 1) b where
+       CountMe _ b = f a
+   :}
+
+   import Test.QuickCheck
+   import Test.QuickCheck.Checkers
+   import Test.QuickCheck.Classes
+
+   :{
+   instance Arbitrary a => Arbitrary (CountMe a) where
+     arbitrary = CountMe <$> arbitrary <*> arbitrary
+   :}
+
+   :{
+   instance (Eq a) => EqProp (CountMe a) where
+     (=-=) = eq
+   :}
+
+   -- the following fails
+   quickBatch $ functor (undefined :: CountMe (Int, String, Int))
+   -- because the functor identity function is not true
+   fmap id (CountMe 1 True) == (CountMe 1 True)
+
+   -- the following fails
+   quickBatch $ applicative (undefined :: CountMe (Int, String, Int))
+   -- because the functor fails otherwise it would be fine
+
+   -- the folowing fails
+   quickBatch $ monad (undefined :: CountMe (Int, String, Int))
+   -- because the left identity (m >>= return = m) law is not true
+   ((CountMe 1 True) >>= return) == (CountMe 1 True)
+
+   -- because the right identity law (return x >>= f = f x) is not true
+   ((return True :: CountMe Bool) >>= (\x -> return $ not x)) == (return False :: CountMe Bool)
+   #+END_SRC
+
+   To fix it we need to fix the ~Functor~ by not modifying the
+   structure (do not increment the integer) and the monoidal behaviour
+   of ~bind~
+   #+BEGIN_SRC haskell :results silent
+   data CountMe a = CountMe Integer a deriving (Eq, Show)
+
+   :{
+   instance Functor CountMe where
+     -- fmap :: (a -> b) -> f a -> f b
+     fmap f (CountMe i a) = CountMe i (f a)
+   :}
+
+   :{
+   instance Applicative CountMe where
+     -- pure :: a -> f a
+     pure = CountMe 0
+     -- (<*>) :: f (a -> b) -> f a -> f b
+     (<*>) (CountMe n1 f) (CountMe n2 a) = CountMe (n1 + n2) (f a)
+   :}
+
+   :{
+   instance Monad CountMe where
+     -- return :: a -> m a
+     return = pure
+     -- (>>=) :: m a -> (a -> m b) -> m b
+     (>>=) (CountMe n1 a) f = CountMe (n1 + n2) b where
+       CountMe n2 b = f a
+   :}
+
+   import Test.QuickCheck
+   import Test.QuickCheck.Checkers
+   import Test.QuickCheck.Classes
+
+   :{
+   instance Arbitrary a => Arbitrary (CountMe a) where
+     arbitrary = CountMe <$> arbitrary <*> arbitrary
+   :}
+
+   :{
+   instance (Eq a) => EqProp (CountMe a) where
+     (=-=) = eq
+   :}
+
+   quickBatch $ functor (undefined :: CountMe (Int, String, Int))
+   quickBatch $ applicative (undefined :: CountMe (Int, String, Int))
+   quickBatch $ monad (undefined :: CountMe (Int, String, Int))
+   #+END_SRC
+
+* 18.06 Application and Composition
+  What if we want to use composition with monad structure?
+  #+BEGIN_SRC haskell :eval never
+  -- we want something like that
+  (.) :: (b -> c) -> (a -> b) -> a -> c
+
+  mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
+  -- doesn't work because f will take a ~b~ and the output of g is ~m b~
+  mcompose f g a = f (g a)
+
+  -- when we want to apply a function to something ignoring the outside
+  -- structure we can use ~fmap~
+  mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
+  mcompose f g a = f <$> (g a)
+
+  -- problem is that the result now is ~m (m c)~ because ~fmap~
+  -- preserves the structure, so we have two layer of structure that we
+  -- need to squash together, that is the ~join~ work
+  mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
+  mcompose f g a = join $ f <$> (g a)
+
+  -- which is ~>>=~
+  mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
+  mcompose f g a = (g a) >>= f
+
+  -- this pattern is captured by the /Kleisli operator/ ~>=>~
+  -- (>=>) :: Monad m => (a -> m b) -> (b -> m c) -> a -> m c
+  mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
+  mcompose = flip (>=>)
+  #+END_SRC
 
 * Exercises
   #+NAME: ghci-clean
@@ -513,3 +688,288 @@
    (file-name-as-directory (file-name-directory (buffer-file-name)))
    chapter)
   #+END_SRC
+
+** Exercises: Monad Instances
+
+   1. Write an instance of ~Monad~ for the following datatype
+      #+BEGIN_SRC haskell :results silent
+      data Nope a = NopeDotJpg deriving (Eq, Show)
+
+      :{
+      instance Functor Nope where
+        -- fmap :: (a -> b) -> f a -> f b
+        fmap _ _ = NopeDotJpg
+      :}
+
+      :{
+      instance Applicative Nope where
+        -- pure :: a -> f a
+        pure _ = NopeDotJpg
+        -- (<*>) :: f (a -> b) -> f a -> f b
+        (<*>) _ _ = NopeDotJpg
+      :}
+
+      :{
+      instance Monad Nope where
+        -- return :: a -> m a
+        return = pure
+        -- (>>=) :: m a -> (a -> m b) -> m b
+        (>>=) _ _ = NopeDotJpg
+      :}
+
+      import Test.QuickCheck
+      import Test.QuickCheck.Checkers
+      import Test.QuickCheck.Classes
+
+      :{
+      instance Arbitrary (Nope a) where
+        arbitrary = return NopeDotJpg
+      :}
+
+      :{
+      instance EqProp (Nope a) where
+        (=-=) = eq
+      :}
+
+      quickBatch $ functor (undefined :: Nope (Int, String, Int))
+      quickBatch $ applicative (undefined :: Nope (Int, String, Int))
+      quickBatch $ monad (undefined :: Nope (Int, String, Int))
+      #+END_SRC
+
+   2. Write an instance of ~Monad~ for the following datatype
+      #+BEGIN_SRC haskell :results silent
+      data PhhhbbtttEither b a = Left' a | Right' b deriving (Eq, Show)
+
+      import Test.QuickCheck
+      import Test.QuickCheck.Checkers
+      import Test.QuickCheck.Classes
+
+      :{
+      instance (Arbitrary a, Arbitrary b) => Arbitrary (PhhhbbtttEither b a) where
+        arbitrary = frequency [(1, Right' <$> arbitrary), (2, Left' <$> arbitrary)]
+      :}
+
+      :{
+      instance (Eq a, Eq b) => EqProp (PhhhbbtttEither b a) where
+        (=-=) = eq
+      :}
+
+      :{
+      instance Functor (PhhhbbtttEither b) where
+        -- fmap :: (a -> b) -> f a -> f b
+        fmap _ (Right' b) = Right' b
+        fmap f (Left' a) = Left' $ f a
+      :}
+
+      quickBatch $ functor (undefined :: PhhhbbtttEither String (Int, String, Int))
+
+      :{
+      instance Applicative (PhhhbbtttEither b) where
+        -- pure :: a -> f a
+        pure x = Left' x
+        -- (<*>) :: f (a -> b) -> f a -> f b
+        (<*>) (Left' f) r = f <$> r
+        (<*>) (Right' x) _ = Right' x
+      :}
+
+      quickBatch $ applicative (undefined :: PhhhbbtttEither String (Int, String, Int))
+
+      :{
+      instance Monad (PhhhbbtttEither b) where
+        -- return :: a -> m a
+        return = pure
+        -- (>>=) :: m a -> (a -> m b) -> m b
+        (>>=) (Left' x) f = f x
+        (>>=) (Right' x) _ = Right' x
+      :}
+
+      quickBatch $ monad (undefined :: PhhhbbtttEither String (Int, String, Int))
+      #+END_SRC
+
+   3. Write an instance of ~Monad~ for the following datatype
+      #+BEGIN_SRC haskell :results silent
+      newtype Identity a = Identity a deriving (Eq, Ord, Show)
+
+      import Test.QuickCheck
+      import Test.QuickCheck.Checkers
+      import Test.QuickCheck.Classes
+
+      :{
+      instance Arbitrary a => Arbitrary (Identity a) where
+        arbitrary = Identity <$> arbitrary
+      :}
+
+      :{
+      instance (Eq a) => EqProp (Identity a) where
+        (=-=) = eq
+      :}
+
+      :{
+      instance Functor Identity where
+        -- fmap :: (a -> b) -> f a -> f b
+        fmap f (Identity a) = Identity $ f a
+      :}
+      quickBatch $ functor (undefined :: Identity (Int, String, Int))
+
+      :{
+      instance Applicative Identity where
+        -- pure :: a -> f a
+        pure x = Identity x
+        -- (<*>) :: f (a -> b) -> f a -> f b
+        (<*>) (Identity f) (Identity a) = Identity $ f a
+      :}
+      quickBatch $ applicative (undefined :: Identity (Int, String, Int))
+
+      :{
+      instance Monad Identity where
+        -- return :: a -> m a
+        return = pure
+        -- (>>=) :: m a -> (a -> m b) -> m b
+        (>>=) (Identity a) f = f a
+      :}
+      quickBatch $ monad (undefined :: Identity (Int, String, Int))
+      #+END_SRC
+
+   4. Write an instance of ~Monad~ for the following type
+      #+BEGIN_SRC haskell :results silent
+      data List a = Nil | Cons a (List a) deriving (Eq, Show)
+
+      import Test.QuickCheck
+      import Test.QuickCheck.Checkers
+      import Test.QuickCheck.Classes
+      import Control.Applicative
+
+      :{
+      instance Arbitrary a => Arbitrary (List a) where
+        arbitrary = frequency [(1, return Nil), (2, liftA2 Cons arbitrary arbitrary)]
+      :}
+
+      :{
+      instance Eq a => EqProp (List a) where
+        (=-=) = eq
+      :}
+
+      :{
+      instance Monoid (List a) where
+        -- mempty :: a
+        mempty = Nil
+        -- mappend :: a -> a -> a
+        mappend l Nil = l
+        mappend Nil r = r
+        mappend (Cons x l) r = Cons x (mappend l r)
+      :}
+      -- quickBatch $ monoid (undefined :: List (Int, String, Int))
+
+      :{
+      instance Functor List where
+        -- fmap :: (a -> b) -> f a -> f b
+        fmap _ Nil = Nil
+        fmap f (Cons a l) = Cons (f a) (f <$> l)
+      :}
+      -- quickBatch $ functor (undefined :: List (Int, String, Int))
+
+      import Data.Monoid
+      :{
+      instance Applicative List where
+        -- pure :: a -> f a
+        pure x = Cons x Nil
+        -- (<*>) :: f (a -> b) -> f a -> f b
+        (<*>) Nil _ = Nil
+        (<*>) (Cons f ll) r = (f <$> r) <> (ll <*> r)
+      :}
+      -- quickBatch $ applicative (undefined :: List (Int, String, Int))
+
+      :{
+      concat' :: List (List a) -> List a
+      concat' Nil = Nil
+      concat' (Cons x xs) = x <> (concat' xs)
+      :}
+
+      :{
+      instance Monad List where
+        -- return :: a -> m a
+        return = pure
+        -- (>>=) :: m a -> (a -> m b) -> m b
+        (>>=) Nil _ = Nil
+        (>>=) xs f = concat' (f <$> xs)
+        -- TODO: the following doesn't work and I don't know why
+        --       it keeps complaining that (xs >>= f) is of type
+        --       (List a) when expects it to be (List b) but
+        --       (xs :: List a) and (f :: (a -> List b))
+        -- (>>=) (Cons x xs) f = (f x) <> (xs >>= f)
+      :}
+      quickBatch $ monad (undefined :: List (Int, String, Int))
+      #+END_SRC
+
+** Exercises: Using Monad and Functor
+
+   1. Write the following function using methods provided by ~Monad~
+      and ~Functor~. Using identity and function composition is fine.
+      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+      import Control.Monad
+      :{
+      j :: Monad m => m (m a) -> m a
+      j = join
+      :}
+
+      j [[1, 2], [], [3]] == [1,2,3]
+      j (Just (Just 1)) == Just 1
+      j Nothing == Nothing
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      True
+      True
+      True
+      #+END_EXAMPLE
+
+   2. Write the following function using methods provided by ~Monad~
+      and ~Functor~. Using identity and function composition is fine.
+      #+BEGIN_SRC haskell :results silent
+      :{
+      l1 :: Monad m => (a -> b) -> m a -> m b
+      l1 = (<$>)
+      :}
+      #+END_SRC
+
+   3. Write the following function using methods provided by ~Monad~
+      and ~Functor~. Using identity and function composition is fine
+      #+BEGIN_SRC haskell :results silent
+      import Control.Monad
+      :{
+      l2 :: Monad m => (a -> b -> c) -> m a -> m b -> m c
+      l2 = liftM2
+      :}
+      #+END_SRC
+
+   4. Write the following function using methods provided by ~Monad~
+      and ~Functor~. Using identity and function composition is fine
+      #+BEGIN_SRC haskell :results silent
+      :{
+      a :: Monad m => m a -> m (a -> b) -> m b
+      a = flip (<*>)
+      :}
+      #+END_SRC
+
+   5. Write the following function using methods provided by ~Monad~
+      and ~Functor~. Using identity and function composition is fine
+      #+NAME: meh-definition
+      #+BEGIN_SRC haskell :results silent
+      import Control.Monad
+      :{
+      meh :: (Monad m) => [a] -> (a -> m b) -> m [b]
+      meh [] _ = return []
+      meh (x:xs) f = liftM2 (:) (f x) (meh xs f)
+      :}
+      #+END_SRC
+
+   6. Write the following function using methods provided by ~Monad~
+      and ~Functor~. Using identity and function composition is fine
+      #+BEGIN_SRC haskell :results silent :noweb yes
+      <<meh-definition>>
+      :{
+      flipType :: (Monad m) => [m a] -> m [a]
+      flipType = flip meh $ id
+      :}
+      #+END_SRC
