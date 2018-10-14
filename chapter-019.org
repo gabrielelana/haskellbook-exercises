@@ -1,0 +1,26 @@
+#+TITLE: Applying Structure
+
+* 18.01 Applying Structure
+  ... only examples
+
+* 18.02 Monoid
+  ... only examples
+
+* 18.03 Functor
+  ... only examples
+
+* 18.04 Applicative
+  ... only examples
+
+* 18.05 Monad
+  ... only examples
+
+* 18.06 An End-to-End Example
+** Exercise
+   Complete the URL Shortener example to avoid to use the same code to
+   shorten two different URLs, in other words, before using the code
+   to shorten an URL verify if that code is already used to shorten
+   another URL. [[./chapter-019][Solution]]
+
+* 18.07 That's a Wrap
+  ... nothing much
