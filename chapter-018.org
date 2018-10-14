@@ -72,7 +72,7 @@
    thing, they exist only for retro compatibility (~Applicative~ have
    been added later)
 
-* Do Syntax and Monads
+* 18.03 Do Syntax and Monads
   Sequencing operations for ~Applicative~ and ~Monads~, same thing but
   with different constraints.
   #+BEGIN_SRC haskell :eval never
