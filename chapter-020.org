@@ -1,13 +1,13 @@
 #+TITLE: Foldable
 
-* 19.01 Foldable
+* 20.01 Foldable
   Lists are not the only foldable thing, there's a general notion of
   catamorphism, generalizing catamorphism for other datatypes involves
   knowing and understanding the monoidal behaviour of those datatypes.
 
-* 19.02 The Foldable Class
+* 20.02 The Foldable Class
   Foldable class: "A class of data structures that can be folded to a
-  summary value" (FC).
+  summary value".
 
   #+BEGIN_SRC haskell :eval never
   class Foldable (t :: * -> *) where
@@ -18,7 +18,7 @@
     one parameter (eg. ~Either~ or ~Tuple~) then one or more type
     parameters need to be part of the structure.
 
-* 19.03 Revenge of the Monoids
+* 20.03 Revenge of the Monoids
   Folding necessarily implies a binary associative operation with an
   identity value. The first two operations defined in ~Foldable~ makes
   it explicit.
@@ -61,7 +61,7 @@
   All {getAll = False}
   #+END_EXAMPLE
 
-* 19.04 Demonstrating Foldable Instances
+* 20.04 Demonstrating Foldable Instances
   To implement ~Foldable~ we only need to implment ~fold~ or ~foldMap~
   because both can be implemented with the other.
 
