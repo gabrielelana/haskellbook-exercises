@@ -1,4 +1,3 @@
-
 module Abs where
 
 abs' :: Integer -> Integer

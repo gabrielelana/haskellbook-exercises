@@ -1,0 +1,57 @@
+#+NAME: ghci-clean
+#+BEGIN_SRC emacs-lisp :var content="" :results raw
+(defun report-compiling-module-p (line)
+  (string-match-p "\\[[0-9]+ of [0-9]+\\] Compiling" line))
+
+(defun report-loaded-module-p (line)
+  (string-match-p "Ok, .+ modules? loaded\\." line))
+
+(defun report-eoe-p (line)
+  (string-match-p "org-babel-haskell-eoe" line))
+
+(defun clean-line (line)
+  (->> line remove-prompt unquote))
+
+(defun remove-prompt (line)
+  (let ((current-prompt (current-prompt line)))
+    (message "current prompt: %S" current-prompt)
+    (if (string-empty-p current-prompt)
+        line
+      (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
+
+(defun current-prompt (line)
+  (if (string-match "\\(^[^|:>]+\\)[|>]" line)
+      (match-string 1 line)
+    ""))
+
+(defun unquote (line)
+  (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" line))
+
+(string-join
+ (seq-map #'clean-line
+          (seq-filter
+           (lambda (line)
+             (and
+              (not (string-empty-p line))
+              (not (report-eoe-p line))
+              (not (report-compiling-module-p line))
+              (not (report-loaded-module-p line))))
+           (split-string content "\n")))
+ "\n")
+#+END_SRC
+
+#+NAME: add-current-chapter-directory-in-path
+#+BEGIN_SRC emacs-lisp :output raw
+(concat
+ ":set -i"
+ (file-name-as-directory (file-name-directory (buffer-file-name)))
+ (file-name-base (buffer-file-name)))
+#+END_SRC
+
+#+NAME: add-chapter-directory-in-path
+#+BEGIN_SRC emacs-lisp :var chapter="" :output raw
+(concat
+ ":set -i"
+ (file-name-as-directory (file-name-directory (buffer-file-name)))
+ chapter)
+#+END_SRC

@@ -1,278 +1,384 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
 #+TITLE: Basic Datatypes
 
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+#+PROPERTY: header-args:haskell+ :epilogue ":load"
+#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
+
 * 4.01 Basic Datatypes
+...
 
 * 4.02 What Are Types?
-- =What Are Types?= Expressions, when evaluated, reduce to
-  values. Every value has a type. Types are how we group a set of
-  values togheter that share something in common.
+Expressions, when evaluated, reduce to values. Every value has a
+type. Types are how we group a set of values togheter that share
+something in common.
 
 * 4.03 Anatomy of a Data Declaration
-- =Data Declaration= Are how datatypes are defined.
-  - =Type Constructor= Is the name of the type and is capitalized.
-  - =Data Constructor= Are the values that inhabit the type they are defined In.
-  - ~data Bool = True | False~
-    - ~Bool~ is the type constructor that defines the datatype name
-    - ~True~ is a data constructor
-    - ~False~ is another data consturctor
-    - The whole thing is called a data declaration
+- /Data Declaration/ are how datatypes are defined.
+  - /Type Constructor/ is the name of the type and is capitalized.
+  - /Data Constructor/ are the values that inhabit the type they are
+    defined in.
+
+#+BEGIN_SRC haskell :eval never
+data Bool = True | False
+#+END_SRC
+
+- ~Bool~ is the /Type Constructor/ that defines the /Data Type/ name
+- ~True~ is a /Data Constructor/
+- ~False~ is another /Data Constructor/
+- The whole thing is called a /Data Declaration/
+
 ** Exercise: Mood Swing
-   Given the following datatype, answer the following questions
-   #+NAME: mood_declaration
-   #+BEGIN_SRC haskell :eval never
-   data Mood = Blah | Woot deriving Show
+Given the following datatype, answer the following questions
+
+#+NAME: mood-declaration
+#+BEGIN_SRC haskell :eval never
+data Mood = Blah | Woot deriving Show
+#+END_SRC
+
+1. What is the /Type Constructor/? ~Mood~
+
+2. If a function requires a ~Mood~ value, what are the value you can possibly use? ~Blah~ or ~Woot~
+
+3. We've written a type signature ~changeMood :: Mood -> Woot~. What's wrong with that? It uses a /Data Constructor/ instead of a /Type Constructor/, it should be ~changeMood :: Mood -> Mood~
+
+4. Implement the function
+   #+NAME: mood
+   #+BEGIN_SRC haskell :tangle chapter-004/Mood.hs :eval never :epilogue ""
+   module Mood where
+
+   <<mood-declaration>>
+
+   changeMood :: Mood -> Mood
+   changeMood Woot = Blah
+   changeMood _ = Woot
    #+END_SRC
 
-   1. What is the type constructor? ~Mood~
-   2. If a function requires a ~Mood~ value, what are the value you can possibly use? ~Blah~ or ~Woot~
-   3. We’ve written a type signature ~changeMood :: Mood -> Woot~. What’s wrong with that? It uses a data constructor instead of a type constructor, it should be ~changeMood :: Mood -> Mood~
-   4. Implement the function
-      #+NAME: mood
-      #+BEGIN_SRC haskell :tangle chapter-004/Mood.hs :noweb yes :results silent
-      module Mood where
+5. Enter all of the above, run it and make sure you got it right
+   #+BEGIN_SRC haskell
+   <<add-chapter-directory-in-path(chapter="chapter-004")>>
+   :l Mood
 
-      <<mood_declaration>>
+   changeMood Woot
+   changeMood Blah
+   #+END_SRC
 
-      -- changeMood :: Mood -> Mood
-      changeMood Woot = Blah
-      changeMood _ = Woot
-      #+END_SRC
-   5. Enter all of the above, run it and make sure you got it right
-      #+BEGIN_SRC haskell :noweb yes :results replace :prologue ":load"
-      <<mood>>
-
-      changeMood Woot
-      changeMood Blah
-      #+END_SRC
-
-      #+RESULTS:
-      : Blah
-      : Woot
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Blah
+   Woot
+   #+END_EXAMPLE
 
 * 4.04 Numeric Types
-- All the following numeric datatypes all have a typeclass ~Num~
-  - =Int= Fixed precision integer.
-  - =Integer= Arbitrary precision integer numbers.
-  - =Fractional=
-    - =Float= Single precision floating point numbers.
-    - =Double= Double precision floating point numbers.
-    - =Rational= Fractional number that represents a ratio of two integers.
-    - =Scientific= Space efficient and almost arbitrary precision scientific number type.
-- The syntax ~127::Int8~ is assigning the type ~Int8~ to the value ~127~
-- Numbers are polymorphic under the surface, and the compile doesn't assign them a concrete type until is not force to do so
-- From the ~Bounded~ typeclass you can find the boundaries through ~minBound~ and ~maxBound~
-  #+BEGIN_SRC haskell :results output replace
-  import GHC.Int
-  :t minBound
-  :t maxBound
-  minBound :: Int8
-  minBound :: Int16
-  minBound :: Int32
-  minBound :: Int64
-  maxBound :: Int8
-  maxBound :: Int16
-  maxBound :: Int32
-  maxBound :: Int64
-  0
-  #+END_SRC
+All the following numeric datatypes all have a typeclass ~Num~
+- ~Int~ Fixed precision integer.
+- ~Integer~ Arbitrary precision integer numbers.
+- ~Fractional~
+  - ~Float~ Single precision floating point numbers.
+  - ~Double~ Double precision floating point numbers.
+  - ~Rational~ Fractional number that represents a ratio of two integers.
+  - ~Scientific~ Space efficient and almost arbitrary precision scientific number type.
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  minBound :: Bounded a => a
-  maxBound :: Bounded a => a
-  -128
-  -32768
-  -2147483648
-  -9223372036854775808
-  127
-  32767
-  2147483647
-  9223372036854775807
-  #+END_EXAMPLE
-- You can find out if a type has an instance of the typeclass ~Bounded~ by asking GHCI for the ~:info~ on that type
-  #+BEGIN_SRC haskell :results output replace
-  :info Int
-  0
-  #+END_SRC
+The syntax ~127::Int8~ is assigning the type ~Int8~ to the value ~127~
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  data Int = I# GHC.Prim.Int# 	-- Defined in ‘GHC.Types’
-  instance Eq Int -- Defined in ‘GHC.Classes’
-  instance Ord Int -- Defined in ‘GHC.Classes’
-  instance Show Int -- Defined in ‘GHC.Show’
-  instance Read Int -- Defined in ‘GHC.Read’
-  instance Enum Int -- Defined in ‘GHC.Enum’
-  instance Num Int -- Defined in ‘GHC.Num’
-  instance Real Int -- Defined in ‘GHC.Real’
-  instance Bounded Int -- Defined in ‘GHC.Enum’
-  instance Integral Int -- Defined in ‘GHC.Real’
-  #+END_EXAMPLE
-- The syntax ~Fracional a => a -> a -> a~ denotes a typeclass constraint. It tells us that the type variable ~a~ must implement the typeclass ~Fractional~
+Numbers are polymorphic under the surface, and the compiler doesn't
+assign them a concrete type until is not forced to do so
+
+From the ~Bounded~ Typeclass you can find the boundaries through ~minBound~ and ~maxBound~
+
+#+BEGIN_SRC haskell
+import GHC.Int
+:t minBound
+:t maxBound
+minBound :: Int8
+minBound :: Int16
+minBound :: Int32
+minBound :: Int64
+maxBound :: Int8
+maxBound :: Int16
+maxBound :: Int32
+maxBound :: Int64
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+minBound :: Bounded a => a
+maxBound :: Bounded a => a
+-128
+-32768
+-2147483648
+-9223372036854775808
+127
+32767
+2147483647
+9223372036854775807
+#+END_EXAMPLE
+
+You can find out if a type has an instance of the typeclass ~Bounded~
+by asking GHCI for the ~:info~ on that type
+
+#+BEGIN_SRC haskell
+:info Int
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+data Int = I# GHC.Prim.Int# 	-- Defined in ‘GHC.Types’
+instance Eq Int -- Defined in ‘GHC.Classes’
+instance Ord Int -- Defined in ‘GHC.Classes’
+instance Show Int -- Defined in ‘GHC.Show’
+instance Read Int -- Defined in ‘GHC.Read’
+instance Enum Int -- Defined in ‘GHC.Enum’
+instance Num Int -- Defined in ‘GHC.Num’
+instance Real Int -- Defined in ‘GHC.Real’
+instance Bounded Int -- Defined in ‘GHC.Enum’
+instance Integral Int -- Defined in ‘GHC.Real’
+#+END_EXAMPLE
+
+The syntax ~Fracional a => a -> a -> a~ denotes a Typeclass
+constraint. It tells us that the type variable ~a~ must implement the
+typeclass ~Fractional~
 
 * 4.05 Comparing Values
 - ~(==) :: Eq a => a -> a -> Bool~
 - ~(/=) :: Eq a => a -> a -> Bool~
 - ~(<) :: Ord a => a -> a -> Bool~
-- ~Eq~ is a typeclass that includes everything that can be compared and determined to be equal in value.
-- ~Org~ is a typeclass that includes everything that can be ordered.
+- ~Eq~ is a Typeclass that includes everything that can be compared
+  and determined to be equal in value.
+- ~Org~ is a Typeclass that includes everything that can be ordered.
 
 * 4.06 Go on and Bool me
 - ~data Bool :: True | False~
-- Note that we capitalize ~True~ and ~False~ because they are our data constructor.
-- Scope is a way to refer to where a named binding to an expression is valid. When we say that something is in scope it means that you can use that expression by its bound name.
+- Note that we capitalize ~True~ and ~False~ because they are /Data
+  Constructors/.
+- Scope is a way to refer to where a named binding to an expression is
+  valid. When we say that something is in scope it means that you can
+  use that expression by its bound name.
+
 ** Exercise: Find the Mistakes
-   1. ~not True && true~ -> data constructors must be capitalized -> ~not True && True~
-   2. ~not (x = 6)~ -> the sign ~=~ is used to bind names not to compare -> ~not (x == 6)~
-   3. ~(1 * 2) > 5~ -> OK
-   4. ~[Merry] > [Happy]~ -> I guess they are supposed to be strings and not data constructors -> ~["Merry"] > ["Happy"]~
-   5. ~[1, 2, 3] ++ "look at me!"~ -> Incompatible types cannot concatenante ~(++) :: [a] -> [a] -> [a]~
-- Haskell doesn't have an ~if~ statement but does have an ~if~ expression
-  #+BEGIN_SRC haskell :tangle chapter-004/GeetIfCool1.hs :eval never
-  module GreetIfCool1 where
+1. ~not True && true~
+   /Data Constructors/ must be capitalized. Should be ~not True && True~
 
-  greetIfCool :: String -> IO ()
-  greetIfCool coolness =
-    if cool
-    then putStrLn "eyyyy. What's shakin'?"
-    else putStrLn "pshhhh."
-    where
-      cool = coolness == "downright frosty yo"
+2. ~not (x = 6)~
+   The sign ~=~ is used to bind names not to compare. Should be ~not (x == 6)~
 
+3. ~(1 * 2) > 5~
+   OK
 
-  main :: IO ()
-  main =
-    do
-      greetIfCool "ah"
-      greetIfCool "downright frosty yo"
-  #+END_SRC
+4. ~[Merry] > [Happy]~ I guess they are supposed to be strings and not
+   data constructors. Should be -> ~["Merry"] > ["Happy"]~
 
-  #+BEGIN_SRC haskell :tangle chapter-004/GeetIfCool2.hs :eval never
-  module GreetIfCool2 where
+5. ~[1, 2, 3] ++ "look at me!"~
+   Incompatible types cannot concatenante ~(++) :: [a] -> [a] -> [a]~
 
-  greetIfCool :: String -> IO ()
-  greetIfCool coolness =
-    if cool coolness
-    then putStrLn "eyyyy. What's shakin'?"
-    else putStrLn "pshhhh."
-    where
-      cool v = v == "downright frosty yo"
+** Conditionals with if-then-else
+Haskell doesn't have an ~if~ statement but does have an ~if~ expression
 
-  main :: IO ()
-  main =
-    do
-      greetIfCool "ah"
-      greetIfCool "downright frosty yo"
-  #+END_SRC
+#+BEGIN_SRC haskell :tangle chapter-004/GreetIfCool1.hs :eval never :epilogue ""
+module GreetIfCool1 where
+
+greetIfCool :: String -> IO ()
+greetIfCool coolness =
+  if cool
+  then putStrLn "eyyyy. What's shakin'?"
+  else putStrLn "pshhhh."
+  where
+    cool = coolness == "downright frosty yo"
+
+main :: IO ()
+main =
+  do
+    greetIfCool "ah"
+    greetIfCool "downright frosty yo"
+#+END_SRC
+
+#+BEGIN_SRC haskell
+<<add-chapter-directory-in-path(chapter="chapter-004")>>
+:l GreetIfCool1
+main
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+pshhhh.
+eyyyy. What's shakin'?
+#+END_EXAMPLE
+
+#+BEGIN_SRC haskell :tangle chapter-004/GreetIfCool2.hs :eval never :epilogue ""
+module GreetIfCool2 where
+
+greetIfCool :: String -> IO ()
+greetIfCool coolness =
+  if cool coolness
+  then putStrLn "eyyyy. What's shakin'?"
+  else putStrLn "pshhhh."
+  where
+    cool v = v == "downright frosty yo"
+
+main :: IO ()
+main =
+  do
+    greetIfCool "downright frosty yo"
+    greetIfCool "ah"
+#+END_SRC
+
+#+BEGIN_SRC haskell
+<<add-chapter-directory-in-path(chapter="chapter-004")>>
+:l GreetIfCool2
+main
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+eyyyy. What's shakin'?
+pshhhh.
+#+END_EXAMPLE
 
 * 4.07 Tuples
-- Tuples is a type that allows you to store and pass around multiple value withing a single value.
-- Tuples have a distinctive, built-in syntax that is used at both type and term levels, and each tuple has a fixed number of constituents.
-- The values within a tuple do not have to be of the same type.
-  #+BEGIN_SRC haskell :results output
-  :t (,)
-  :i (,)
-  0
-  #+END_SRC
+Tuples is a type that allows you to store and pass around multiple
+value withing a single value.
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  (,) :: a -> b -> (a, b)
-  data (,) a b = (,) a b 	-- Defined in ‘GHC.Tuple’
-  instance Monoid a => Applicative ((,) a) -- Defined in ‘GHC.Base’
-  instance (Eq a, Eq b) => Eq (a, b) -- Defined in ‘GHC.Classes’
-  instance Functor ((,) a) -- Defined in ‘GHC.Base’
-  instance Monoid a => Monad ((,) a) -- Defined in ‘GHC.Base’
-  instance (Monoid a, Monoid b) => Monoid (a, b)
-    -- Defined in ‘GHC.Base’
-  instance (Ord a, Ord b) => Ord (a, b) -- Defined in ‘GHC.Classes’
-  instance (Show a, Show b) => Show (a, b) -- Defined in ‘GHC.Show’
-  instance (Read a, Read b) => Read (a, b) -- Defined in ‘GHC.Read’
-  instance Foldable ((,) a) -- Defined in ‘Data.Foldable’
-  instance Traversable ((,) a) -- Defined in ‘Data.Traversable’
-  instance (Bounded a, Bounded b) => Bounded (a, b)
-    -- Defined in ‘GHC.Enum’
-  #+END_EXAMPLE
-- The datatype declaration differs from ~Bool~ datatype declaration in two important ways
-  - It take two parameters ~a~ and ~b~. Those have to be applied to concrete types, much as variables at the term level have to be applied to values to evaluate a function.
-  - It is a product type not a sum type. A product type is a conjunction: you must supply both values to construct the type.
-  #+BEGIN_SRC haskell :results output
+Tuples have a distinctive, built-in syntax that is used at both type
+and term levels, and each tuple has a fixed number of constituents.
+
+The values within a tuple do not have to be of the same type.
+#+BEGIN_SRC haskell
+:t (,)
+"#########"
+:i (,)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+(,) :: a -> b -> (a, b)
+#########
+data (,) a b = (,) a b 	-- Defined in ‘GHC.Tuple’
+Applicative ((,) a) -- Defined in ‘GHC.Base’
+Eq (a, b) -- Defined in ‘GHC.Classes’
+instance Functor ((,) a) -- Defined in ‘GHC.Base’
+Monad ((,) a) -- Defined in ‘GHC.Base’
+Monoid (a, b)
+  -- Defined in ‘GHC.Base’
+Ord (a, b) -- Defined in ‘GHC.Classes’
+Semigroup (a, b)
+  -- Defined in ‘GHC.Base’
+Show (a, b) -- Defined in ‘GHC.Show’
+Read (a, b) -- Defined in ‘GHC.Read’
+instance Foldable ((,) a) -- Defined in ‘Data.Foldable’
+instance Traversable ((,) a) -- Defined in ‘Data.Traversable’
+Bounded (a, b)
+  -- Defined in ‘GHC.Enum’
+#+END_EXAMPLE
+
+The /Datatype Declaration/ differs from ~Bool~ /Datatype Declaration/
+in two important ways
+- It take two parameters ~a~ and ~b~. Those have to be applied to
+  concrete types, much as variables at the term level have to be
+  applied to values to evaluate a function.
+- It is a product type not a sum type. A product type is a
+  conjunction: you must supply both values to construct the type.
+
+  #+BEGIN_SRC haskell
   (,) 8 10
   :t (,) 8 10
   (,) 8 "Julie"
   (,) True 'c'
   :t (,) True 'c'
-  0
   #+END_SRC
 
   #+RESULTS:
-  : (8,10)
-  : (,) 8 10 :: (Num b, Num a) => (a, b)
-  : (8,"Julie")
-  : (True,'c')
-  : (,) True 'c' :: (Bool, Char)
-- Utility functions to remember: ~fst~, ~snd~ and ~swap~
-  #+BEGIN_SRC haskell :results output replace
-  import Data.Tuple
-  t = (1 :: Integer, "blah")
-  :t t
-  fst t
-  snd t
-  swap t
-  :t swap t
-  0
-  #+END_SRC
+  #+BEGIN_EXAMPLE
+  (8,10)
+  (,) 8 10 :: (Num a, Num b) => (a, b)
+  (8,"Julie")
+  (True,'c')
+  (,) True 'c' :: (Bool, Char)
+  #+END_EXAMPLE
 
-  #+RESULTS:
-  : t :: (Integer, [Char])
-  : 1
-  : blah
-  : ("blah",1)
-  : swap t :: ([Char], Integer)
-- The (x, y) syntax of the tuple is special. The constructors you use in the type signatures and in your code (terms) are syntactically identical even though they’re different things.
-  #+BEGIN_SRC haskell
-  fst' :: (a, b) -> a
-  fst' (a, _) = a
+Utility functions to remember: ~fst~, ~snd~ and ~swap~
+#+BEGIN_SRC haskell
+import Data.Tuple
+t = (1 :: Integer, "blah")
+:t t
+"#########"
+fst t
+snd t
+swap t
+"#########"
+:t swap t
+#+END_SRC
 
-  fst' (1, 2)
-  #+END_SRC
+#+RESULTS:
+#+BEGIN_EXAMPLE
+t :: (Integer, [Char])
+#########
+1
+blah
+("blah",1)
+#########
+swap t :: ([Char], Integer)
+#+END_EXAMPLE
 
-  #+RESULTS:
-  : 1
+The ~(x, y)~ syntax of the tuple is special. The constructors you use
+in the type signatures and in your code (terms) are syntactically
+identical even though they’re different things.
 
-  #+BEGIN_SRC haskell
-  snd' :: (a, b) -> a
-  snd' (_, b) = b
+#+BEGIN_SRC haskell
+:{
+fst' :: (a, b) -> a
+fst' (a, _) = a
+:}
 
-  snd' (1, 2)
-  #+END_SRC
+fst' (1, 2)
+#+END_SRC
 
-  #+RESULTS:
-  : 2
+#+RESULTS:
+: 1
+
+#+BEGIN_SRC haskell
+:{
+snd' :: (a, b) -> b
+snd' (_, b) = b
+:}
+
+snd' (1, 2)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+2
+#+END_EXAMPLE
 
 * 4.08 Lists
-- Another type that contains multiple valus but they differ from tuples in three ways.
-  - All elements of a list must be of the same type.
-  - List have they own distinct ~[]~ syntax. Like for the tuples it is used both for the type constructor in type signatures and at the term level to express list values.
-  - The number of values isn't specified in the type.
-#+BEGIN_SRC haskell :results output
+Another type that contains multiple valus but they differ from tuples
+in three ways.
+- All elements of a list must be of the same type.
+- List have they own distinct ~[]~ syntax. Like for the tuples it is
+  used both for the /Type Constructor/ in type signatures and for the
+  /Data Constructor/ at the term level to express list values.
+- The number of values isn't specified in the type.
+
+#+BEGIN_SRC haskell
 l = ["Foo", "Bar", "Baz"]
 l
 :t l
 l ++ ["Fuz"]
 concat [l, ["A", "B"]]
-0
 #+END_SRC
 
 #+RESULTS:
-:
-: ["Foo","Bar","Baz"]
-: l :: [[Char]]
-: ["Foo","Bar","Baz","Fuz"]
-: ["Foo","Bar","Baz","A","B"]
+#+BEGIN_EXAMPLE
+["Foo","Bar","Baz"]
+l :: [[Char]]
+["Foo","Bar","Baz","Fuz"]
+["Foo","Bar","Baz","A","B"]
+#+END_EXAMPLE
 
 * 4.09 Exercises
-#+BEGIN_SRC haskell :session exercise :results none
+#+BEGIN_SRC haskell :eval never
 awesome = ["Papuchon", "curry", ":)"]
 also = ["Quake", "The Simons"]
 allAwesome = [awesome, also]
@@ -280,76 +386,100 @@ allAwesome = [awesome, also]
 
 1. Given the definition of ~length~ what would be the type signature?
    ~length :: [a] -> Integer~
+
 2. What are the results of the following expressions?
    1. ~length [1, 2, 3, 4, 5]~ -> ~5~
    2. ~length [(1, 2), (2, 3), (3, 4)]~ -> ~3~
    3. ~length allAwesome~ -> ~2~
    4. ~length (concat allAwesome)~ -> ~5~
+
 3. One works and one returns an error
-   1. ~6 / 3~ -> OK
-   2. ~6 / length [1, 2, 3]~ -> Error, because ~lenght~ returns an ~Int~ which doesn't have an instance of ~Fractional~
-4. How can you fix the broken code from the preceding exercise using a different division function/operator?
+   1. ~6 / 3~
+      Works
+   2. ~6 / length [1, 2, 3]~
+      Error, because ~lenght~ returns an ~Int~ which doesn't have an
+      instance of ~Fractional~
+
+4. How can you fix the broken code from the preceding exercise using a
+   different division function/operator?
    ~div 6 (length [1, 2, 3])~
-5. What is the type of the expression 2 + 3 == 5? What would we expect as a result?
+
+5. What is the type of the expression ~2 + 3 == 5~?
    ~Bool~
+   What would we expect as a result?
    ~True~
+
 6. What is the type and expected result value of the following?
-   #+BEGIN_SRC haskell :results silent
+   #+BEGIN_SRC haskell :eval never
    let x = 5
    x + 3 == 5
    #+END_SRC
-   ~Bool~
-   ~False~
-7. Below are some bits of code. Which will work? Why or why not? If they will work, what value would these reduce to?
-   1. ~length allAwesome == 2~ -> ~True~
-   2. ~length [1, 'a', 3, 'b']~ -> Error, that's not a valid list, there's no type for all the values in the list
-   3. ~length allAwesome + length awesome~ -> ~5~
-   4. ~(8 == 8) && ('b' < 'a')~ -> ~False~
-   5. ~(8 == 8) && 9~ -> Error, ~9~ is not a ~Bool~
-8. Write a function that tells whether or not a given String is a palindrome.
-   #+BEGIN_SRC haskell :tangle chapter-004/Palindrome.hs :eval never
+   ~Bool~ and ~False~
+
+7. Below are some bits of code. Which will work? Why or why not? If
+   they will work, what value would these reduce to?
+   1. ~length allAwesome == 2~
+      Works. ~True~
+   2. ~length [1, 'a', 3, 'b']~
+      Error. That's not a valid list, they don't have the same type.
+   3. ~length allAwesome + length awesome~
+      Work. ~5~
+   4. ~(8 == 8) && ('b' < 'a')~
+      Works. ~False~
+   5. ~(8 == 8) && 9~
+      Error. ~9~ is not of type ~Bool~
+
+8. Write a function that tells whether or not a given String is a
+   palindrome.
+   #+BEGIN_SRC haskell :tangle chapter-004/Palindrome.hs :eval never :epilogue ""
    module Palindrome where
 
    isPalindrome :: (Eq a) => [a] -> Bool
    isPalindrome s = s == reverse s
    #+END_SRC
 
-   #+BEGIN_SRC haskell :results output replace
-   :load /home/coder/code/haskellbook-exercises/chapter-004/Palindrome
+   #+BEGIN_SRC haskell
+   <<add-chapter-directory-in-path(chapter="chapter-004")>>
+   :load Palindrome
    isPalindrome "ABBA"
    isPalindrome "AA"
    isPalindrome "A"
    isPalindrome "AB"
-   0
    #+END_SRC
 
    #+RESULTS:
-   : True
-   : True
-   : True
-   : False
+   #+BEGIN_EXAMPLE
+   True
+   True
+   True
+   False
+   #+END_EXAMPLE
+
 9. Write a function to return the absolute value of a number using if-then-else
-   #+BEGIN_SRC haskell :tangle chapter-004/Abs.hs :eval never
+   #+BEGIN_SRC haskell :tangle chapter-004/Abs.hs :eval never :epilogue ""
    module Abs where
 
    abs' :: Integer -> Integer
    abs' n = if n < 0 then (-n) else n
    #+END_SRC
 
-   #+BEGIN_SRC haskell :results output replace
-   :load /home/coder/code/haskellbook-exercises/chapter-004/Abs
+   #+BEGIN_SRC haskell
+   <<add-chapter-directory-in-path(chapter="chapter-004")>>
+   :l Abs
    abs' 5
    abs' (-5)
-   0
    #+END_SRC
 
    #+RESULTS:
-   : 5
-   : 5
+   #+BEGIN_EXAMPLE
+   5
+   5
+   #+END_EXAMPLE
+
 10. Fill in the definition of the following function, using fst and snd
-    #+BEGIN_SRC haskell :results value
+    #+BEGIN_SRC haskell
     :{
-    f :: (a, b) -> (c, d) -> ((b, d), k(a, c))
+    f :: (a, b) -> (c, d) -> ((b, d), (a, c))
     f x y = ((snd x, snd y), (fst x, fst y))
     :}
 
@@ -357,34 +487,67 @@ allAwesome = [awesome, also]
     #+END_SRC
 
     #+RESULTS:
-    : ((2,4),(1,3))
+    #+BEGIN_EXAMPLE
+    ((2,4),(1,3))
+    #+END_EXAMPLE
 
 ** Correcting Syntax
-1. A function that adds 1 of a length of a string.
-   #+BEGIN_SRC haskell
+1. A function that adds ~1~ of a length of a string.
+
+   Wrong
+   #+BEGIN_SRC haskell :eval never
    x = (+)
 
-   f xs = x w 1
-        where w = length xs
+   F xs = w 'x' 1 where w = length xs
    #+END_SRC
+
+   Works
+   #+BEGIN_SRC haskell :eval never
+   x = (+)
+
+   f xs = x w 1 where w = length xs
+   #+END_SRC
+
 2. This is supposed to be the identity function.
-   #+BEGIN_SRC haskell
+
+   Wrong
+   #+BEGIN_SRC haskell :eval never
+   \X = x
+   #+END_SRC
+
+   Works
+   #+BEGIN_SRC haskell :eval never
    \x -> x
    #+END_SRC
+
 3. When fixed, this function will return 1 from the value (1, 2).
-   #+BEGIN_SRC haskell
+
+   Wrong
+   #+BEGIN_SRC haskell :eval never
+   f (a b) = A
+   #+END_SRC
+
+   Works
+   #+BEGIN_SRC haskell :eval never
    f (a b) = a
    #+END_SRC
 
 ** Match the function names to their types
 1. Which of the following types is the type of show?
-   c ~Show a => a -> String~
-2. Which of the following types is the type of (==)?
-   b ~Eq a => a -> a -> Bool~
-3. Which of the following types is the type of fst?
-   a ~(a, b) -> a~
-4. Which of the following types is the type of (+)?
-   d ~(+) :: Num a => a -> a -> a~
+
+   c) ~Show a => a -> String~
+
+2. Which of the following types is the type of ~(==)~?
+
+   b) ~Eq a => a -> a -> Bool~
+
+3. Which of the following types is the type of ~fst~?
+
+   a) ~(a, b) -> a~
+
+4. Which of the following types is the type of ~(+)~?
+
+   d) ~(+) :: Num a => a -> a -> a~
 
 * 4.10 Definitions
 - Tuple :: is an ordered grouping of values.
@@ -397,7 +560,11 @@ allAwesome = [awesome, also]
 - Polymorphism :: being able to write code in terms of values which may be one of several, or any, type.
 
 * 4.11 Names
-- There are 7 categories of entities that have names
-  - *Functions*, *Term Variables*, *Data Constructors*, *Type Variables*, *Type Constructors*, *Typeclasses* and *Modules*
-  - Term Level: *Term Variables* and *Data Contructors*
-  - Type Level: *Type Variables*, *Type Constructors*, *Typeclasses*
+There are 7 categories of entities that have names
+- *Functions*
+- *Term Variables* (term level)
+- *Data Constructors* (term level)
+- *Type Variables* (type level)
+- *Type Constructors* (type level)
+- *Type Classes* (type level)
+- *Modules*

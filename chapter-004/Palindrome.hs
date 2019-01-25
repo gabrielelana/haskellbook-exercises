@@ -1,4 +1,3 @@
-
 module Palindrome where
 
 isPalindrome :: (Eq a) => [a] -> Bool

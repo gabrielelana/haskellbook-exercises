@@ -1,13 +1,12 @@
-
-module GreetIfCool2 where
+module GreetIfCool1 where
 
 greetIfCool :: String -> IO ()
 greetIfCool coolness =
-  if cool coolness
+  if cool
   then putStrLn "eyyyy. What's shakin'?"
   else putStrLn "pshhhh."
   where
-    cool v = v == "downright frosty yo"
+    cool = coolness == "downright frosty yo"
 
 main :: IO ()
 main =
