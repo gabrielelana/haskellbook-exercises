@@ -1,8 +1,16 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
 #+TITLE: Types
 
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+#+PROPERTY: header-args:haskell+ :epilogue ":load"
+#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
+
 * 5.01 Types
-  Type systems in logic and mathematics have been designed to impose
-  constraints that enforce correctness.
+Type systems in logic and mathematics have been designed to impose
+constraints that enforce correctness.
 
 * 5.02 What are types for?
 - Reduces errors.
@@ -11,293 +19,810 @@
 - Serves as documentation.
 
 * 5.03 How to read type signatures
-- The arrow is the type constructor for functions (~data (->) a b~)
-- Function type has no data constructors. The values that shows up at term level is the function. Functions are values.
-- ~(+) :: a -> a -> a~ right associative ~(->) a (a -> a)~ mean takes and ~a~ and returns a ~(a -> a)~
-- When a typeclass is constraining a type variable, the variable could represent one of the types that have instances of that typeclass.
-- When we constrain a type varialbe like ~Num a => a -> a~ means also that the first and the second argument must be of the same concrete type when found.
-- A type signature can have more than one typeclass constraint (~(Ord a, Num a) => a -> a -> Ordering~)
-- Look up [[https://wiki.haskell.org/Keywords][here]] to learn the keywords of the language
-- The only way to evaluate anything is to evaluate a function
-- Function evaluation is left associative -> left most arguments are evaluated first
+The arrow is the type constructor for functions ~data (->) a b~
+#+BEGIN_SRC haskell
+:i (->)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+data (->) (a :: TYPE q) (b :: TYPE r) 	-- Defined in ‘GHC.Prim’
+infixr 0 ->
+instance Applicative ((->) a) -- Defined in ‘GHC.Base’
+instance Functor ((->) r) -- Defined in ‘GHC.Base’
+instance Monad ((->) r) -- Defined in ‘GHC.Base’
+Monoid (a -> b) -- Defined in ‘GHC.Base’
+Semigroup (a -> b) -- Defined in ‘GHC.Base’
+#+END_EXAMPLE
+
+Function type has no data constructors. The values that shows up at
+term level is the function. Functions are values.
+
+~(->)~ is right associative, it means that ~(+) :: a -> a -> a~ takes an
+~a~ and returns a ~(a -> a)~
+
+When a /Type Class/ is constraining a /Type Variable/, the variable
+can represent one of the types that have instances of that /Type
+Class/.
+
+When we constrain a /Type Variable/ like ~Num a => a -> a~ means also
+that the first and the second argument must be of the same concrete
+type when found.
+
+A type signature can have more than one /Type Class/ constraint like
+#+BEGIN_SRC haskell :eval never
+Ord a, Num a) => a -> a -> Ordering
+#+END_SRC
+
+Look up [[https://wiki.haskell.org/Keywords][here]] to learn the keywords of the language.
+
+Application is evaluation; in other words, the only way to evaluate
+anything is by applying functions, and function application is left
+associative, means that the left most arguments are evaluated first.
+
 ** Exercise: Type Matching
-   1. a -> c
-   2. b -> d
-   3. c -> b
-   4. d -> a
-   5. e -> e
+Match the function to its type signature
+
+1. a) ~not~ -> c) ~_ :: Bool -> Bool~
+
+2. b) ~length~ -> d) ~_ :: [a] -> Int~
+
+3. c) ~concat~ -> b) ~_ :: [[a]] -> [a]~
+
+4. d) ~head~ -> a) ~_ :: [a] -> a~
+
+5. e) ~(<)~ -> e) ~_ :: Ord a => a -> a -> Bool~
 
 * 5.04 Currying
-- Partial Application
-  #+BEGIN_SRC haskell :results output replace
-  :{
-  addFive :: Integer -> Integer -> Integer
-  addFive a b = a + b + 5
-  :}
+Partial Application
+#+BEGIN_SRC haskell
+:{
+addFive :: Integer -> Integer -> Integer
+addFive a b = a + b + 5
+:}
+:t addFive
 
-  0
-  :t addFive
-  addTen = addFive 5
-  :t addTen
-  fifteen = addTen 5
-  :t fifteen
-  fifteen
-  0
-  #+END_SRC
+addTen = addFive 5
+:t addTen
 
-  #+RESULTS:
-  : addFive :: Integer -> Integer -> Integer
-  : addTen :: Integer -> Integer
-  : fifteen :: Integer
-  : 15
-- Manual currying and uncurrying
-- Sectioning: specifically refers to partial application of infix operators, which has a special syntax and allows you to choose whether the argument you're applying the operator to is the first or the second.
-  #+BEGIN_SRC haskell :results output replace
-  x = 5
-  y = (2^)
-  z = (^2)
+fifteen = addTen 5
+:t fifteen
 
-  y x
-  z x
-  0
-  #+END_SRC
+fifteen
+#+END_SRC
 
-  #+RESULTS:
-  : 32
-  : 25
+#+RESULTS:
+#+BEGIN_EXAMPLE
+addFive :: Integer -> Integer -> Integer
+addTen :: Integer -> Integer
+fifteen :: Integer
+15
+#+END_EXAMPLE
+
+** Uncurrying
+Haskell is curried by default, but you can /Uncurry/
+functions. /Uncurrying/ means un-nesting the functions and replacing
+the two functions with a tuple of two values.
+
+- Uncurried functions: One function, many arguments
+- Curried functions: Many function, one argument each
+
+Curried
+#+BEGIN_SRC haskell :eval never
+(+) :: Num a => a -> a -> a
+#+END_SRC
+
+If you have a function ~f :: (t1, t2) -> t~ you can always write a
+function ~curry :: ((t1, t2) -> t) -> t1 -> t2 -> t~
+#+BEGIN_SRC haskell :eval never
+curry :: ((t1, t2) -> t) -> t1 -> t2 -> t
+curry f a b = f (a, b)
+#+END_SRC
+
+Uncurried
+#+BEGIN_SRC haskell :eval never
+(+) :: Num a => (a, a) -> a
+#+END_SRC
+
+If you have a function ~f :: t1 -> t2 -> t~ you can always write a
+function ~uncurry :: (t1 -> t2 -> t) -> (t1, t2) -> t~
+#+BEGIN_SRC haskell :eval never
+uncurry :: (t1 -> t2 -> t) -> (t1, t2) -> t
+uncurry f (a, b) = f a b
+#+END_SRC
+
+
+** Sectioning
+Specifically refers to partial application of infix operators, which
+has a special syntax and allows you to choose whether the argument
+you're applying the operator to is the first or the second.
+
+#+BEGIN_SRC haskell
+x = 5
+y = (2^)
+z = (^2)
+
+y x
+z x
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+32
+25
+#+END_EXAMPLE
+
 ** Exercise: Type Arguments
 1. ~f :: a -> a -> a -> a~ what is the type of ~f 'c'~
-   a) ~Char~
+
+   a) ~Char -> Char -> Char~
+
 2. ~g :: a -> b -> c -> b~ what is the type of ~g 0 'c' "woot"~
+
    d) ~Char~
+
 3. ~h :: (Num a, Num b) => a -> b -> b~ what is the type of ~h 1.0 2~
+
    d) ~Num b => b~
+
 4. ~h :: (Num a, Num b) => a -> b -> b~ what is the type of ~h 1 (5.5 :: Double)~
+
    c) ~Double~
+
 5. ~jackal :: (Ord a, Eq b) => a -> b -> a~ what is the type of ~jackal "keyboard" "has the word jackal in it"~
-   a) ~Char~
+
+   a) ~[Char]~
+
 6. ~jackal :: (Ord a, Eq b) => a -> b -> a~ what is the type of ~jackal "keyboard"~
+
    e) ~Eq b => b -> [Char]~
+
 7. ~kessel :: (Ord a, Num b) => a -> b -> a~ what is the type of ~kessel 1 2~
+
    d) ~(Num a, Ord a) => a~
+
 8. ~kessel :: (Ord a, Num b) => a -> b -> a~ what is the type of ~kessel 1 (2 :: Integer)~
+
    a) ~(Num a, Ord a) => a~
+
 9. ~kessel :: (Ord a, Num b) => a -> b -> a~ what is the type of ~kessel (1 :: Integer) 2~
+
    c) ~Integer~
 
 * 5.05 Polymorphism
-  - Polymorphic means "made of many forms"
-  - Polymorphic type variables give us the ability to to implement expressions that can accept arguments of many types and return results of many types without rewriting the expression for every type
-  - Type signatures may have three kind of types:
-    - Concrete
-    - Constrained Polymorphic (also called Ad-Hoc Polymorphism)
-    - Parametrically Polymorphic
-  - Parametricity means that the behaviour of a function doesn't change with respect to the type of its argument if the type is compatible with the constraints.
-** Exercise: Parametricity
-   1. Is not possible
-   2. Write all possible implementation of a function with type signature ~a -> a -> a~
-      #+BEGIN_SRC haskell
-      first :: a -> a -> a
-      first a b = a
-      #+END_SRC
+Polymorphic means "made of many forms". Polymorphic type variables
+give us the ability to to implement expressions that can accept
+arguments of many types and return results of many types without
+rewriting the expression for every type
 
-      #+BEGIN_SRC haskell
-      second :: a -> a -> a
-      second a b = b
-      #+END_SRC
-   3. Write all possible implementation of function with type signature ~a -> b -> b~
-      #+BEGIN_SRC haskell
-      only :: a -> b -> b
-      only a b = b
-      #+END_SRC
+- Type signatures may have three kind of types:
+  - Concrete
+  - Constrained Polymorphic (also called Ad-Hoc Polymorphism)
+  - Parametric Polymorphic
+
+Parametricity means that the behaviour of a function doesn't change
+with respect to the type of its argument if the type is compatible
+with the constraints.
+
+** Exercise: Parametricity
+
+1. Given the type a -> a, which is the type for id, attempt to make a
+   function that terminates successfully that does something other
+   than returning the same value.
+
+   It's not possible.
+
+2. Write all possible implementation of a function with type signature
+   ~??? :: a -> a -> a~
+
+   #+BEGIN_SRC haskell :eval never
+   first :: a -> a -> a
+   first a b = a
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :eval never
+   second :: a -> a -> a
+   second a b = b
+   #+END_SRC
+
+3. Write all possible implementation of function with type signature
+   ~a -> b -> b~
+
+   #+BEGIN_SRC haskell :eval never
+   only :: a -> b -> b
+   only a b = b
+   #+END_SRC
 
 * 5.06 Type Inference
-  - Type inference is an algorithm for determining the types of expressions.
+Type inference is an algorithm for determining the types of expressions.
+
 ** Exercise: Apply Yourself
-   1. ~myConcat :: [Char] -> [Char]~
-   2. ~myMult :: Fractional a => a -> a~
-   3. ~myTake :: Int -> [Char]~
-   4. ~myCom :: Int -> Bool~
-   5. ~myAlph :: Char -> Bool~
+Look at these pairs of functions. One function is unapplied, so the
+compiler will infer a maximally polymorphic type. The second function
+has been applied to a value, so the inferred type signature may have
+become concrete, or at least less polymorphic. Figure out how the type
+would change and why, make a note of what you think the new inferred
+type would be and then check your work in GHCi
+
+1. General function ~(++) :: [a] -> [a] -> [a]~
+
+   Applied in ~myConcat x = x ++ " yo"~
+
+   ~myConcat :: [Char] -> [Char]~
+
+2. General function ~(*) :: Num a => a -> a -> a~
+
+   Applied in ~myMult x = (x / 3) * 5~
+
+   ~myMult :: Fractional a => a -> a~
+
+3. General function ~take :: Int -> [a] -> [a]~
+
+   Applied in ~myTake x = take x "hey you"~
+
+   ~myTake :: Int -> [Char]~
+
+4. General function ~(>) :: Ord a => a -> a -> Bool~
+
+   Applied in ~myCom x = x > (length [1..10])~
+
+   ~myCom :: Int -> Bool~
+
+5. General function ~(<) :: Ord a => a -> a -> Bool~
+
+   Applied in ~myAlph x = x < 'z'~
+
+   ~myAlph :: Char -> Bool~
+
 * 5.07 Asserting Types for Declaration
+You can force the type inference by explicitly declaring types
+
+#+BEGIN_SRC haskell
+triple x = x * 3
+:t triple
+
+-- With type declaration
+triple' x = x * 3 :: Integer
+:t triple'
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+triple :: Num a => a -> a
+triple' :: Integer -> Integer
+#+END_EXAMPLE
+
+Another way is to explicitly declare the type of the function
+#+BEGIN_SRC haskell
+:{
+-- Type Declaration
+triple :: Integer -> Integer
+-- Function Declaration
+triple x = x * 3
+:}
+
+:t triple
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+triple :: Integer -> Integer
+#+END_EXAMPLE
+
+This is how most Haskell code you look at will be laid out, with
+separate top-level declarations for types and functions. Such top-
+level declarations are in scope throughout the module.
+
+It is possible to assert type locally with ~let~ and ~where~
+#+BEGIN_SRC haskell
+:{
+triple x = f x
+  where f :: Integer -> Integer
+        f x = x * 3
+:}
+
+:t triple
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+triple :: Integer -> Integer
+#+END_EXAMPLE
+
 * 5.08 Chapter Exercises
 ** Multiple choice
-   1. c
-   2. a
-   3. b
-   4. c
+1. A value of type ~[a]~ is
+
+   c) A list whose elements are all of some type ~𝑎~
+
+2. A function of type [[~a]] -> [a]~ could
+
+   a) Take a list of strings as an argument
+
+3. A function of type ~[a] -> Int -> a~
+
+   b) Returns one element of type ~𝑎~ from a list
+
+4. A function of type ~(a, b) -> a~
+
+   c) Takes a tuple argument and returns the first value
+
 ** Determine the type
-   1. Determine the value returned by the application of functions and its value
-      1. ~54~, ~Num a => a~
-      2. ~(0, "doge")~, ~Num a => (a, [Char])~
-      3. ~(0, "doge")~, ~(Integer, [Char])~
-      4. ~False~, ~Bool~
-      5. ~5~, ~Int~
-      6. ~False~, ~Bool~
-   2. What's the type of ~w~? ~Num a => a~
-   3. What's the type of ~y~? ~Fractional a => a~
-   3. What's the type of ~y~? ~[Char]~
+For the following functions, determine the type of the specified
+value.
+
+1. Determine the value returned by the application of functions and its value
+
+   1. ~(* 9) 6~
+
+      ~54 :: Num a => a~
+
+   2. ~head [(0,"doge"),(1,"kitteh")]~
+
+      ~(0, "dodge") :: Num a => (a, [Char])~
+
+   3. ~head [(0 :: Integer ,"doge"),(1,"kitteh")]~
+
+      ~(0, "dodge") :: (Integer, [Char])~
+
+   4. ~if False then True else False~
+
+      ~False :: Bool~
+
+   5. ~length [1, 2, 3, 4, 5]~
+
+      ~5 :: Int~
+
+   6. ~(length [1, 2, 3, 4]) > (length "TACOCAT")~
+
+      ~False :: Bool~
+
+2. Given
+   #+BEGIN_SRC haskell :eval never
+   x = 5
+   y = x + 5
+   w = y * 10
+   #+END_SRC
+
+   What's the type of ~w~? ~w :: Num a => a~
+
+3. Given
+   #+BEGIN_SRC haskell :eval never
+   x = 5
+   y = x + 5
+   z y = y * 10
+   #+END_SRC
+
+   What's the type of ~z~? ~z :: Num a => a -> a~
+
+4. Given
+   #+BEGIN_SRC haskell :eval never
+   x = 5
+   y = x + 5
+   f = 4 / y
+   #+END_SRC
+
+   What's the type of ~f~? ~f :: Fractional a => a~
+
+5. Given
+   #+BEGIN_SRC haskell :eval never
+   x = "Julie"
+   y = " <3 "
+   z = "Haskell"
+   f = x ++ y ++ z
+   #+END_SRC
+
+   What's the type of ~f~? ~f :: [Char]~
+
 ** Does it compile?
-   1. It doesn't compile, fixed
-      #+BEGIN_SRC haskell :results none
-      bigNum = (^) 5
-      wahoo = bigNum $ 10
-      wahoo
-      #+END_SRC
-   2. It compiles
-   3. It doesn't compile, fixed
-      #+BEGIN_SRC haskell :results none
-      a = (+)
-      b = a
-      c = b 10
-      d = c 200
-      d
-      #+END_SRC
-   4. I doesn't compile, c is not defined
+For each set of expressions, figure out which expression, if any,
+causes the compiler to squawk at you. Fix it if you can.
+
+1. Does it compile?
+   #+BEGIN_SRC haskell :eval never
+   bigNum = (^) 5 $ 10
+   wahoo = bigNum $ 10
+   #+END_SRC
+
+   No, ~bigNum~ is fully applied and so it cannot be applied to ~10~
+   in ~wahoo~
+   #+BEGIN_SRC haskell :eval never
+   bigNum = (^) 5
+   wahoo = bigNum $ 10
+   #+END_SRC
+
+2. Does it compile?
+   #+BEGIN_SRC haskell
+   x = print
+   y = print "woohoo!"
+   z = x "hello world"
+   #+END_SRC
+
+   It compiles
+
+3. Does it compile?
+   #+BEGIN_SRC haskell :eval never
+   a = (+)
+   b = 5
+   c = b 10
+   d = c 200
+   #+END_SRC
+
+   No, ~b~ cannot be applied to a value
+   #+BEGIN_SRC haskell :eval never
+   a = (+)
+   b = a
+   c = b 10
+   d = c 200
+   #+END_SRC
+
+4. Does it compile?
+   #+BEGIN_SRC haskell :eval never
+   a = 12 + b
+   b = 10000 * c
+   #+END_SRC
+
+   No, ~c~ has not been declared
+   #+BEGIN_SRC haskell :eval never
+   a = 12 + b
+   b = 10000 * c
+   c = 1
+   #+END_SRC
+
 ** Type variable or specific type constructor?
-   1. Already done in the book
-   2. Fully polymorphic, concrete, concrete
-   3. Fully polymorphic, constrained polymorphic, concrete
-   4. Fully polymorphic, fully polymorphic, concrete
-** Write a type signature
-   1. ~functionH :: [a] -> a~
-   2. ~functionC :: Ord a => a -> a -> Bool~
-   3. ~functionS :: (a, b) -> b~
-** Given a type write a function
-   1. Only one version
-      #+BEGIN_SRC haskell :results none
-      i :: a -> a
-      i x = x
-      #+END_SRC
-   2. Only one version
-      #+BEGIN_SRC haskell :results none
-      c :: a -> b -> a
-      c x y = x
-      #+END_SRC
-   3. Yes
-   4. Only one version
-      #+BEGIN_SRC haskell :results none
-      c' :: a -> b -> b
-      c' x y = y
-      #+END_SRC
-   5. Two known possibilities
-      #+BEGIN_SRC haskell :results none
-      r :: [a] -> [a]
-      r xs = xs
-      #+END_SRC
-      #+BEGIN_SRC haskell :results none
-      r :: [a] -> [a]
-      r xs = reverse xs
-      #+END_SRC
-      #+BEGIN_SRC haskell :results none
-      r :: [a] -> [a]
-      r xs = tail xs
-      #+END_SRC
-   6. Only one version
-      #+BEGIN_SRC haskell :results none
-      co :: (b -> c) -> (a -> b) -> a -> c
-      co b2c a2b a = b2c (a2b a)
-      #+END_SRC
-   7. Only one version
-      #+BEGIN_SRC haskell :results none
-      a :: (a -> c) -> a -> a
-      a _ x = x
-      #+END_SRC
-   8. Only one version
-      #+BEGIN_SRC haskell :results none
-      a' :: (a -> b) -> a -> b
-      a' a2b a = a2b a
-      #+END_SRC
+In the following /Type Signatures/, categorize each component
+as one of: fully polymorphic, constrained polymorphic, concrete
+
+1. Categorize the components of the /Type Signature/
+   #+BEGIN_SRC haskell :eval never
+   f :: Num a => a -> b -> Int -> Int
+   --            1    2    3      4
+   #+END_SRC
+
+   1. constrained polymorphic
+   2. fully polymorphic
+   3. concrete
+   4. concrete
+
+2. Categorize the components of the /Type Signature/
+   #+BEGIN_SRC haskell :eval never
+   f :: zed -> Zed -> Blah
+   --   1      2      3
+   #+END_SRC
+
+   1. fully polymorphic
+   2. concrete
+   3. concrete
+
+3. Categorize the components of the /Type Signature/
+   #+BEGIN_SRC haskell :eval never
+   f :: Enum b => a -> b -> C
+   --             1    2    3
+   #+END_SRC
+
+   1. fully polymorphic
+   2. constrained polymorphic
+   3. concrete
+
+4. Categorize the components of the /Type Signature/
+   #+BEGIN_SRC haskell :eval never
+   f :: f -> g -> C
+   --   1    2    3
+   #+END_SRC
+
+   1. fully polymorphic
+   2. fully polymorphic
+   3. concrete
+
+** Write a Type Signature
+For the following expressions, please add a type signature.
+
+1. Add a /Type Signature/
+   #+BEGIN_SRC haskell :eval never
+   functionH :: ???
+   functionH (x:_) = x
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results none
+   :{
+   functionH :: [a] -> a
+   functionH (x:_) = x
+   :}
+   #+END_SRC
+
+2. Add a /Type Signature/
+   #+BEGIN_SRC haskell :eval never
+   functionC :: ???
+   functionC x y =
+     if (x > y) then True else False
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results none
+   :{
+   functionC :: Ord a => a -> a -> Bool
+   functionC x y =
+     if (x > y) then True else False
+   :}
+   #+END_SRC
+
+3. Add a /Type Signature/
+   #+BEGIN_SRC haskell :eval never
+   functionS :: ???
+   functionS (x, y) = y
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results none
+   :{
+   functionS :: (a, b) -> b
+   functionS (x, y) = y
+   :}
+   #+END_SRC
+
+** Given a Type, Write a Function
+You will be shown a type and a function that needs to be written. Use
+the information the type provides to determine what the function
+should do.
+
+1. Only one implementation
+   #+BEGIN_SRC haskell :results none
+   -- i :: a -> a
+   :{
+   i :: a -> a
+   i x = x
+   :}
+   #+END_SRC
+
+2. Only one implementation
+   #+BEGIN_SRC haskell :results none
+   -- c :: a -> b -> a
+   :{
+   c :: a -> b -> a
+   c x _ = x
+   :}
+   #+END_SRC
+
+3. Given alpha equivalence are ~c''~ and ~c~ (see above) the same
+   thing?
+
+   #+BEGIN_SRC haskell :results none
+   -- c'' :: b -> a -> b
+   :{
+   c'' :: b -> a -> b
+   c'' x _ = x
+   :}
+   #+END_SRC
+
+   The answer is: Yes
+
+4. Only one implementation
+   #+BEGIN_SRC haskell :results none
+   -- c' :: a -> b -> b
+   :{
+   c' :: a -> b -> b
+   c' _ y = y
+   :}
+   #+END_SRC
+
+5. Multiple implementations
+
+   #+BEGIN_SRC haskell :results none
+   -- r :: [a] -> [a]
+   :{
+   r :: [a] -> [a]
+   r xs = xs
+   :}
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results none
+   -- r :: [a] -> [a]
+   :{
+   r :: [a] -> [a]
+   r xs = reverse xs
+   :}
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results none
+   -- r :: [a] -> [a]
+   :{
+   r :: [a] -> [a]
+   r xs = tail xs
+   :}
+   #+END_SRC
+
+6. Only one implementation
+   #+BEGIN_SRC haskell :results none
+   -- co :: (b -> c) -> (a -> b) -> a -> c
+   :{
+   co :: (b -> c) -> (a -> b) -> a -> c
+   co b2c a2b a = b2c (a2b a)
+   :}
+   #+END_SRC
+
+7. Only one implementation
+   #+BEGIN_SRC haskell :results none
+   -- a :: (a -> c) -> a -> a
+   :{
+   a :: (a -> c) -> a -> a
+   a _ x = x
+   :}
+   #+END_SRC
+
+8. Only one implementation
+   #+BEGIN_SRC haskell :results none
+   -- a' :: (a -> b) -> a -> b
+   :{
+   a' :: (a -> b) -> a -> b
+   a' a2b a = a2b a
+   :}
+   #+END_SRC
+
 ** Fix it
-   1. Make it compile
-      #+BEGIN_SRC haskell :tangle chapter-005/SingFirst.hs :results none
-      module SingFirst where
+Won’t someone take pity on this poor broken code and fix it up? Be
+sure to check carefully for things like capitalization, parentheses,
+and indentation.
 
-      fstString :: [Char] -> [Char]
-      fstString x = x ++ " in the rain"
+1. Make it compile
+   #+BEGIN_SRC haskell :tangle chapter-005/SingFirst.hs :epilogue ""
+   module SingFirst where
 
-      sndString :: [Char] -> [Char]
-      sndString x = x ++ " over the rainbow"
+   fstString :: [Char] -> [Char]
+   fstString x = x ++ " in the rain"
 
-      sing = if (x < y) then fstString x else sndString y
-        where
-          x = "Singin"
-          y = "Somewhere"
-      #+END_SRC
-   2. Make it sing the other song
-      #+BEGIN_SRC haskell :tangle chapter-005/SingSecond.hs :results none
-      module SingSecond where
+   sndString :: [Char] -> [Char]
+   sndString x = x ++ " over the rainbow"
 
-      fstString :: [Char] -> [Char]
-      fstString x = x ++ " in the rain"
+   sing = if (x < y) then fstString x else sndString y
+     where
+       x = "Singin"
+       y = "Somewhere"
+   #+END_SRC
 
-      sndString :: [Char] -> [Char]
-      sndString x = x ++ " over the rainbow"
+   #+BEGIN_SRC haskell
+   <<add-chapter-directory-in-path(chapter="chapter-005")>>
+   :l SingFirst
+   sing
+   #+END_SRC
 
-      sing = if (x > y) then fstString x else sndString y
-        where
-          x = "Singin"
-          y = "Somewhere"
-      #+END_SRC
-   3. Make it compile
-      #+BEGIN_SRC haskell :tangle chapter-005/Arith3Broken.hs :results none
-      module Arith3Broken where
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Singin in the rain
+   #+END_EXAMPLE
 
-      main :: IO ()
-      main = do
-        print (1 + 2)
-        putStrLn (show 10)
-        print (negate (-1))
-        print ((+) 0 blah) where blah = negate 1
-      #+END_SRC
-** COMMENT Type-Known-Do
-   1. Make it type check
-      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
-      f :: Int -> String
-      f = undefined
+2. Make it sing the other song
+   #+BEGIN_SRC haskell :tangle chapter-005/SingSecond.hs :epilogue ""
+   module SingSecond where
 
-      g :: String -> Char
-      g = undefined
+   fstString :: [Char] -> [Char]
+   fstString x = x ++ " in the rain"
 
-      h :: Int -> Char
-      h x = g . f $ x
-      #+END_SRC
-   2. Make it type check
-      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
-      data A
-      data B
-      data C
+   sndString :: [Char] -> [Char]
+   sndString x = x ++ " over the rainbow"
 
-      q :: A -> B
-      q = undefined
+   sing = if (x > y) then fstString x else sndString y
+     where
+       x = "Singin"
+       y = "Somewhere"
+   #+END_SRC
 
-      w :: B -> C
-      w = undefined
+   #+BEGIN_SRC haskell
+   <<add-chapter-directory-in-path(chapter="chapter-005")>>
+   :l SingSecond
+   sing
+   #+END_SRC
 
-      e :: A -> C
-      e x = w . q $ x
-      #+END_SRC
-   3. Make it type check
-      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
-      data X
-      data Y
-      data Z
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Somewhere over the rainbow
+   #+END_EXAMPLE
 
-      xz :: X -> Z
-      xz = undefined
+3. Make it compile
+   #+BEGIN_SRC haskell :tangle chapter-005/Arith3Broken.hs :epilogue ""
+   module Arith3Broken where
 
-      yz :: Y -> Z
-      yz = undefined
+   main :: IO ()
+   main = do
+     print (1 + 2)
+     putStrLn (show 10)
+     print (negate (-1))
+     print ((+) 0 blah) where blah = negate 1
+   #+END_SRC
 
-      xform :: (X, Y) -> (Z, Z)
-      xform (x, y) = (xz x, yz y)
-      #+END_SRC
-   4. Make it type check
-      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
-      munge :: (x -> y)
-            -> (y -> (w, z))
-            -> x
-            -> w
+   #+BEGIN_SRC haskell
+   <<add-chapter-directory-in-path(chapter="chapter-005")>>
+   :l Arith3Broken
+   main
+   #+END_SRC
 
-      munge x2y y2wz x = fst $ y2wz $ x2y $ x
-      #+END_SRC
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   3
+   10
+   1
+   -1
+   #+END_EXAMPLE
+
+** Type-Known-Do
+
+1. Make it type check
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   f :: Int -> String
+   f = undefined
+
+   g :: String -> Char
+   g = undefined
+
+   h :: Int -> Char
+   h x = g . f $ x
+   #+END_SRC
+
+2. Make it type check
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   data A
+   data B
+   data C
+
+   q :: A -> B
+   q = undefined
+
+   w :: B -> C
+   w = undefined
+
+   e :: A -> C
+   e x = w . q $ x
+   #+END_SRC
+
+3. Make it type check
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   data X
+   data Y
+   data Z
+
+   xz :: X -> Z
+   xz = undefined
+
+   yz :: Y -> Z
+   yz = undefined
+
+   xform :: (X, Y) -> (Z, Z)
+   xform (x, y) = (xz x, yz y)
+   #+END_SRC
+
+4. Make it type check
+   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   munge :: (x -> y)
+         -> (y -> (w, z))
+         -> x
+         -> w
+
+   munge x2y y2wz x = fst $ y2wz $ x2y $ x
+   #+END_SRC
+* 5.09 Definitions
+- Polymorphism :: refers to type variables which may refer to more
+                  than one concrete type.
+- Type Inference :: is a faculty some programming languages, most
+                    notably Haskell and ML, have to infer principal
+                    types from terms without needing explicit type
+                    annotations.
+- Principal Type :: is the most generic type which still type
+                    checks. There are, in some cases, terms in Haskell
+                    which can be well-typed but which have no
+                    principal type. In those cases, an explicit type
+                    annotation must be added.
+- Type Class :: is a means of expressing faculties or interfaces that
+                multiple datatypes may have in common. This enables us
+                to write code exclusively in terms of those
+                commonalities without repeating yourself for each
+                instance.
+- Parametricity :: is the property that holds in the presence of para-
+                   metric polymorphism. Parametricity states that the
+                   behavior of a function will be uniform across all
+                   concrete applications of the function.
+- Ad-Hoc Polymorphism :: (sometimes called "constrained polymorphism")
+     is polymorphism that applies one or more type class constraints
+     to what would’ve otherwise been a parametrically polymorphic type
+     variable.
+- Module :: is the unit of organization that the Haskell programming
+            language uses to collect together declarations of values,
+            functions, datatypes, type classes, and type class
+            instances. Any time you use “import” in Haskell, you are
+            importing declara- tions from a module.

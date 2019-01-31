@@ -1,4 +1,3 @@
-
 module SingSecond where
 
 fstString :: [Char] -> [Char]
