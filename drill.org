@@ -1,7 +1,60 @@
 #+TITLE: HaskellBook Flash Cards
 
+* Chapter 04
+** What are types?                                                                          :drill:
+*** Answer
+Are how we group a set of values together that share something in
+common
+** What is ~data Bool = True | False~?                                                      :drill:
+*** Answer
+Is a /Data Declaration/
+** What is ~Bool~ in ~data Bool = True | False~?                                            :drill:
+*** Answer
+Is a /Type Constructor/
+** What is ~True~ in ~data Bool = True | False~?                                            :drill:
+*** Answer
+Is a /Data Constructor/
+** What's a Data Declaration?                                                               :drill:
+*** Answer
+How datatypes are defined
+** What's a Type Constructor                                                                :drill:
+*** Answer
+How we define the name of a type. Type constructors are used at type
+level
+** What's a Data Constructor?                                                               :drill:
+*** Answer
+Are the values that inhabit the type they are defined in. Data
+constructors are used at term level.
+** What's the type of ~8~?                                                                  :drill:
+*** Answer
+Numbers are polymorphic, the compiler doesn't assign them a concrete
+type until is not forced to do so. In this case we cannot tell
+** What are the ~Integral~ number types                                                     :drill:
+*** Answer
+Int, Integer, Word
+** What are the ~Fractional~ number types                                                   :drill:
+*** Answer
+Float, Double, Rational, Fixed, Scientific
+** What's the type signature of ~==~                                                        :drill:
+*** Answer
+~(==) :: Eq a => a -> a -> Bool~
+** What's the type signature of ~<~                                                         :drill:
+*** Answer
+~(<) :: Ord a => a -> a -> Bool~
+** ~if~ it's a statement or an expression?                                                  :drill:
+*** Answer
+It's an expression
+** What's the type signature of ~fst~?                                                      :drill:
+*** Answer
+~fst :: (a, b) -> a~
+** What's the type signature of ~snd~                                                       :drill:
+*** Answer
+~snd :: (a, b) -> b~
+** What's the type signature of ~swap~?                                                     :drill:
+*** Answer
+~swap :: (a, b) -> (b, a)~
 * Chapter 11
-** What are the kinds?                                                                       :drill:
+** What are the kinds?                                                                      :drill:
 :PROPERTIES:
 :ID:       96250e86-196d-4046-be99-130e9938eb34
 :VISIBILITY: folded
@@ -10,7 +63,7 @@
 Kinds are the types of type constructors, primarly encoding the number
 of arguments they take.
 
-** When kinds become types?                                                                  :drill:
+** When kinds become types?                                                                 :drill:
 :PROPERTIES:
 :ID:       46365b63-8516-4238-be97-542f28f8b75d
 :VISIBILITY: folded
@@ -18,7 +71,7 @@ of arguments they take.
 *** Answer
 When they are fully applied.
 
-** Kinds application                                                                         :drill:
+** Kinds application                                                                        :drill:
 :PROPERTIES:
 :ID:       ad406627-6d4b-43e4-9c52-9767a6d0a8a0
 :DRILL_LAST_INTERVAL: 4.6883
@@ -35,7 +88,7 @@ How many time the kind ~* -> * -> *~ must be applied to become a type?
 *** Answer
 2
 
-** What is an higher-kinded type?                                                            :drill:
+** What is an higher-kinded type?                                                           :drill:
 :PROPERTIES:
 :ID:       ed1e41cb-de7f-4c23-9931-4e57316b32ad
 :VISIBILITY: folded
@@ -43,7 +96,7 @@ How many time the kind ~* -> * -> *~ must be applied to become a type?
 *** Answer
 A kind that needs to be applied more than once to become a type
 
-** What kind has ~data Silly a b c = Silly a b c deriving Show~?                             :drill:
+** What kind has ~data Silly a b c = Silly a b c deriving Show~?                            :drill:
 :PROPERTIES:
 :ID:       2a17521b-99d1-4eff-8317-3aeee32c023d
 :VISIBILITY: folded
@@ -51,7 +104,7 @@ A kind that needs to be applied more than once to become a type
 *** Answer
 ~Silly :: * -> * -> * -> *~
 
-** What kind has ~[]~?                                                                       :drill:
+** What kind has ~[]~?                                                                      :drill:
 :PROPERTIES:
 :ID:       48f3ac53-1b89-400b-96c0-32fcf957edcc
 :VISIBILITY: folded
@@ -59,28 +112,28 @@ A kind that needs to be applied more than once to become a type
 *** Answer
 ~[] :: * -> *~
 
-** What's the type of ~[]~?                                                                  :drill:
+** What's the type of ~[]~?                                                                 :drill:
 :PROPERTIES:
 :ID:       6e33ee49-6583-4085-8319-005556d212cb
 :END:
 *** Answer
 ~[] :: [a]~
 
-** What are arguments taken from polymorphic type constructors?                              :drill:
+** What are arguments taken from polymorphic type constructors?                             :drill:
 :PROPERTIES:
 :ID:       efae5cf1-3e93-46c4-81df-f7a62bcbb67e
 :END:
 *** Answer
 Types
 
-** What are arguments taken from data constructors?                                          :drill:
+** What are arguments taken from data constructors?                                         :drill:
 :PROPERTIES:
 :ID:       c178f70e-9e5d-4d10-8e13-4e60364edc81
 :END:
 *** Answer
 Values
 
-** Naming a patterns                                                                         :drill:
+** Naming a patterns                                                                        :drill:
 :PROPERTIES:
 :ID:       b91b750e-8c4a-4c43-8cfd-79cddff624a2
 :DRILL_LAST_INTERVAL: 5.1613
@@ -97,7 +150,7 @@ value of a list like ~_ = [1, 2, 3]~?
 *** Answer
 ~l@(h:t) = [1, 2, 3]~
 
-** Ignoring in patterns                                                                      :drill:
+** Ignoring in patterns                                                                     :drill:
 :PROPERTIES:
 :DRILL_LAST_INTERVAL: 3.6334
 :DRILL_REPEATS_SINCE_FAIL: 2
@@ -110,136 +163,136 @@ value of a list like ~_ = [1, 2, 3]~?
 :END:
 How can you ignore a part of a match in a pattern
 *** Answer
-With an ~_~, like if we are interested only in the tail of a list we
-can use a pattern like ~(_:t) = [1, 2, 3~
+With an underscore ~_~. If we are interested only in the tail of a
+list we can use a pattern like ~(_:t) = [1, 2, 3]~
 
 * Chapter 12
-** What's the definition of ~Maybe~?                                                         :drill:
+** What's the definition of ~Maybe~?                                                        :drill:
 *** Answer
 ~data Maybe a = Nothing | Just a~
 
-** When should be used ~Maybe~?                                                              :drill:
+** When should be used ~Maybe~?                                                             :drill:
 *** Answer
 To encode the effect of failure
 
-** What's the definition of ~Either~?                                                        :drill:
+** What's the definition of ~Either~?                                                       :drill:
 *** Answer
 ~data Either a b = Left a | Right b~
 
-** When should be used ~Either~?                                                             :drill:
+** When should be used ~Either~?                                                            :drill:
 *** Answer
 To encode the effect of failure when we want more informations
 about the error
 
-** What do you put on the ~Left~ side of ~Either~?                                           :drill:
+** What do you put on the ~Left~ side of ~Either~?                                          :drill:
 *** Answer
 The error
 
-** What do you put on the ~Right~ side of ~Either~?                                          :drill:
+** What do you put on the ~Right~ side of ~Either~?                                         :drill:
 *** Answer
 The value
 
-** Why the error type is always on the ~Left~ side of ~Either~?                              :drill:
+** Why the error type is always on the ~Left~ side of ~Either~?                             :drill:
 *** Answer
 So that with typeclasses like ~Functor~ that works with a type
 constructor with one type parameter we can give it a partially
 applied ~Either~ with the error part leaving the success part to
 work with.
-** What are the /Kinds/?                                                                     :drill:
+** What are the /Kinds/?                                                                    :drill:
 *** Answer
 Kinds are type types of types, or types one level up
-** What are /Kinds/ for?                                                                     :drill:
+** What are /Kinds/ for?                                                                    :drill:
 *** Answer
 To generalize behaviour over data with an unknown type
-** How do we represent /Kinds/ in Haskell?                                                   :drill:
+** How do we represent /Kinds/ in Haskell?                                                  :drill:
 *** Answer
 With the symbol ~*~
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 We know that something is a fully applied, and therefore concrete
 type when it is represent as <[~*~]>
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 Type constructors operate at <[type]> level. Types are resolved at
 <[compile-time]>
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 Type constructors are <[functions]> that operate <[type]> level
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 Data constructors operate at <[term]> level. Values can be
 interacted with at <[run-time]>
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 In a datatype definition what comes before the ~=~ is a <[type constructor]>
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 In a datatype definition what comes after the ~=~ is a <[data constructor]>
-** The term /Type Constant/ is used to refer to...                                           :drill:
+** The term /Type Constant/ is used to refer to...                                          :drill:
 *** Answer
 A type constructor that takes no arguments.
-** The term /Data Constant/ is used to refer to...                                           :drill:
+** The term /Data Constant/ is used to refer to...                                          :drill:
 *** Answer
 A data constructor that takes no arguments.
-** The term /Type Constructor/ is used to refer to...                                        :drill:
+** The term /Type Constructor/ is used to refer to...                                       :drill:
 *** Answer
 Denotes a type in a /data declaration/
-** Give some examples of /Type Constants/                                                    :drill:
+** Give some examples of /Type Constants/                                                   :drill:
 *** Answer
 ~Bool~, ~Integer~, ~Char~, ~Float~, ~Double~
-** Give some examples of /Type Constructors/                                                 :drill:
+** Give some examples of /Type Constructors/                                                :drill:
 *** Answer
 ~Maybe~, ~(,)~, ~[]~, ~Either~
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 The Haskell Report uses the term <[type constant]> to refer to
 types that take no arguments and are already types. In the Report,
 <[type constructor]> is used to refer to types which must have
 arguments applied to become a type.
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 The syntax ~::~ usually means <["has type of"]>
-** What are the /lifted/ types?                                                              :drill:
+** What are the /lifted/ types?                                                             :drill:
 *** Aswer
 Have kind ~*~, they include every type that can be user defined
 and they are every type that can be inhabited by /bottom/ (⊥)
-** What are the /unlifted/ types?                                                            :drill:
+** What are the /unlifted/ types?                                                           :drill:
 *** Anwer
 Have kind ~#~, they are types that cannot be inhabited by /bottom/
 (⊥) like machine types or raw pointers
-** What kind are the /newtypes/? Are they lifted or not? Why?                                :drill:
+** What kind are the /newtypes/? Are they lifted or not? Why?                               :drill:
 *** Answer
 They have kind ~*~ but they are not /lifted/ becase they cannot
 contain /bottom/ only they type they contain can contain /bottom/
 so they are /unlifted/
 * Chapter 13
-** What's the name of ~<-~ in a ~do~ block?                                                  :drill:
+** What's the name of ~<-~ in a ~do~ block?                                                 :drill:
 The name is /bind/.
-** What's the role of ~<-~ in a ~do~ block?                                                  :drill:
+** What's the role of ~<-~ in a ~do~ block?                                                 :drill:
 Binds a name to the ~𝑎~ of an ~m a~ value, where ~𝑚~ is some monadic structure.
-** What's the type of ~return~?                                                              :drill:
+** What's the type of ~return~?                                                             :drill:
 ~Monad m => a -> m a~
-** What's the command to create a new simple project name "awesome" with Stack?              :drill:
+** What's the command to create a new simple project name "awesome" with Stack?             :drill:
 ~stack new awesome simple~
-** What's called ~>>=~?                                                                      :drill:
+** What's called ~>>=~?                                                                     :drill:
 The name is /bind/.
-** What's the use of ~>>=~?                                                                  :drill:
+** What's the use of ~>>=~?                                                                 :drill:
 It will sequentially compose two actions so that a value generated
 from the first will become an argument of the second
 * Chapter 15
-** What's an /algebra/?                                                                      :drill:
+** What's an /algebra/?                                                                     :drill:
 *** Answer
 - A /set/ of values
 - Some /operations/ that operates over those values
 - Some /laws/ followed by those operations
-** How can be implemented /algebras/ in Haskell                                              :drill:
+** How can be implemented /algebras/ in Haskell                                             :drill:
 *** Answer
 Algebras can be implemented with /typeclasses/. The values that
 inhabit the /types/ that have an instance of the typeclass are the
 /sets/ of values associated to the algebra. The functions defined
 in the typeclass are the /operations/ of the algebra.
-** What's a Monoid                                                                           :drill:
+** What's a Monoid                                                                          :drill:
 *** Answer
 An algebra with a binary associative operation and an identity
-** What's a Semigroup                                                                        :drill:
+** What's a Semigroup                                                                       :drill:
 *** Answer
 An algebra with a binary associative operation
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 Data constructors with only <[nonalphanumeric]> characters that
 begins with colon (~:~) are <[infix]> by default
-** Definition of Monoid typeclass                                                            :drill:
+** Definition of Monoid typeclass                                                           :drill:
 *** Answer
 #+BEGIN_SRC haskell
 class Monoid a where
@@ -248,36 +301,36 @@ class Monoid a where
   mconcat :: [a] -> a
 #+END_SRC
 ~mconcat~ can be derived
-** Derive the implementation of ~mconcat~ given ~mempty~ and ~mappend~                       :drill:
+** Derive the implementation of ~mconcat~ given ~mempty~ and ~mappend~                      :drill:
 *** Answer
 #+BEGIN_SRC haskell
 mconcat :: [a] -> a
 mconcat = foldr mappend mempty
 #+END_SRC
-** What we mean when we say that some datatype is a monoid?                                  :drill:
+** What we mean when we say that some datatype is a monoid?                                 :drill:
 *** Answer
 That it admits a lawful instance of the Monoid typeclass.
-** What's the intuitive meaning of the Monoid operation ~mappend~                            :drill:
+** What's the intuitive meaning of the Monoid operation ~mappend~                           :drill:
 *** Answer
 Join two values of a type into another value of the same type.
-** How does the idenity value ~mempty~ work?                                                 :drill:
+** How does the idenity value ~mempty~ work?                                                :drill:
 *** Answer
 Using ~mempty~ as a value in ~mappend~ with another value the
 result is always the other value.
-** Can a type have multiple instances of Monoid?                                             :drill:
+** Can a type have multiple instances of Monoid?                                            :drill:
 *** Answer
 No, every type has one and only one instance of a typeclass
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 Type with instances of ~Num~ form a <[~Monoid~]> under
 multiplication and summation.
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 ~List~ form a ~Monoid~ under <[concatenation]>
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 ~String~ form a ~Monoid~ under <[concatenation]>
-** The infix operator ~<>~ is syntactic sugar for                                            :drill:
+** The infix operator ~<>~ is syntactic sugar for                                           :drill:
 *** Answer
 ~Data.Monoid.mappend~
-** How can you give to a type multiple instances of a typeclass?                             :drill:
+** How can you give to a type multiple instances of a typeclass?                            :drill:
 *** Answer
 By wrapping the type in a newtype.
 #+BEGIN_SRC haskell :eval never
@@ -291,7 +344,7 @@ Product 3 <> Product 2 -- => Product {getProduct=6}
    #+BEGIN_SRC haskell :eval never
    (x <> y) <> z = x <> (y <> z)
    #+END_SRC
-** State the ~Monoid~ laws                                                                   :drill:
+** State the ~Monoid~ laws                                                                  :drill:
 *** Answer
 1. Identity
    #+BEGIN_SRC haskell :eval never
@@ -301,62 +354,62 @@ Product 3 <> Product 2 -- => Product {getProduct=6}
    #+BEGIN_SRC haskell :eval never
    (x <> y) <> z = x <> (y <> z)
    #+END_SRC
-** Write the identity property of ~Monoid~                                                   :drill:
+** Write the identity property of ~Monoid~                                                  :drill:
 *** Answer
 #+BEGIN_SRC haskell
 monoidIdentityProperty :: Monoid a => a -> Bool
 monoidIdentityProperty x = mempty <> x == x && x <> mempty == x
 #+END_SRC
-** Write the associativity property of ~Monoid~                                              :drill:
+** Write the associativity property of ~Monoid~                                             :drill:
 *** Answer
 #+BEGIN_SRC haskell
 monoidAssociativityProperty :: Monoid a => a -> a -> a -> Bool
 monoidAssociativityProperty x y z = (x <> y) <> z == x <> (y <> z)
 #+END_SRC
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 - Laws define <[algebras]>.
 - Laws provide guardatees and solid foundations.
 - Guarantees provide predictable <[composition]> of programs.
 - Ability to <[combine]> programs give us the ability to <[reuse]>
   programs in different context.
-** What kind of composition will give the newtype ~Sum~ to instances of ~Num~                :drill:
+** What kind of composition will give the newtype ~Sum~ to instances of ~Num~               :drill:
 *** Answer
 Summation.
-** What kind of composition will give the newtype ~Product~ to instances of ~Num~            :drill:
+** What kind of composition will give the newtype ~Product~ to instances of ~Num~           :drill:
 *** Answer
 Multiplication.
-** What kind of composition will give the newtype ~All~ to boolean values                    :drill:
+** What kind of composition will give the newtype ~All~ to boolean values                   :drill:
 *** Answer
 Boolean conjuction aka ~and~ or ~&&~.
-** What kind of composition will give the newtype ~Any~ to boolean values                    :drill:
+** What kind of composition will give the newtype ~Any~ to boolean values                   :drill:
 *** Answer
 Boolean disjunction aka ~or~ or ~||~.
-** What kind of composition will give the newtype ~First~ to instances of ~Maybe~            :drill:
+** What kind of composition will give the newtype ~First~ to instances of ~Maybe~           :drill:
 *** Answer
 Keep the first non ~Nothing~ value.
-** What kind of composition will give the newtype ~Last~ to instances of ~Maybe~             :drill:
+** What kind of composition will give the newtype ~Last~ to instances of ~Maybe~            :drill:
 *** Answer
 Keep the last non ~Nothing~ value.
-** What's the definition of /orphan instance/?                                               :drill:
+** What's the definition of /orphan instance/?                                              :drill:
 *** Answer
 Is when an instance of a typeclass is defined for a datatype but
 the definition of the typeclass and the definition of the datatype
 are not in the same module of the instance.
-** What can be done to avoid problems with orphan instances?                                 :drill:
+** What can be done to avoid problems with orphan instances?                                :drill:
 *** Answer
 1. Define types and instances of known typeclasses in the same file.
 2. Define typeclasses and their instances for known types in the same file.
 3. Wrap known types to define instances of known typeclasses.
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 An /algebra/ is /stronger/ than another when it provides <[more]>
 operations, aka is /stronger/ when we can do more without knowing
 the <[specific type]> we are working with.
-** Algebras Strength                                                                         :drill:
+** Algebras Strength                                                                        :drill:
 :PROPERTIES:
 :DRILL_CARD_TYPE: hide1cloze
 :END:
 <[/Magma/]> -> <[/Semigroup/]> -> <[/Monoid/]> -> <[/AbelianMonoid/]>
-** Exercise                                                                                  :drill:
+** Exercise                                                                                 :drill:
 Write a instance of ~Semigroup~ for the following type
 #+BEGIN_SRC haskell :eval never
 data Two a b = Two a b deriving (Eq, Show)
@@ -366,7 +419,7 @@ data Two a b = Two a b deriving (Eq, Show)
 instance (Semigroup a, Semigroup b) => Semigroup (Two a b) where
   mappend (Two x1 y1) (Two x2 y2) = Two (x1 <> x2) (y1 <> y2)
 #+END_SRC
-** Exercise                                                                                  :drill:
+** Exercise                                                                                 :drill:
 Write a instance of ~Monoid~ for the following type
 #+BEGIN_SRC haskell :eval never
 data Two a b = Two a b deriving (Eq, Show)
@@ -378,25 +431,25 @@ instance (Monoid a, Monoid b) => Monoid (Two a b) where
   mappend (Two x1 y1) (Two x2 y2) = Two (x1 <> x2) (y1 <> y2)
 #+END_SRC
 * Chapter 16
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 :PROPERTIES:
 :DRILL_CARD_TYPE: show1cloze
 :END:
 A <[type constant or a fully applied type]> have kind <[~*~]>
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 :PROPERTIES:
 :DRILL_CARD_TYPE: show1cloze
 :END:
 <[Types]> classify <[values]>
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 :PROPERTIES:
 :DRILL_CARD_TYPE: show1cloze
 :END:
 <[Kinds]> classify <[types]>
-** What kind must have a function argument?                                                  :drill:
+** What kind must have a function argument?                                                 :drill:
 *** Answer
 Must be a type constant or a fully applied type with kind ~*~
-** The ~(<$>)~ is the alias of?                                                              :drill:
+** The ~(<$>)~ is the alias of?                                                             :drill:
 *** Answer
 ~fmap~ of the ~Functor~ typeclass
 ** State the ~Functor~ laws
@@ -409,34 +462,34 @@ Must be a type constant or a fully applied type with kind ~*~
    #+BEGIN_SRC haskell :eval never
    fmap (f . g) == (fmap f) . (fmap g)
    #+END_SRC
-** Write the ~Functor~'s identity law                                                        :drill:
+** Write the ~Functor~'s identity law                                                       :drill:
 *** Answer
 #+BEGIN_SRC haskell :eval never
 fmap id == id
 #+END_SRC
-** Write the ~Functor~'s composability law                                                   :drill:
+** Write the ~Functor~'s composability law                                                  :drill:
 *** Answer
 #+BEGIN_SRC haskell :eval never
 fmap (f . g) == (fmap f) . (fmap g)
 #+END_SRC
-** What gives us the identity law of ~Functor~?                                              :drill:
+** What gives us the identity law of ~Functor~?                                             :drill:
 *** Answer
 The preservation of the functorial structure.
-** What gives us the composability law of ~Functor~?                                         :drill:
+** What gives us the composability law of ~Functor~?                                        :drill:
 *** Answer
 The composability of functions is preserved.
-** Question                                                                                  :drill:
+** Question                                                                                 :drill:
 Can you write an instance of a typeclass that requires a type with
 kind ~* -> *~ for a type with a higher kind? If yes, how?
 *** Answer
 Yes, by partially applying the type constructor with a concrete
 type or with a type variable
-** Question                                                                                  :drill:
+** Question                                                                                 :drill:
 Can you write an instance of a typeclass that requires a type with
 kind ~* -> *~ for a type with a lower kind? If yes, how?
 *** Answer
 No
-** Exercise                                                                                  :drill:
+** Exercise                                                                                 :drill:
 Write an instance of ~Functor~ for the following type
 #+BEGIN_SRC haskell :eval never
 data Two a b = Two a b deriving (Eq, Show)
@@ -447,18 +500,18 @@ data Two a b = Two a b deriving (Eq, Show)
 instance Functor (Two a) where
   fmap f (Two a x) = Two a (f x)
 #+END_SRC
-** Question                                                                                  :drill:
+** Question                                                                                 :drill:
 1. What's the type of ~fmap show~?
 2. What we are doing by partially applying ~fmap~ to a function?
 *** Answer
 1. ~(Show a, Functor f) => f a -> f String~
 2. We are /lifting/ that function, ~show~ in this case, to work
    with all types that admit an instance of ~Functor~
-** What's a /natural transformation/?                                                        :drill:
+** What's a /natural transformation/?                                                       :drill:
 *** Answer
 When you transofrm the /structure/ and leave the /type argument/ alone.
 * Chapter 17
-** Describe the types of ~$~, ~<>~, ~<$>~, ~<*>~                                             :drill:
+** Describe the types of ~$~, ~<>~, ~<$>~, ~<*>~                                            :drill:
 *** Answer
 #+BEGIN_SRC haskell :eval never
  $  ::   (a -> b) ->   a ->   b
@@ -466,7 +519,7 @@ When you transofrm the /structure/ and leave the /type argument/ alone.
 <$> ::   (a -> b) -> f a -> f b
 <*> :: f (a -> b) -> f a -> f b
 #+END_SRC
-** Why ~Applicative~ is described as monoidal ~Functor~?                                     :drill:
+** Why ~Applicative~ is described as monoidal ~Functor~?                                    :drill:
 *** Answer
 Because it needs to combine two piece of functorial structure, one
 that wraps the function and one that wraps the value, this
@@ -477,7 +530,7 @@ combination can be (or can be seen) as the monoidal ~mappend~.
 <*> :: f (a -> b) -> f a -> f b
 #+END_SRC
 
-** State the ~Applicative~ laws                                                              :drill:
+** State the ~Applicative~ laws                                                             :drill:
 *** Answer
 1. Identity
    #+BEGIN_SRC haskell :eval never
@@ -495,24 +548,24 @@ combination can be (or can be seen) as the monoidal ~mappend~.
    #+BEGIN_SRC haskell :eval never
    u <*> pure y = pure ($ y) <*> v
    #+END_SRC
-** Sentence                                                                                  :drill:
+** Sentence                                                                                 :drill:
 It is not guaranteed that the <[monoidal]> behaviour of the
 applicative instance is the same as the <[monoid]> instance of the
 involved type.
 
-** What is the signature of ~Applicative~'s ~pure~ method?                                   :drill:
+** What is the signature of ~Applicative~'s ~pure~ method?                                  :drill:
 *** Answer
 #+BEGIN_SRC haskell :eval never
 pure :: a -> f a
 pure = undefined
 #+END_SRC
-** What is the signature of ~Applicative~'s ~apply~ method?                                  :drill:
+** What is the signature of ~Applicative~'s ~apply~ method?                                 :drill:
 *** Answer
 #+BEGIN_SRC haskell :eval never
 (<*>) :: f (a -> b) -> f a -> f b
 (<*>) = undefined
 #+END_SRC
-** What is the signature of ~liftA2~? What it does? Write and usage example                  :drill:
+** What is the signature of ~liftA2~? What it does? Write and usage example                 :drill:
 *** Answer
 It let us apply functions with more than one arguments to values
 wrapped in functorial structure
@@ -522,13 +575,13 @@ liftA2 = undefined
 
 liftA2 (+) (Just 1) (Just 2) == (Just 3)
 #+END_SRC
-** Implement ~liftA2~ using ~<$>~ and ~<*>~                                                  :drill:
+** Implement ~liftA2~ using ~<$>~ and ~<*>~                                                 :drill:
 *** Answer
 #+BEGIN_SRC haskell
 liftA2 :: (a -> b -> c) -> f a -> f b -> f c
 liftA2 f fa fb = f <$> fa <*> fb
 #+END_SRC
-** Exercise                                                                                  :drill:
+** Exercise                                                                                 :drill:
 Write an instance of ~Applicative~ for the following type
 #+BEGIN_SRC haskell :eval never
 data Two a b = Two a b deriving (Eq, Show)
@@ -542,7 +595,7 @@ instance Monoid a => Applicative (Two a) where
   (Two x1 f) <*> (Two x2 y) = Two (x1 <> x2) (f y)
 #+END_SRC
 * Chapter 18
-** Write the definition of ~Monad~ typeclass                                                 :drill:
+** Write the definition of ~Monad~ typeclass                                                :drill:
 *** Answer
 #+BEGIN_SRC haskell :eval never
 class Applicative m => Monad m where
@@ -550,7 +603,7 @@ class Applicative m => Monad m where
   (>>=) :: m a -> (a -> m b) -> m b
   (>>) :: m a -> m b -> m b
 #+END_SRC
-** Desugar the following function without using ~do~ notation                                :drill:
+** Desugar the following function without using ~do~ notation                               :drill:
 #+BEGIN_SRC haskell :eval never
 bindingAndSequencing :: IO ()
 bindingAndSequencing = do
@@ -567,7 +620,7 @@ bindingAndSequencing = do
       \name ->
         putStrLn $ "Hello: " ++ name
 #+END_SRC
-** What's the difference between ~(*>)~ and ~(>>)~ operator?                                 :drill:
+** What's the difference between ~(*>)~ and ~(>>)~ operator?                                :drill:
 *** Answer
 They are the same the only thing that differs is the constraint,
 ~(*>)~ works on ~Applicative~, ~(>>)~ works on ~Monad~ (and
@@ -576,7 +629,7 @@ therefore on ~Applicative~ too)
 (*>) :: Applicative f => f a -> f b -> f b
 (>>) :: Monad m => m a -> m b -> m b
 #+END_SRC
-** State the ~Monad~ laws                                                                    :drill:
+** State the ~Monad~ laws                                                                   :drill:
 *** Answer
 1. Left Identity
    #+BEGIN_SRC haskell :eval never
@@ -590,11 +643,11 @@ therefore on ~Applicative~ too)
    #+BEGIN_SRC haskell :eval never
    (m >>= f) >>= g = m >>= (\x -> f x >>= g)
    #+END_SRC
-** What's a monadic function?                                                                :drill:
+** What's a monadic function?                                                               :drill:
 *** Answer
 A function that returns more structure after being lifted over
 monadic structure
-** What's the Kleisli operator? What's the signature? What's is good for?                    :drill:
+** What's the Kleisli operator? What's the signature? What's is good for?                   :drill:
 *** Answer
 Provides composition for function that return a monadic value
 (/monadic function/)

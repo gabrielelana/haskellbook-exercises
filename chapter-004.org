@@ -13,7 +13,7 @@
 
 * 4.02 What Are Types?
 Expressions, when evaluated, reduce to values. Every value has a
-type. Types are how we group a set of values togheter that share
+type. Types are how we group a set of values together that share
 something in common.
 
 * 4.03 Anatomy of a Data Declaration
@@ -41,9 +41,12 @@ data Mood = Blah | Woot deriving Show
 
 1. What is the /Type Constructor/? ~Mood~
 
-2. If a function requires a ~Mood~ value, what are the value you can possibly use? ~Blah~ or ~Woot~
+2. If a function requires a ~Mood~ value, what are the value you can
+   possibly use? ~Blah~ or ~Woot~
 
-3. We've written a type signature ~changeMood :: Mood -> Woot~. What's wrong with that? It uses a /Data Constructor/ instead of a /Type Constructor/, it should be ~changeMood :: Mood -> Mood~
+3. We've written a type signature ~changeMood :: Mood -> Woot~. What's
+   wrong with that? It uses a /Data Constructor/ instead of a /Type
+   Constructor/, it should be ~changeMood :: Mood -> Mood~
 
 4. Implement the function
    #+NAME: mood
@@ -74,20 +77,29 @@ data Mood = Blah | Woot deriving Show
 
 * 4.04 Numeric Types
 All the following numeric datatypes all have a typeclass ~Num~
-- ~Int~ Fixed precision integer.
-- ~Integer~ Arbitrary precision integer numbers.
-- ~Fractional~
-  - ~Float~ Single precision floating point numbers.
-  - ~Double~ Double precision floating point numbers.
-  - ~Rational~ Fractional number that represents a ratio of two integers.
-  - ~Scientific~ Space efficient and almost arbitrary precision scientific number type.
+- ~Integral~: Whole numbers, positive and negative.
+  - ~Int~: Fixed precision integer.
+  - ~Integer~: Arbitrary precision integer numbers.
+  - ~Word~: Fixed precision integer like ~Int~ but the smallest is
+    ~0~.
+- ~Fractional~: Numbers with fractional part.
+  - ~Float~: Single precision floating point numbers.
+  - ~Double~: Double precision floating point numbers.
+  - ~Rational~: Fractional number that represents a ratio of two
+    integers.
+  - ~Fixed~: Fixed point (fixed precision) type that can represent
+    varying numbers of decimal points depending on which type you
+    choose.
+  - ~Scientific~: Space efficient and almost arbitrary precision
+    scientific number type.
 
 The syntax ~127::Int8~ is assigning the type ~Int8~ to the value ~127~
 
 Numbers are polymorphic under the surface, and the compiler doesn't
 assign them a concrete type until is not forced to do so
 
-From the ~Bounded~ Typeclass you can find the boundaries through ~minBound~ and ~maxBound~
+From the ~Bounded~ Typeclass you can find the boundaries through
+~minBound~ and ~maxBound~
 
 #+BEGIN_SRC haskell
 import GHC.Int
@@ -168,14 +180,17 @@ typeclass ~Fractional~
 3. ~(1 * 2) > 5~
    OK
 
-4. ~[Merry] > [Happy]~ I guess they are supposed to be strings and not
-   data constructors. Should be -> ~["Merry"] > ["Happy"]~
+4. ~[Merry] > [Happy]~
+   ~Merry~ and ~Happy~ should have been string, because ~[Char]~
+   implements ~Ord~. Otherwise ~Merry~ and ~Happy~ can be /Data
+   Constructors/ but their type must implement ~Ord~
 
 5. ~[1, 2, 3] ++ "look at me!"~
-   Incompatible types cannot concatenante ~(++) :: [a] -> [a] -> [a]~
+   Two different types cannot be concatenated together
 
 ** Conditionals with if-then-else
-Haskell doesn't have an ~if~ statement but does have an ~if~ expression
+Haskell doesn't have an ~if~ statement but does have an ~if~
+expression
 
 #+BEGIN_SRC haskell :tangle chapter-004/GreetIfCool1.hs :eval never :epilogue ""
 module GreetIfCool1 where
