@@ -53,6 +53,100 @@ It's an expression
 ** What's the type signature of ~swap~?                                                     :drill:
 *** Answer
 ~swap :: (a, b) -> (b, a)~
+* Chapter 05
+** What's the output of ~:t 13~                                                             :drill:
+*** Answer
+~13 :: Num p => p~
+** What's the arrow (~->~)                                                                  :drill:
+*** Answer
+It's a /Type Constructor/ without a /Data Constructor/, it shows up only at type level and not at term level.
+** The arrow ~(->)~ is left of right associative?                                           :drill:
+*** Answer
+Is right associative, it means that ~(+) :: a -> a -> a~ it takes an
+~a~ and returns a function ~(a -> a)~
+** Function application is left or right associative?                                       :drill:
+*** Answer
+If left associative, it means that ~f g 5~ will be applied as ~(f g) 5~
+** What it means that a /Type Class/ is constraining a /Type Variable/?                     :drill:
+*** Answer
+It means that the variable represents one of the types that have
+instances of that /Type Class/
+** How do you write that the /Type Variable/ ~a~ is constrained with /Type Class/ ~Num~?    :drill:
+*** Answer
+~Num a => a~
+** Sentence                                                                                 :drill:
+All <[functions]> in Haskell take <[one]> argument and return <[one]>
+result
+** Describe in words ~(+) :: Num a => a -> a -> a~                                          :drill:
+*** Answer
+It's a function that takes and argument of type ~a~ constrained by
+~Num a~ and returns a function that takes and argument of the same
+type ~a~ and returns a value of the same type ~a~.
+** Describe in words ~map :: (a -> b) -> [a] -> [b]~                                        :drill:
+*** Answer
+It's a function that takes a function from type ~a~ to type ~b~ and
+returns a function that takes a list of values of type ~a~ and returns
+a list of values ~b~
+** Transformation from ~f :: (t1, t2) -> t3~ to ~f' :: t1 -> t2 -> t3~ is called...         :drill:
+*** Answer
+Curring
+** Transformation from ~f :: t1 -> t2 -> t3~ to ~f' :: (t1, t2) -> t3~ is called...         :drill:
+*** Answer
+Unurring
+** Write a function to curry a function ~(t1, t2) -> t3~                                    :drill:
+*** Answer
+#+BEGIN_SRC haskell :eval never
+curry :: ((t1, t2) -> t3) -> t1 -> t2 -> t3
+curry f a b = f (a, b)
+#+END_SRC
+** Write a function to uncurry a function ~t1 -> t2 -> t3~                                  :drill:
+*** Answer
+#+BEGIN_SRC haskell
+uncurry :: (t1 -> t2 -> t3) -> (t1, t2) -> t3
+uncurry f (a, b) = f a b
+#+END_SRC
+** What's /Sectioning/?                                                                     :drill:
+*** Answer
+Partial application of infix operators. ~(2^)~ leaves the remaining
+argument to the right or ~(^2)~ leaving the remaining argument to the
+left.
+** What means /Polymorphic/?                                                                :drill:
+*** Answer
+It means "made of many forms". Polymorphic type variables give us the
+ability to implement expressions that can accept arguments of many
+types and results of many types without rewriting the expression for
+every type.
+** Type variables can be: ...                                                               :drill:
+*** Answer
+- Concrete
+- Constrained Polymorphic (also called /Ad-Hoc Polymorphism/)
+- Parametric Polymorphic
+** A function is /Polymorphic/ when?                                                        :drill:
+*** Answer
+A function is polymorphic when its type signature has variables that
+can represent more than one type.
+** What's the /Parametricity/ property?                                                     :drill:
+*** Answer
+Parametricity is the property we get from having parametric
+polymorphism. Parametricity means that the behavior of a function with
+respect to the types of its arguments is uniform. The behavior cannot
+change just because it was applied to an argument of a different type.
+** What's a /Polymorphic Constant/?                                                         :drill:
+*** Answer
+A value whose concrete type is left to be decided. Ex ~[]~ which has
+type ~[a]~ or ~1~ which has type ~Num a => a~.
+** What's a /Principal Type/?                                                               :drill:
+*** Answer
+Is the most generic type which still type checks.
+** What's a /Type Class/?                                                                   :drill:
+*** Answer
+Is a means of expressing faculties or interfaces that multiple
+datatypes have in common.
+** What's a /Module/?                                                                       :drill:
+*** Answer
+Is the unit of organization that Haskell uses to collect together
+declarations of values, functions, datatypes, type classes, and type
+classes instances.
 * Chapter 11
 ** What are the kinds?                                                                      :drill:
 :PROPERTIES:

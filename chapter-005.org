@@ -19,7 +19,47 @@ constraints that enforce correctness.
 - Serves as documentation.
 
 * 5.03 How to read type signatures
-The arrow is the type constructor for functions ~data (->) a b~
+With numbers we see type class information (type class constraints)
+and not concrete types, so that we can use the data (ex. ~13~) in
+multiple computations and not only where ~Int~ or ~Integer~ are
+required.
+
+#+BEGIN_SRC haskell
+:t 13
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+13 :: Num p => p
+#+END_EXAMPLE
+
+But if we declare the number with a concrete type then
+
+#+BEGIN_SRC haskell
+x = 13 :: Integer
+:t x
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+x :: Integer
+#+END_EXAMPLE
+
+We can also query signature of functions
+
+#+BEGIN_SRC haskell
+:t not
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+not :: Bool -> Bool
+#+END_EXAMPLE
+
+** Understanding the function type
+The arrow is a /Type Constructor/ backed into the language, it takes
+arguments and has no /Data Constructor/
+
 #+BEGIN_SRC haskell
 :i (->)
 #+END_SRC
@@ -35,23 +75,21 @@ Monoid (a -> b) -- Defined in ‘GHC.Base’
 Semigroup (a -> b) -- Defined in ‘GHC.Base’
 #+END_EXAMPLE
 
-Function type has no data constructors. The values that shows up at
+Function type has no /Data Constructors/. The values that shows up at
 term level is the function. Functions are values.
 
-~(->)~ is right associative, it means that ~(+) :: a -> a -> a~ takes an
-~a~ and returns a ~(a -> a)~
+~(->)~ is right associative, it means that ~(+) :: a -> a -> a~ takes
+an ~a~ and returns a ~(a -> a)~
 
 When a /Type Class/ is constraining a /Type Variable/, the variable
 can represent one of the types that have instances of that /Type
-Class/.
-
-When we constrain a /Type Variable/ like ~Num a => a -> a~ means also
-that the first and the second argument must be of the same concrete
-type when found.
+Class/. When we constrain a /Type Variable/ like ~Num a => a -> a~
+means also that the first and the second argument must be of the same
+concrete type when found.
 
 A type signature can have more than one /Type Class/ constraint like
 #+BEGIN_SRC haskell :eval never
-Ord a, Num a) => a -> a -> Ordering
+(Ord a, Num a) => a -> a -> Ordering
 #+END_SRC
 
 Look up [[https://wiki.haskell.org/Keywords][here]] to learn the keywords of the language.
@@ -74,7 +112,9 @@ Match the function to its type signature
 5. e) ~(<)~ -> e) ~_ :: Ord a => a -> a -> Bool~
 
 * 5.04 Currying
-Partial Application
+All functions in Haskell take one argument and return one result.
+
+** Partial Application
 #+BEGIN_SRC haskell
 :{
 addFive :: Integer -> Integer -> Integer
@@ -114,6 +154,7 @@ Curried
 
 If you have a function ~f :: (t1, t2) -> t~ you can always write a
 function ~curry :: ((t1, t2) -> t) -> t1 -> t2 -> t~
+
 #+BEGIN_SRC haskell :eval never
 curry :: ((t1, t2) -> t) -> t1 -> t2 -> t
 curry f a b = f (a, b)
@@ -130,7 +171,6 @@ function ~uncurry :: (t1 -> t2 -> t) -> (t1, t2) -> t~
 uncurry :: (t1 -> t2 -> t) -> (t1, t2) -> t
 uncurry f (a, b) = f a b
 #+END_SRC
-
 
 ** Sectioning
 Specifically refers to partial application of infix operators, which
@@ -153,6 +193,7 @@ z x
 #+END_EXAMPLE
 
 ** Exercise: Type Arguments
+
 1. ~f :: a -> a -> a -> a~ what is the type of ~f 'c'~
 
    a) ~Char -> Char -> Char~
@@ -193,12 +234,12 @@ z x
 Polymorphic means "made of many forms". Polymorphic type variables
 give us the ability to to implement expressions that can accept
 arguments of many types and return results of many types without
-rewriting the expression for every type
+rewriting the expression for every type.
 
-- Type signatures may have three kind of types:
-  - Concrete
-  - Constrained Polymorphic (also called Ad-Hoc Polymorphism)
-  - Parametric Polymorphic
+Type variables can be:
+- Concrete
+- Constrained Polymorphic (also called Ad-Hoc Polymorphism)
+- Parametric Polymorphic
 
 Parametricity means that the behaviour of a function doesn't change
 with respect to the type of its argument if the type is compatible
@@ -206,8 +247,8 @@ with the constraints.
 
 ** Exercise: Parametricity
 
-1. Given the type a -> a, which is the type for id, attempt to make a
-   function that terminates successfully that does something other
+1. Given the type ~a -> a~, which is the type for id, attempt to make
+   a function that terminates successfully that does something other
    than returning the same value.
 
    It's not possible.
@@ -221,8 +262,8 @@ with the constraints.
    #+END_SRC
 
    #+BEGIN_SRC haskell :eval never
-   second :: a -> a -> a
-   second a b = b
+   last :: a -> a -> a
+   last a b = b
    #+END_SRC
 
 3. Write all possible implementation of function with type signature
@@ -232,6 +273,45 @@ with the constraints.
    only :: a -> b -> b
    only a b = b
    #+END_SRC
+
+** Polymorphic Constants
+Some constants / values can be polymorphic aka their concrete type can
+be left to be decided
+
+#+BEGIN_SRC haskell
+:t [] -- parametric
+:t 1  -- constrained
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[] -- parametric :: [a]
+1  -- constrained :: Num p => p
+#+END_EXAMPLE
+
+Sometimes we have a value with a concrete type but we would like to
+have a polymorphic value to be used in more context
+
+#+BEGIN_SRC haskell
+-- 6 / length([1, 2, 3])
+-- raise an error because length give us an Int an (/) pretends a Fractional
+:t length
+:t (/)
+-- we can use fromIntegral
+:t fromIntegral
+-- which turns an Integral value in a Num value
+6 / fromIntegral(length([1, 2, 3]))
+6 / (fromIntegral . length) [1, 2, 3]
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+length :: Foldable t => t a -> Int
+(/) :: Fractional a => a -> a -> a
+fromIntegral :: (Integral a, Num b) => a -> b
+2.0
+2.0
+#+END_EXAMPLE
 
 * 5.06 Type Inference
 Type inference is an algorithm for determining the types of expressions.
@@ -275,7 +355,9 @@ type would be and then check your work in GHCi
    ~myAlph :: Char -> Bool~
 
 * 5.07 Asserting Types for Declaration
-You can force the type inference by explicitly declaring types
+You can enforce types of things by explicitly declaring them. Adding
+type signatures to your code can provide guidance to you as you write
+your functions.
 
 #+BEGIN_SRC haskell
 triple x = x * 3
@@ -357,11 +439,11 @@ value.
 
       ~54 :: Num a => a~
 
-   2. ~head [(0,"doge"),(1,"kitteh")]~
+   2. ~head [(0, "doge"), (1, "kitteh")]~
 
       ~(0, "dodge") :: Num a => (a, [Char])~
 
-   3. ~head [(0 :: Integer ,"doge"),(1,"kitteh")]~
+   3. ~head [(0 :: Integer, "doge"), (1, "kitteh")]~
 
       ~(0, "dodge") :: (Integer, [Char])~
 
@@ -384,7 +466,9 @@ value.
    w = y * 10
    #+END_SRC
 
-   What's the type of ~w~? ~w :: Num a => a~
+   What's the type of ~w~?
+
+   ~w :: Num a => a~
 
 3. Given
    #+BEGIN_SRC haskell :eval never
@@ -402,7 +486,9 @@ value.
    f = 4 / y
    #+END_SRC
 
-   What's the type of ~f~? ~f :: Fractional a => a~
+   What's the type of ~f~?
+
+   ~f :: Fractional a => a~
 
 5. Given
    #+BEGIN_SRC haskell :eval never
@@ -412,7 +498,9 @@ value.
    f = x ++ y ++ z
    #+END_SRC
 
-   What's the type of ~f~? ~f :: [Char]~
+   What's the type of ~f~?
+
+    ~f :: [Char]~
 
 ** Does it compile?
 For each set of expressions, figure out which expression, if any,
@@ -426,13 +514,14 @@ causes the compiler to squawk at you. Fix it if you can.
 
    No, ~bigNum~ is fully applied and so it cannot be applied to ~10~
    in ~wahoo~
+
    #+BEGIN_SRC haskell :eval never
    bigNum = (^) 5
    wahoo = bigNum $ 10
    #+END_SRC
 
 2. Does it compile?
-   #+BEGIN_SRC haskell
+   #+BEGIN_SRC haskell :eval never
    x = print
    y = print "woohoo!"
    z = x "hello world"
@@ -449,6 +538,7 @@ causes the compiler to squawk at you. Fix it if you can.
    #+END_SRC
 
    No, ~b~ cannot be applied to a value
+
    #+BEGIN_SRC haskell :eval never
    a = (+)
    b = a
@@ -463,6 +553,7 @@ causes the compiler to squawk at you. Fix it if you can.
    #+END_SRC
 
    No, ~c~ has not been declared
+
    #+BEGIN_SRC haskell :eval never
    a = 12 + b
    b = 10000 * c
@@ -470,8 +561,8 @@ causes the compiler to squawk at you. Fix it if you can.
    #+END_SRC
 
 ** Type variable or specific type constructor?
-In the following /Type Signatures/, categorize each component
-as one of: fully polymorphic, constrained polymorphic, concrete
+In the following /Type Signatures/, categorize each component as one
+of: fully polymorphic, constrained polymorphic, concrete
 
 1. Categorize the components of the /Type Signature/
    #+BEGIN_SRC haskell :eval never
@@ -634,7 +725,8 @@ should do.
    -- co :: (b -> c) -> (a -> b) -> a -> c
    :{
    co :: (b -> c) -> (a -> b) -> a -> c
-   co b2c a2b a = b2c (a2b a)
+   -- co b2c a2b a = b2c (a2b a)
+   co b2c a2b = b2c . a2b
    :}
    #+END_SRC
 
@@ -744,7 +836,8 @@ and indentation.
 ** Type-Known-Do
 
 1. Make it type check
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   #+BEGIN_SRC haskell :results none
+   :{
    f :: Int -> String
    f = undefined
 
@@ -753,10 +846,12 @@ and indentation.
 
    h :: Int -> Char
    h x = g . f $ x
+   :}
    #+END_SRC
 
 2. Make it type check
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   #+BEGIN_SRC haskell :results none
+   :{
    data A
    data B
    data C
@@ -769,10 +864,12 @@ and indentation.
 
    e :: A -> C
    e x = w . q $ x
+   :}
    #+END_SRC
 
 3. Make it type check
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   #+BEGIN_SRC haskell :results none
+   :{
    data X
    data Y
    data Z
@@ -785,44 +882,46 @@ and indentation.
 
    xform :: (X, Y) -> (Z, Z)
    xform (x, y) = (xz x, yz y)
+   :}
    #+END_SRC
 
 4. Make it type check
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   #+BEGIN_SRC haskell :results none
+   :{
    munge :: (x -> y)
          -> (y -> (w, z))
          -> x
          -> w
-
    munge x2y y2wz x = fst $ y2wz $ x2y $ x
+   :}
    #+END_SRC
+
 * 5.09 Definitions
-- Polymorphism :: refers to type variables which may refer to more
+- Polymorphism :: Refers to type variables which may refer to more
                   than one concrete type.
-- Type Inference :: is a faculty some programming languages, most
+- Type Inference :: Is a faculty some programming languages, most
                     notably Haskell and ML, have to infer principal
                     types from terms without needing explicit type
                     annotations.
-- Principal Type :: is the most generic type which still type
+- Principal Type :: Is the most generic type which still type
                     checks. There are, in some cases, terms in Haskell
                     which can be well-typed but which have no
                     principal type. In those cases, an explicit type
                     annotation must be added.
-- Type Class :: is a means of expressing faculties or interfaces that
+- Type Class :: Is a means of expressing faculties or interfaces that
                 multiple datatypes may have in common. This enables us
                 to write code exclusively in terms of those
                 commonalities without repeating yourself for each
                 instance.
-- Parametricity :: is the property that holds in the presence of para-
-                   metric polymorphism. Parametricity states that the
-                   behavior of a function will be uniform across all
-                   concrete applications of the function.
-- Ad-Hoc Polymorphism :: (sometimes called "constrained polymorphism")
-     is polymorphism that applies one or more type class constraints
-     to what would’ve otherwise been a parametrically polymorphic type
-     variable.
-- Module :: is the unit of organization that the Haskell programming
+- Parametricity :: Is the property that holds in the presence of
+                   parametric polymorphism. Parametricity states that
+                   the behavior of a function will be uniform across
+                   all concrete applications of the function.
+- Ad-Hoc Polymorphism :: Is polymorphism that applies one or more type
+     class constraints to what would’ve otherwise been a
+     parametrically polymorphic type variable.
+- Module :: Is the unit of organization that the Haskell programming
             language uses to collect together declarations of values,
             functions, datatypes, type classes, and type class
             instances. Any time you use “import” in Haskell, you are
-            importing declara- tions from a module.
+            importing declarations from a module.
