@@ -147,6 +147,81 @@ datatypes have in common.
 Is the unit of organization that Haskell uses to collect together
 declarations of values, functions, datatypes, type classes, and type
 classes instances.
+
+* Chapter 06
+** In what sense Typeclasses are the opposite of Datatypes?                                 :drill:
+*** Answer
+Because /Datatypes/ defines how /Types/ are created whereas
+/Typeclasses/ defines how /Types/ are consumed (used in a
+computation).
+** What's the relationship between Typeclasses and their instances?                         :drill:
+*** Answer
+Typeclasses defines functions. Typeclasses instances supply an
+implementation of those functions for a specific Type.
+** Sentence                                                                                 :drill:
+Typeclasses allow us to <[generalize]> over a set of <[/types/]> in
+order to define and execute a standard set of <[functions]> for those
+<[types]>
+** List some well known Typeclasses                                                         :drill:
+*** Answer
+- Eq
+- Show
+- Ord
+- Enum
+- Bounded
+- Num
+** What does it mean for a Type to have an instance of a Typeclass?                         :drill:
+*** Answer
+To have an implementation of every (required) function defined in the
+Typeclass.
+** List the functions defined in ~Eq~ Typeclass                                             :drill:
+*** Answer
+- ~(==) :: a -> a -> Bool~
+- ~(/=) :: a -> a -> Bool~
+** Define an instance of Typeclass ~Eq~ for the following Type                              :drill:
+#+BEGIN_SRC haskell
+data Trivial = Trivial
+#+END_SRC
+*** Answer
+#+BEGIN_SRC haskell
+instance Eq Trivial where
+  (==) Trivial Trivial = True
+#+END_SRC
+** What are partial functions?                                                              :drill:
+*** Answer
+Functions that are not defined for all possible input. Haskell will
+refuse to compile such functions.
+** Sentence                                                                                 :drill:
+*** Answer
+For a <[polymorphic]> datatype we can ask, for one or more <[type
+argument]>, to implement one or more <[Typeclass]>
+** Write an instance of Typeclass ~Eq~ for the following Datatype                           :drill:
+#+BEGIN_SRC haskell
+data Pair a = Pair a a
+#+END_SRC
+*** Answer
+#+BEGIN_SRC haskell
+instance Eq a => Eq (Pair a) where
+  (==) (Pair l1 l2) (Pair r1 r2) =
+    l1 == r1 && l2 == r2
+#+END_SRC
+** How can a Typeclass inherith from another?                                               :drill:
+*** Answer
+In the definition of a /Typeclass/ you can require the /Type/ to
+already implement another /Typeclass/ (NOTE: that is not the same as
+requiring a type to implement another /Typeclass/ when you define
+another /Typeclass/ implementation)
+
+#+BEGIN_SRC haskell :eval never
+class (Real a, Enum a) => Integral a where ...
+#+END_SRC
+
+Any type that implements ~Integral~ must implement already ~Real~ and
+~Enum~
+** Why Typeclasses don't suffer from multiple inheritance problems?                         :drill:
+*** Answer
+Because /Typeclasses/ inheritance is addictive, an implementation of a
+method of a /Typeclass/ cannot override the implementation of another.
 * Chapter 11
 ** What are the kinds?                                                                      :drill:
 :PROPERTIES:

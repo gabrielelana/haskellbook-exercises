@@ -1,4 +1,3 @@
-
 module Trivial where
 
 data Trivial =
@@ -6,3 +5,4 @@ data Trivial =
 
 instance Eq Trivial where
   (==) Trivial Trivial = True
+:load

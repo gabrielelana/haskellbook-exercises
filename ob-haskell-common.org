@@ -55,3 +55,8 @@
  (file-name-as-directory (file-name-directory (buffer-file-name)))
  chapter)
 #+END_SRC
+
+#+NAME: head
+#+BEGIN_SRC sh :var n="1" :var content="" :results raw
+echo "$content" | head -n$n
+#+END_SRC

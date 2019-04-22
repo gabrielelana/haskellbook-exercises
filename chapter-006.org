@@ -1,35 +1,43 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
 #+TITLE: Typeclasses
+
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+#+PROPERTY: header-args:haskell+ :epilogue ":load"
+#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
 
 * 6.01 Typeclasses
 In this chapter
 - Typeclasses ~Eq~, ~Num~, ~Ord~, ~Enum~ and ~Show~
-- What is type-defaulting typeclasses?
+- What is Type-Defaulting Typeclass?
 - What is Typeclass inheritance?
 - Common but often implicit functions that creates side effects
 
-* 6.02 What are typeclasses?
+* 6.02 What are Typeclasses?
 Types and Typeclasses are in a sense opposite
-- Declaration of a datatype defines how that type is created.
-- Declaration of a typeclasses defines how a set of types are consumed
-  or used in a computation.
+- Declaration of a /Datatype/ defines how that /Type/ is created.
+- Declaration of a /Typeclass/ defines how a set of /Types/ are
+  consumed or used in a computation.
 
-Typeclasses allow us to generalize over a set of types in order to
+Typeclasses allow us to generalize over a set of /Types/ in order to
 define and execute a standard set of functions for those types.
 
 We don't need to define separate equality functions for each different
 type of data, as long as our type *implements* or *instantiates* the
-~Eq~ typeclass, we can use the standard functions defined in ~Eq~.
+~Eq~ /Typeclass/, we can use the standard functions defined in ~Eq~.
 
-- *Typeclasses* declare operations (functions members of a typeclass)
-- *Instances* supply implementation for operations declared in
-  typeclasses
+- *Typeclasses* declare operations (functions members of a /Typeclass/)
+- Typeclasses *instances* supply implementation for operations
+  declared in a /Typeclass/
 
 * 6.03 Back to Bool
 Look at the typeclasses of ~Bool~. Each of these instances is a
-typeclass that ~Bool~ implements, and the instances are unique
-implementations of the functions defined in the typeclass.
+/Typeclass/ that ~Bool~ implements, and the instances are unique
+implementations of the functions defined in the /Typeclass/.
 
-#+BEGIN_SRC haskell :results raw :wrap EXAMPLE
+#+BEGIN_SRC haskell
 :i Bool
 #+END_SRC
 
@@ -50,20 +58,18 @@ instance Bounded Bool -- Defined in ‘GHC.Enum’
 - Ord :: for things that can be put into a sequential order
 - Show :: render things into strings
 
-Typeclasses have a *hierarchy*, all members of ~Ord~ must be members of
-~Eq~ (to put in order something you need to be able to compare them
+Typeclasses have a *hierarchy*, all members of ~Ord~ must be members
+of ~Eq~ (to put in order something you need to be able to compare them
 for equality), all members of ~Enum~ must be members of ~Ord~ (to put
 something in an enumerated list you need to be able to sort them).
 
 * 6.04 Eq
-In Haskell equality is implemented with ~Eq~.
+Some language bake equality in every object of the language but some
+datatype do not have a sensible notion of equality so Haskell does not
+encode equality in every type. In Haskell equality is implemented with
+the /Typeclass/ ~Eq~.
 
-#+NAME: head
-#+BEGIN_SRC sh :var n="1" :var content="" :results raw
-echo "$content" | head -n$n
-#+END_SRC
-
-#+BEGIN_SRC haskell :results raw replace :wrap EXAMPLE :post head(n="3", content=*this*)
+#+BEGIN_SRC haskell :post head(n="3", content=*this*)
 :i Eq
 #+END_SRC
 
@@ -74,9 +80,10 @@ class Eq a where
   (/=) :: a -> a -> Bool
 #+END_EXAMPLE
 
-Any type that has an instance of ~Eq~ typeclass implements the functions ~==~ and ~/=~
+Any type that has an instance of ~Eq~ typeclass implements the
+functions ~==~ and ~/=~
 
-#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :epilogue "0"
+#+BEGIN_SRC haskell
 5 == 5
 5 /= 6
 (1, 2) == (2, 1)
@@ -95,7 +102,7 @@ Type binding ~(==) :: a -> a -> Bool~ starts from the left, so if we
 bind the first ~a~ to ~(Integer, Integer)~ then what we expect for the
 second ~a~ it's the same type
 
-#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :epilogue "0"
+#+BEGIN_SRC haskell
 :t (==) (1, 2)
 "--------------------------------------"
 (1, 2) == "puppies"
@@ -103,22 +110,24 @@ second ~a~ it's the same type
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
-(==) (1, 2) :: (Num b, Num a, Eq b, Eq a) => (a, b) -> Bool
+(==) (1, 2) :: (Eq a, Eq b, Num a, Num b) => (a, b) -> Bool
 --------------------------------------
-<interactive>:108:11: error:
+<interactive>:44:11: error:
     • Couldn't match expected type ‘(Integer, Integer)’
                   with actual type ‘[Char]’
     • In the second argument of ‘(==)’, namely ‘"puppies"’
       In the expression: (1, 2) == "puppies"
       In an equation for ‘it’: it = (1, 2) == "puppies"
 #+END_EXAMPLE
+
 * 6.05 Writing typeclass instances
 We will define ~Eq~ for our own datatype without deriving anything,
 first thing look at the [[http://hackage.haskell.org/package/base/docs/Data-Eq.html][definition of the typeclass you need to
-implement]], for ~Eq~ we need to implment either ~==~ or ~/=~ (the other
-can be deduced, you can implement both if you have somthing clever
-that works for your datatype that is more efficient than a simple
-negation)
+implement]].
+
+For ~Eq~ we need to implement either ~==~ or ~/=~ (the other can be
+deduced, you can implement both if you have something clever that
+works for your datatype that is more efficient than a simple negation)
 
 #+NAME: trivial
 #+BEGIN_SRC haskell :tangle chapter-006/trivial.hs :eval never
@@ -137,7 +146,7 @@ instance Eq Trivial where
    typeclass instance.
 4. ~where~ terminates the declaration and starts the implementation.
 5. ~==~ is the infix operator we are providing as part of the
-   typeclass.
+   Typeclass.
 6. ~Trivial~ is the data constructor we are using to identify the
    first argument.
 7. ~Trivial~ is the data constructor we are using to identify the
@@ -146,17 +155,7 @@ instance Eq Trivial where
    constructor ~Trivial~ then the result is ~True~.
 9. Typeclass instances are unique to a given type.
 
-#+NAME: ghci-clean
-#+BEGIN_SRC emacs-lisp :var content="" :results raw
-(string-join
-  (seq-map
-    (lambda (line)
-      (replace-regexp-in-string "^.*Prelude> " "" line))
-    (split-string content "\n"))
-  "\n")
-#+END_SRC
-
-#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :noweb yes :epilogue ":load" :post ghci-clean(content=*this*)
+#+BEGIN_SRC haskell
 :{
 <<trivial>>
 :}
@@ -197,7 +196,7 @@ instance Eq Date where
     dayOfWeek == dayOfWeek' && dayOfMonth == dayOfMonth'
 #+END_SRC
 
-#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :noweb yes :epilogue ":load" :post ghci-clean(content=*this*)
+#+BEGIN_SRC haskell
 :{
 <<dayofweek>>
 :}
@@ -214,11 +213,11 @@ False
 #+END_EXAMPLE
 
 ** Partial Function
-Partial functions, not to be confused with /partially applied
-functions/, are function that are not defined for all possible input,
-kindly the Haskell compiler will let us know that that's a problem
+Partial functions (no "partially applied functions) are functions that
+are not defined for all possible input. Kindly the Haskell compiler
+will let us know that that's a problem
 
-#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :noweb yes :epilogue ":load" :post ghci-clean(content=*this*)
+#+BEGIN_SRC haskell
 :{
 <<dayofweek>>
 
@@ -233,12 +232,12 @@ f Fri
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
-*** Exception: <interactive>:(1493,1)-(1495,9): Non-exhaustive patterns in function f
+,*** Exception: <interactive>:(173,1)-(175,9): Non-exhaustive patterns in function f
 #+END_EXAMPLE
 
 Let's try to build one that is complete
 
-#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :noweb yes :epilogue ":load" :post ghci-clean(content=*this*)
+#+BEGIN_SRC haskell
 :{
 <<dayofweek>>
 
@@ -261,11 +260,11 @@ f Fri
 #+END_EXAMPLE
 
 ** Ask for more
-When we are implementing a typeclass for a certain polymorphic
-datatype, we can ask for one or more type arguments to implement one
-or more typeclass
+When we are implementing a /Typeclass/ for a certain polymorphic
+datatype, we can ask, for one or more type arguments, to implement one
+or more /Typeclass/
 
-#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+#+BEGIN_SRC haskell
 :{
 module IdentityEq where
 
@@ -280,7 +279,8 @@ instance Eq (Identity a) where
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
-<interactive>:1557:5: error:
+
+<interactive>:237:5: error:
     • No instance for (Eq a) arising from a use of ‘==’
       Possible fix: add (Eq a) to the context of the instance declaration
     • In the expression: v == v'
@@ -300,7 +300,7 @@ instance Eq a => Eq (Identity a) where
      v == v'
 #+END_SRC
 
-#+BEGIN_SRC haskell :results output :noweb yes replace :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
+#+BEGIN_SRC haskell
 :{
 <<identityeq>>
 :}
@@ -316,16 +316,15 @@ True
 Write the ~Eq~ instance for the datatype provided
 
 1. Write an ~Eq~ instance for ~TisAnInteger~
-   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   #+BEGIN_SRC haskell
    :{
-   module EqIntances01 where
-
    data TisAnInteger =
      TisAn Integer
 
    instance Eq TisAnInteger where
      (==) (TisAn n1) (TisAn n2) = n1 == n2
    :}
+
    TisAn 1 == TisAn 1
    TisAn 1 == TisAn 2
    #+END_SRC
@@ -337,16 +336,15 @@ Write the ~Eq~ instance for the datatype provided
    #+END_EXAMPLE
 
 2. Write an ~Eq~ instance for ~TwoIntegers~
-   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   #+BEGIN_SRC haskell
    :{
-   module EqIntances02 where
-
    data TwoIntegers =
      Two Integer Integer
 
    instance Eq TwoIntegers where
      (==) (Two nl1 nl2) (Two nr1 nr2) = nl1 == nr1 && nl2 == nr2
    :}
+
    Two 1 1 == Two 1 1
    Two 1 1 == Two 1 2
    #+END_SRC
@@ -358,10 +356,8 @@ Write the ~Eq~ instance for the datatype provided
    #+END_EXAMPLE
 
 3. Write an ~Eq~ instance for ~StringOrInt~
-   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   #+BEGIN_SRC haskell
    :{
-   module EqInstances03 where
-
    data StringOrInt =
      TisAnInt Int | TisAString String
 
@@ -369,6 +365,7 @@ Write the ~Eq~ instance for the datatype provided
      (==) (TisAnInt n1) (TisAnInt n2) = n1 == n2
      (==) (TisAString s1) (TisAString s2) = s1 == s2
    :}
+
    TisAnInt 1 == TisAnInt 1
    TisAnInt 1 == TisAnInt 2
    TisAString "aaa" == TisAString "aaa"
@@ -384,17 +381,16 @@ Write the ~Eq~ instance for the datatype provided
    #+END_EXAMPLE
 
 4. Write an ~Eq~ instance for ~(Pair a)~
-   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   #+BEGIN_SRC haskell
    :{
-   module EqInstances04 where
-
    data Pair a =
      Pair a a
 
    instance Eq a => Eq (Pair a) where
-     (==) (Pair vl1 vl2) (Pair vr1 vr2) =
-       vl1 == vr1 && vl2 == vr2
+     (==) (Pair l1 l2) (Pair r1 r2) =
+       l1 == r1 && l2 == r2
    :}
+
    Pair 1 2 == Pair 1 2
    Pair 1 2 == Pair 2 2
    Pair "aaa" "bbb" == Pair "aaa" "ccc"
@@ -410,17 +406,16 @@ Write the ~Eq~ instance for the datatype provided
    #+END_EXAMPLE
 
 5. Write an ~Eq~ instance for ~(Tuple a b)~
-   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   #+BEGIN_SRC haskell
    :{
-   module EqInstances05 where
-
    data Tuple a b =
      Tuple a b
 
    instance (Eq a, Eq b) => Eq (Tuple a b) where
-     (==) (Tuple vl1 vl2) (Tuple vr1 vr2) =
-       vl1 == vr1 && vl2 == vr2
+     (==) (Tuple l1 l2) (Tuple r1 r2) =
+       l1 == r1 && l2 == r2
    :}
+
    Tuple "a" 1 == Tuple "a" 1
    Tuple "a" 1 == Tuple "a" 2
    Tuple True (1, 2) == Tuple True (1, 2)
@@ -436,10 +431,8 @@ Write the ~Eq~ instance for the datatype provided
    #+END_EXAMPLE
 
 6. Write an ~Eq~ instance for ~(Which a)~
-   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   #+BEGIN_SRC haskell
    :{
-   module EqInstances06 where
-
    data Which a
      = ThisOne a
      | ThatOne a
@@ -449,6 +442,7 @@ Write the ~Eq~ instance for the datatype provided
      (==) (ThatOne l) (ThatOne r) = l == r
      (==) _ _ = False
    :}
+
    ThisOne 1 == ThisOne 1
    ThisOne 1 == ThisOne 2
    ThisOne 1 == ThatOne 1
@@ -468,18 +462,17 @@ Write the ~Eq~ instance for the datatype provided
    #+END_EXAMPLE
 
 7. Write an ~Eq~ instance for ~(EitherOr)~
-   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
+   #+BEGIN_SRC haskell
    :{
-   module EqInstances07 where
-
    data EitherOr a b =
      Hello a | Goodbye b
 
    instance (Eq a, Eq b) => Eq (EitherOr a b) where
-     (==) (Hello vl) (Hello vr) = vl == vr
-     (==) (Goodbye vl) (Goodbye vr) = vl == vr
+     (==) (Hello l) (Hello r) = l == r
+     (==) (Goodbye l) (Goodbye r) = l == r
      (==) _ _ = False
    :}
+
    Hello "Robert" == Hello "Robert"
    Hello "Robert" == Hello "Mike"
    Goodbye "Robert" == Goodbye "Robert"
@@ -499,7 +492,7 @@ Write the ~Eq~ instance for the datatype provided
    #+END_EXAMPLE
 
 * 6.06 Num
-Is a typeclass implemented by most of the number datatype
+The Typeclass ~Num~ is implemented by most of the number datatype.
 
 #+BEGIN_SRC haskell :results raw replace :wrap EXAMPLE
 :i Num
@@ -520,6 +513,10 @@ class Num a where
 instance Num Word -- Defined in ‘GHC.Num’
 instance Num Integer -- Defined in ‘GHC.Num’
 instance Num Int -- Defined in ‘GHC.Num’
+instance Num Int8 -- Defined in ‘GHC.Int’
+instance Num Int64 -- Defined in ‘GHC.Int’
+instance Num Int32 -- Defined in ‘GHC.Int’
+instance Num Int16 -- Defined in ‘GHC.Int’
 instance Num Float -- Defined in ‘GHC.Float’
 instance Num Double -- Defined in ‘GHC.Float’
 #+END_EXAMPLE
@@ -550,19 +547,19 @@ instance Integral Int -- Defined in ‘GHC.Real’
 Any type that implements ~Integral~ must implement already ~Real~ and
 ~Enum~, since any type that implements ~Real~ must implement ~Num~
 then any type that implements ~Integral~ also implements ~Num~. Since
-~Real~ cannot override the methods of ~Num~, this typeclass
+~Real~ cannot override the methods of ~Num~, this /Typeclass/
 inheritance is only additive and the ambiguity problems caused by
 multiple inheritance in some programming languages are avoided.
 
 Typeclasses inheritance is additive.
 
 ** Exercises: Tuple Experiment
-- `quotRem` always round things towards 0 like it's common for
+- ~quotRem~ always round things towards 0 like it's common for
   mathematicians
-- `divMod` always round things towards -∞ like it's common to find in
+- ~divMod~ always round things towards -∞ like it's common to find in
   other programming languages
 
-#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :epilogue "0"
+#+BEGIN_SRC haskell
 quot (-9) 4 -- round towards 0
 div (-9) 4 -- round towards -∞
 #+END_SRC
