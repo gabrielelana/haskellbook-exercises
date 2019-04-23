@@ -521,6 +521,7 @@ instance Num Float -- Defined in ‘GHC.Float’
 instance Num Double -- Defined in ‘GHC.Float’
 #+END_EXAMPLE
 
+** Integral
 Let's look at the typeclass ~Integral~
 
 #+BEGIN_SRC haskell :results raw replace :wrap EXAMPLE
@@ -570,11 +571,21 @@ div (-9) 4 -- round towards -∞
 -3
 #+END_EXAMPLE
 
+** Fractional
+~Num~ is a superclass of ~Fractional~
+
+#+BEGIN_SRC haskell :eval never
+class Num a => Fractional a where
+  (/) :: a -> a -> a
+  recip :: a -> a
+  fromRational :: Rational -> a
+#+END_SRC
+
 * 6.07 Type-defaulting Typeclasses
-When you have a typeclass-constrained (ad hoc) polymorphic value and
-need to evaluate it then the polymorphism must be resolved, sometimes
-it will be because declared so or because of type inference, when it
-doesn't then typeclasses have a default type value.
+When you have a Typeclass constrained (ad hoc) polymorphic value (like
+~5~) and need to evaluate it then the polymorphism must be resolved,
+sometimes it will be because declared so or because of type inference,
+when it doesn't then Typeclasses have a default type value.
 
 #+BEGIN_SRC haskell :eval never
 default Num Integer
@@ -587,17 +598,13 @@ default Floating Double
 default RealFloat Double
 #+END_SRC
 
-This is called =Type Defaulting=
+This is called /Type Defaulting/
 
 * 6.08 Ord
-Typeclass ~Ord~ is for things that can be put in order
+Typeclass ~Ord~ is for things that can be put in order. ~Eq~ is a
+superclass or ~Ord~.
 
-#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post head(n="16", content=*this*) :epilogue "0"
-:i Ord
-#+END_SRC
-
-#+RESULTS:
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC haskell :eval never
 class Eq a => Ord a where
   compare :: a -> a -> Ordering
   (<) :: a -> a -> Bool
@@ -606,19 +613,11 @@ class Eq a => Ord a where
   (>=) :: a -> a -> Bool
   max :: a -> a -> a
   min :: a -> a -> a
-  {-# MINIMAL compare | (<=) #-}
-  	-- Defined in ‘GHC.Classes’
-instance (Ord b, Ord a) => Ord (Either a b)
-  -- Defined in ‘Data.Either’
-instance Ord a => Ord [a] -- Defined in ‘GHC.Classes’
-instance Ord Word -- Defined in ‘GHC.Classes’
-instance Ord Ordering -- Defined in ‘GHC.Classes’
-instance Ord Int -- Defined in ‘GHC.Classes’
-#+END_EXAMPLE
+#+END_SRC
 
 Typeclass ~Ord~ requires an instance of ~Eq~
 
-#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :epilogue "0"
+#+BEGIN_SRC haskell
 compare 7 8
 compare 8 7
 compare 7 7
@@ -641,10 +640,43 @@ True
 True
 #+END_EXAMPLE
 
+** Ord Instances
+Friday is always the best day
+
+#+BEGIN_SRC haskell
+:{
+data DayOfWeek =
+  Mon | Tue | Wed | Thu | Fri | Sat | Sun
+  deriving (Eq, Show)
+
+instance Ord DayOfWeek where
+  compare Fri Fri = EQ
+  compare Fri _ = GT
+  compare _ Fri = LT
+  compare _ _ = EQ
+:}
+
+compare Mon Mon
+compare Mon Fri
+compare Fri Mon
+compare Fri Fri
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+EQ
+LT
+GT
+EQ
+#+END_EXAMPLE
+
 ** Exercises: Will They Work?
+Take a look at the following code examples and try to decide if they
+will work, what result they will return if they do, and why or why not
 
 1. Yes, result is ~5~, it works because ~length~ returns an ~Int~ and
    ~Int~ has an instance of ~Ord~
+
    #+BEGIN_SRC haskell :results silent
    max (length [1, 2, 3]) (length [8, 9, 10, 11, 12])
    #+END_SRC
@@ -652,39 +684,44 @@ True
 2. Yes, result is ~LT~, it works because ~*~ returns something that
    must have an instance of ~Num~ and we have plenty of concrete types
    that have an instance of ~Num~ and ~Ord~ ex. ~Int~
+
    #+BEGIN_SRC haskell :results silent
    compare (3*4) (3*5)
    #+END_SRC
 
 3. No, because ~compare~ requires that both its arguments are of the
    same type
+
    #+BEGIN_SRC haskell :results silent
    compare "Julie" True
    #+END_SRC
-   The type variable ~a~ will be bound to the type of the first
-   parameter ("Julie") ~[Char]~ and therefore the second parameter is
-   expected to be also of type ~[Char]~
-   #+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :epilogue "0"
-   :t compare "Julie"
-   #+END_SRC
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   compare "Julie" :: [Char] -> Ordering
-   #+END_EXAMPLE
+   The type variable ~a~ will be bound to the type of the first
+   parameter (~Julie~) which is of type ~[Char]~ and therefore the
+   second parameter is expected to be also of type ~[Char]~
 
 4. Yes, result is ~False~, it works for the same reason of the second
    exercise
+
    #+BEGIN_SRC haskell :results silent
    (5 + 3) > (3 + 6)
    #+END_SRC
 
 * 6.09 Enum
-Typeclass ~Enum~ is for things that have a =predecessor= and a =successor=
+Typeclass ~Enum~ is for things that have a predecessor and a successor
 
-#+BEGIN_SRC haskell :results output replace :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue "0"
-:i Enum
+#+BEGIN_SRC haskell :eval never
+class Enum a where
+  succ :: a -> a
+  pred :: a -> a
+  toEnum :: Int -> a
+  fromEnum :: a -> Int
+  enumFrom :: a -> [a]
+  enumFromThen :: a -> a -> [a]
+  enumFromTo :: a -> a -> [a]
+#+END_SRC
 
+#+BEGIN_SRC haskell
 succ 4
 pred 4
 succ False
@@ -697,26 +734,6 @@ enumFromThenTo 1 4 10
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
-class Enum a where
-  succ :: a -> a
-  pred :: a -> a
-  toEnum :: Int -> a
-  fromEnum :: a -> Int
-  enumFrom :: a -> [a]
-  enumFromThen :: a -> a -> [a]
-  enumFromTo :: a -> a -> [a]
-  enumFromThenTo :: a -> a -> a -> [a]
-  {-# MINIMAL toEnum, fromEnum #-}
-  	-- Defined in ‘GHC.Enum’
-instance Enum Word -- Defined in ‘GHC.Enum’
-instance Enum Ordering -- Defined in ‘GHC.Enum’
-instance Enum Integer -- Defined in ‘GHC.Enum’
-instance Enum Int -- Defined in ‘GHC.Enum’
-instance Enum Char -- Defined in ‘GHC.Enum’
-instance Enum Bool -- Defined in ‘GHC.Enum’
-instance Enum () -- Defined in ‘GHC.Enum’
-instance Enum Float -- Defined in ‘GHC.Float’
-instance Enum Double -- Defined in ‘GHC.Float’
 5
 3
 True
@@ -728,121 +745,130 @@ True
 #+END_EXAMPLE
 
 * 6.10 Show
-Typeclass ~Show~ provides humans-readable string representations of structured data.
+Typeclass ~Show~ provides humans-readable string representations of
+structured data.
 
-- ~Show~ is not a serialization format.
-- The most representative function is ~show~
-  #+BEGIN_SRC haskell :eval never
-  show :: Show a => a -> String
-  #+END_SRC
-- ~Show~ is required as a typeclass contraint by ~print~ on the first
-  argument, the type signature of ~print~ is ~print :: Show a => a -> IO ()~.
-- An ~IO~ action is an action that, when performed, produces side
-  effects such as reading from input, printing to the screen, writing
-  to files, ecc...
-- ~()~ is called =unit=, it's a value and also a type that has only
-  one inhabitant, it essentially represents nothing.
-- ~IO ()~ is an ~IO~ action that will produce nothing.
-- ~IO String~ is an ~IO~ action that will produce a ~String~
+#+BEGIN_SRC haskell :eval never
+class Show a where
+  showsPrec :: Int -> a -> ShowS
+  show :: a -> String
+  showList :: [a] -> ShowS
+#+END_SRC
+
+~Show~ is required by ~print :: Show a => a -> IO ()~
+
+~()~ is called /Unit/, it's a value and also a type that has only one
+habitant, it essentially represents nothing.
 
 * 6.11 Read
-Typeclass ~Read~ provides a means to interpret a string into structured data.
+Typeclass ~Read~ provides a means to interpret a string into
+structured data.
 
-- ~Read~ is not a serialization format.
-- The most representative function is ~read~
-  #+BEGIN_SRC haskell :eval never
-  read :: Read a => String -> a
-  #+END_SRC
-- Function ~read~ is a =partial function=, when the string is not a
-  valid representation of the datatype you want then an exception is
-  raised. Because of that it should be avoided
+The most representative function is ~read~
+#+BEGIN_SRC haskell :eval never
+read :: Read a => String -> a
+#+END_SRC
+
+Function ~read~ is a /Partial Function/, when the string is not a
+valid representation of the datatype you want then an exception is
+raised. Because of that it should be avoided.
 
 * 6.12 Typeclasse are dispatched by type
-
 - Typeclasses are defined by the set of operations and values all
   instances must provide.
-- Typeclasses /instances/ are unique pairings of the typeclass and a
-  type.
-- Typeclasses /instances/ define the ways to implement the typeclasse
+- Typeclasses /instances/ are unique pairings of the /Typeclass/ and a
+  /Type/.
+- Typeclasses /instances/ define the ways to implement the /Typeclass/
   operations for that type.
 
 * 6.13 Give me more operations
-Concrete types means all the typeclasses they implement. Do not
-require more than you need, this will open the code to be more
-reusable.
+A parametric (non constrained) /Type/ variable can be of any type, we
+get a lot o freedom but there's little we can do since all the code is
+defined in instances of /Typeclasses/.
+
+Requiring a concrete /Type/ means that you can use all the /Typeclass/
+instances defined for that /Type/.
+
+Requiring a constrained /Type/ variable gives you power and
+flexibility.
 
 * 6.14 Exercises
-
 ** Multiple Choice
 
-1. The typeclass =Eq= (c) make equality tests possible
+1. The /Typeclass/ ~Eq~ (c) make equality tests possible.
 
-2. The typeclass =Ord= (b) is a subclass of =Eq=
+2. The /Typeclass/ ~Ord~ (b) is a subclass of ~Eq~.
 
-3. Suppose typeclass =Ord= has an operation =>=. What is the type of
-   =>=? (a) =(>) :: (Ord a) => a -> a -> Bool=
+3. Suppose /Typeclass/ ~Ord~ has an operation ~>~. What is the type of
+   ~>~? (a) ~(>) :: (Ord a) => a -> a -> Bool~.
 
-4. In =x = divMod 16 12= (c) the type of =x= is a tuple
+4. In ~x = divMod 16 12~ (c) the type of ~x~ is a tuple.
 
-5. Type typeclass =Integral= includes (a) =Int= and =Integer= numbers
+5. Type /Typeclass/ ~Integral~ includes (a) ~Int~ and ~Integer~
+   numbers.
 
 ** Does it type check?
 
 1. Does it type check?
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   #+BEGIN_SRC haskell :results none
+   :{
    data Person = Person Bool
 
    printPerson :: Person -> IO ()
    printPerson person = putStrLn (show person)
+   :}
    #+END_SRC
-   No, because there's no instance of =Show= for =Person= datatype, we
+
+   No, because there's no instance of ~Show~ for ~Person~ datatype, we
    must give it one or let the compiler deriving one
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+
+   #+BEGIN_SRC haskell :results none
+   :{
    data Person = Person Bool deriving Show
 
    printPerson :: Person -> IO ()
    printPerson person = putStrLn (show person)
+   :}
    #+END_SRC
 
 2. Does it type check?
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   #+BEGIN_SRC haskell :results none
    data Mood = Blah | Woot deriving Show
 
-   settleDown x =
-     if x == Woot then Blah else x
+   settleDown x = if x == Woot then Blah else x
    #+END_SRC
-   No, because there's no instance of =Eq= for =Person= datatype,
-   needed for the equality comparison in the =if=, we must provide or
+
+   No, because there's no instance of ~Eq~ for ~Person~ datatype,
+   needed for the equality comparison in the ~if~, we must provide or
    derive one
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+
+   #+BEGIN_SRC haskell :results none
    data Mood = Blah | Woot deriving (Show, Eq)
 
-   settleDown x =
-     if x == Woot then Blah else x
+   settleDown x = if x == Woot then Blah else x
    #+END_SRC
 
-3. If you were able to get settleDown to typecheck:
+3. If you were able to get ~settleDown~ to typecheck:
 
    1. What values are acceptable inputs to that function?
-      #+BEGIN_SRC haskell :results none
-      settleDown :: Mood -> Mood
-      #+END_SRC
+      ~Blah~ and ~Woot~
 
-   2. What will happen if you try to run settleDown 9? An error. Why?
-      because 9 cannot compare with a value of type =Mood=.
+   2. What will happen if you try to run ~settleDown~ ~9~? An
+      error. Why? because ~9~ is not a value of the expected type
+      ~Mood~
       #+BEGIN_SRC haskell :results none
       :{
       data Mood = Blah | Woot deriving (Show, Eq)
 
-      settleDown x =
-        if x == Woot then Blah else x
+      settleDown x = if x == Woot then Blah else x
       :}
 
       settleDown 9
       #+END_SRC
 
-   3. What will happen if you try to run =Blah > Woot=? An error. Why?
-      because =Mood= doesn't have an instance of =Ord= typeclass
+   3. What will happen if you try to run ~Blah > Woot~? An error. Why?
+      because ~Mood~ doesn't have an instance of ~Ord~ /Typeclass/
+
       #+BEGIN_SRC haskell :results none
       data Mood = Blah | Woot deriving (Show, Eq)
       Blah > Woot
@@ -887,22 +913,22 @@ data Papu =
 :}
 #+END_SRC
 
-1. Does it type check? No, wrong data constructor for =Papu=
-   #+BEGIN_SRC haskell :results none :noweb yes
+1. Does it type check? No, wrong data constructor for ~Papu~
+   #+BEGIN_SRC haskell :results none
    <<papu>>
 
    phew = Papu "chases" True
    #+END_SRC
 
 2. Does it type check? Yes
-   #+BEGIN_SRC haskell :results none :noweb yes
+   #+BEGIN_SRC haskell :results none
    <<papu>>
 
    truth = Papu (Rocks "chomskydoz") (Yeah True)
    #+END_SRC
 
 3. Does it type check? Yes
-   #+BEGIN_SRC haskell :results none :noweb yes
+   #+BEGIN_SRC haskell :results none
    <<papu>>
 
    :{
@@ -911,9 +937,8 @@ data Papu =
    :}
    #+END_SRC
 
-4. Does it type check? No, because =Papu= doesn't implement =Ord=
-   needed for =(>)=
-   #+BEGIN_SRC haskell :results none :noweb yes
+4. Does it type check? No, because ~Papu~ doesn't implement ~Ord~
+   #+BEGIN_SRC haskell :results none
    <<papu>>
 
    :{
@@ -925,160 +950,222 @@ data Papu =
 ** Match the types
 
 1. Are the two types compatibile for the same value? No
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
-   i :: Num a => a
-   i = 7
-   #+END_SRC
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   #+BEGIN_SRC haskell :results none
+   :{
    i :: a
    i = 7
+   :}
    #+END_SRC
 
-2. Are the two types compatibile for the same value? No, not all =Num=
-   are compatible with =7.0= which is a =Fractional=
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+2. Are the two types compatible for the same value? No, not all ~Num~
+   are compatible with ~7.0~ which is a ~Fractional~
+   #+BEGIN_SRC haskell :results none
+   :{
    f :: Float
    f = 1.0
+   :}
    #+END_SRC
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+
+   #+BEGIN_SRC haskell :results none
+   :{
    f :: Num a => a
    f = 1.0
+   :}
    #+END_SRC
 
 3. Are the two types compatible for the same value? Yes, for the reasons above
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   #+BEGIN_SRC haskell :results none
+   :{
    f :: Float
    f = 1.0
+   :}
    #+END_SRC
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+
+   #+BEGIN_SRC haskell :results none
+   :{
    f :: Fractional a => a
    f = 1.0
+   :}
    #+END_SRC
 
 4. Are the two types compatible for the same value? Yes, because
-   =RealFrac= implies =Fractional=
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   ~RealFrac~ implies ~Fractional~
+   #+BEGIN_SRC haskell :results none
+   :{
    f :: Float
    f = 1.0
+   :}
    #+END_SRC
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+
+   #+BEGIN_SRC haskell :results none
+   :{
    f :: RealFrac a => a
    f = 1.0
+   :}
    #+END_SRC
 
 5. Are the two types compatible for the same value? Yes, the
    requirements are very low so more constraints are ok.
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   #+BEGIN_SRC haskell :results none
+   :{
    freud :: a -> a
    freud x = x
+   :}
    #+END_SRC
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+
+   #+BEGIN_SRC haskell :results none
+   :{
    freud :: Ord a => a -> a
    freud x = x
+   :}
    #+END_SRC
 
 6. Are the two types compatible for the same value? Yes
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   #+BEGIN_SRC haskell :results none
+   :{
    freud :: a -> a
    freud x = x
-   #+END_SRC
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
-   freud :: Int -> Int
-   freud x = x
+   :}
    #+END_SRC
 
-7. Are the two types compatible for the same value? No, because
-   =myInt= is declared as an =Int= then =sigmund= must return an =Int=
-   which cannot be coerced into a polymorphic type =a=
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   #+BEGIN_SRC haskell :results none
+   :{
+   freud :: Int -> Int
+   freud x = x
+   :}
+   #+END_SRC
+
+7. Are the two types compatible for the same value? No, because ~myX~
+   is declared as an ~Int~ then ~sigmund~ must return an ~Int~ which
+   cannot be coerced into a polymorphic type ~a~
+   #+BEGIN_SRC haskell :results none
    myX = 1::Int
    sigmund :: Int -> Int
    sigmund x = myX
    #+END_SRC
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+
+   #+BEGIN_SRC haskell :results none
    myX = 1::Int
    sigmund :: a -> a
    sigmund x = myX
    #+END_SRC
 
 8. Are the two types compatible for the same value? No, because
-   =myInt= is declared as an =Int= then =sigmund= must return an =Int=
-   which cannot be coerced into a constrained type =Num a=
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   ~myInt~ is declared as an ~Int~ then ~sigmund~ must return an ~Int~
+   which cannot be coerced into a constrained type ~Num a~
+   #+BEGIN_SRC haskell :results none
    myX = 1::Int
    sigmund :: Int -> Int
    sigmund x = myX
    #+END_SRC
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+
+   #+BEGIN_SRC haskell :results none
    myX = 1::Int
    sigmund :: Num a => a -> a
    sigmund x = myX
    #+END_SRC
 
 9. Are the two types compatible for the same value? Yes
-   #+BEGIN_SRC haskell :results none :epilogue ":}\n:m"
+   #+BEGIN_SRC haskell :results none
    import Data.List (sort)
+
    :{
    jung :: Ord a => [a] -> a
    jung xs = head (sort xs)
+   :}
    #+END_SRC
-   #+BEGIN_SRC haskell :results none :epilogue ":}\n:m"
+
+   #+BEGIN_SRC haskell :results none
    import Data.List (sort)
+
    :{
    jung :: [Int] -> Int
    jung xs = head (sort xs)
+   :}
    #+END_SRC
 
 10. Are the two types compatible for the same value? Yes
-    #+BEGIN_SRC haskell :results none :epilogue ":}\n:m"
+    #+BEGIN_SRC haskell :results none
     import Data.List (sort)
+
     :{
     young :: [Char] -> Char
     young xs = head (sort xs)
+    :}
     #+END_SRC
-    #+BEGIN_SRC haskell :results none :epilogue ":}\n:m"
+
+    #+BEGIN_SRC haskell :results none
     import Data.List (sort)
+
     :{
     young :: Ord a => [a] -> a
     young xs = head (sort xs)
+    :}
     #+END_SRC
 
-11. Are the two types compatible for the same value? No, =signifier=
-    works with =[Char]= and a =[Char]= cannot be coerced into a
-    polymorphic constrained type =Ord a=
-    #+BEGIN_SRC haskell :results none :epilogue ":}\n:m"
+11. Are the two types compatible for the same value? No, ~signifier~
+    works with ~[Char]~ and a ~[Char]~ cannot be coerced into a
+    polymorphic constrained type ~Ord a~
+    #+BEGIN_SRC haskell :results none
     import Data.List (sort)
+
     :{
     mySort :: [Char] -> [Char]
     mySort = sort
 
     signifier :: [Char] -> Char
     signifier xs = head (mySort xs)
+    :}
     #+END_SRC
-    #+BEGIN_SRC haskell :results none :epilogue ":}\n:m"
+
+    #+BEGIN_SRC haskell :results none
     import Data.List (sort)
+
     :{
     mySort :: [Char] -> [Char]
     mySort = sort
 
     signifier :: Ord a => [a] -> a
     signifier xs = head (mySort xs)
+    :}
     #+END_SRC
 
 ** Type-Kwon-Do Two: Electric Typealoo
 
 1. Derive the implementation from the type signature
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   #+BEGIN_SRC haskell :results none
+   :{
    chk :: Eq b => (a -> b) -> a -> b -> Bool
-   chk a2b a b = b == a2b a
+   chk ???
+   :}
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results none
+   :{
+   chk :: Eq b => (a -> b) -> a -> b -> Bool
+   chk a2b a = (==) $ a2b a
+   :}
    #+END_SRC
 
 2. Derive the implementation from the type signature
-   #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
+   #+BEGIN_SRC haskell :results none
+   :{
+   arith :: Num b
+         => (a -> b)
+         -> Integer
+         -> a
+         -> b
+   arith = ???
+   :}
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results none
+   :{
    arith :: Num b
          => (a -> b)
          -> Integer
          -> a
          -> b
    arith a2b i a = (a2b a) + (fromIntegral i)
+   :}
    #+END_SRC

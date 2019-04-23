@@ -156,8 +156,9 @@ Because /Datatypes/ defines how /Types/ are created whereas
 computation).
 ** What's the relationship between Typeclasses and their instances?                         :drill:
 *** Answer
-Typeclasses defines functions. Typeclasses instances supply an
-implementation of those functions for a specific Type.
+/Typeclasses/ defines functions and values. /Typeclasses/ instances
+supply an implementation of those functions and values for a specific
+/Type/.
 ** Sentence                                                                                 :drill:
 Typeclasses allow us to <[generalize]> over a set of <[/types/]> in
 order to define and execute a standard set of <[functions]> for those
@@ -174,7 +175,7 @@ order to define and execute a standard set of <[functions]> for those
 *** Answer
 To have an implementation of every (required) function defined in the
 Typeclass.
-** List the functions defined in ~Eq~ Typeclass                                             :drill:
+** List all the methods defined in ~Eq~ Typeclass                                           :drill:
 *** Answer
 - ~(==) :: a -> a -> Bool~
 - ~(/=) :: a -> a -> Bool~
@@ -222,6 +223,52 @@ Any type that implements ~Integral~ must implement already ~Real~ and
 *** Answer
 Because /Typeclasses/ inheritance is addictive, an implementation of a
 method of a /Typeclass/ cannot override the implementation of another.
+** What is /Type Defaulting/?                                                               :drill:
+*** Answer
+Is when a /Typeclass/ constrained polymorphic value needs to be
+resolved and it cannot be resolved either by declaration (~5 ::
+Double~) or by type inference then the polymorphism is resolved using
+the /Typeclass/ default type value (ex. for ~5~ the /Typeclass/ is
+~Num~ and the default type of ~Num~ is ~Integer~)
+** Question?                                                                                :drill:
+What is used, besides declaration and type inference, to resolve the
+polymorphism of a value?
+*** Answer
+/Type Defaulting/, every Typeclass have a default type value, ~Enum~
+has ~Integer~ as default, ~Fractional~ has ~Double~ as default.
+** What's ~Ord~ /Typeclass/ for?                                                            :drill:
+*** Answer
+For things that can be put in order
+** List all the methods in ~Ord~ /Typeclass/                                                :drill:
+*** Answer
+- ~compare :: a -> a -> Ordering~
+- ~(<) :: a -> a -> Bool~
+- ~(<=) :: a -> a -> Bool~
+- ~(>) :: a -> a -> Bool~
+- ~(>=) :: a -> a -> Bool~
+- ~max :: a -> a -> a~
+- ~min :: a -> a -> a~
+** What's ~Enum~ /Typeclass/ for?                                                           :drill:
+*** Answer
+For things that have a predecessor and a successor
+** What's ~Show~ /Typeclass/ for?                                                           :drill:
+*** Answer
+To provide human readable string representations of structured data.
+** What's ~()~?                                                                             :drill:
+*** Answer
+Is called /Unit/, it's a value and also a type that has only one
+habitant, it essentially represents nothing.
+** What's the most representative method of ~Show~ /Typeclass/?                             :drill:
+*** Answer
+~show :: a -> String~
+** What's ~Read~ /Typeclass/ for?                                                           :drill:
+*** Answer
+Interpret a string into a structured data.
+** What's the most representative method of ~Read~ /Typeclass/?                             :drill:
+*** Answer
+~read :: String -> a~ which is a partial function (we cannot guarantee
+that for every string we can create a value of type ~a~) so it should
+be avoided.
 * Chapter 11
 ** What are the kinds?                                                                      :drill:
 :PROPERTIES:
