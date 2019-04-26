@@ -1,4 +1,3 @@
-
 module RoundTripDispatch where
 
 roundTrip :: (Show a, Read b) => a -> b

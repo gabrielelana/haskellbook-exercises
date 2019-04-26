@@ -269,6 +269,77 @@ Interpret a string into a structured data.
 ~read :: String -> a~ which is a partial function (we cannot guarantee
 that for every string we can create a value of type ~a~) so it should
 be avoided.
+* Chapter 07
+** How variables get bound to values?                                                       :drill:
+*** Answer
+- Apply arguments values to function parameters (~f x = x; f 5~)
+- ~let~ expressions (~let x = 5 in ...~)
+- ~where~ statements (~where x = 5~)
+- Pattern matching (~x:_ = [5, 6, 7]~)
+- Declaration (~x = 5~)
+** Sentence                                                                                 :drill:
+Haskell is a <[lexically]> scoped language.
+** Write ~triple~ as an anonimous function                                                  :drill:
+*** Answer
+~triple = \x -> x * 3~
+** When it's useful an anonymous function?                                                  :drill:
+*** Answer
+- When you need to pass it to another function.
+- When it's not called anywhere else.
+** What's /Pattern Matching/?                                                               :drill:
+*** Answer
+A way of matching values against patterns and where appropriate
+binding values to successful matches.
+** What /Pattern Matching/ is used for?                                                     :drill:
+*** Answer
+- Vary what a function does given different input.
+- Unpack and expose the contents of our data.
+** What's the meaning of ~_~ in a pattern for a /Pattern Match/                             :drill:
+*** Answer
+It's the /Universal Pattern/ that matches everything and doesn't bound
+any variable.
+** Recall the syntax of a case expression                                                   :drill:
+*** Answer
+#+BEGIN_SRC haskell :results none
+:{
+case 5 > 7 of
+  False -> "It works"
+  True -> "Run!"
+:}
+#+END_SRC
+** What's an /High Order/ function?                                                         :drill:
+*** Answer
+A function that takes another function as an argument and / or returns
+a function as result. Due to currying, in Haskell any function that
+appears to take more than one argument is an high order funciton.
+** Recall the syntax for /Guard Clauses/                                                    :drill:
+*** Answer
+#+BEGIN_SRC haskell :results none
+:{
+myAbs :: Integer -> Integer
+myAbs x
+  | x < 0 = (-x)
+  | otherwise = x
+:}
+#+END_SRC
+** What's the type of ~(.)~ and how it's called?                                            :drill:
+*** Answer
+/Function Composition/
+~(.) :: (b -> c) -> (a -> b) -> a -> c~
+** What it means for a function to be written in a /Pointfree Style/?                       :drill:
+*** Answer
+It means that is written without specifying the arguments (derives
+from topology where there are spaces made of points and functions
+between those points, specifying functions without points means
+specifying functions without arguments).
+
+In this style functions are made by pure composition or partial
+applications of existing functions.
+
+#+BEGIN_SRC haskell :results none
+addOne = (+) 1
+#+END_SRC
+
 * Chapter 11
 ** What are the kinds?                                                                      :drill:
 :PROPERTIES:

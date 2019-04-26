@@ -1,4 +1,3 @@
-
 module RoundTripPointFree where
 
 roundTrip :: (Show a, Read a) => a -> a
