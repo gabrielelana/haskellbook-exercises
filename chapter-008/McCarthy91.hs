@@ -1,4 +1,3 @@
-
 module McCarthy91 where
 
 mc91 :: Integer -> Integer

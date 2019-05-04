@@ -1,4 +1,3 @@
-
 module MaybeDividedBy where
 
 type Numerator = Integer

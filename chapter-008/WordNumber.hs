@@ -1,4 +1,3 @@
-
 module WordNumber where
 
 import Data.List (intersperse)

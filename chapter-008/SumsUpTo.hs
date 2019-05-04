@@ -1,4 +1,3 @@
-
 module SumsUpTo where
 
 sumsUpTo :: (Eq a, Num a) => a -> a

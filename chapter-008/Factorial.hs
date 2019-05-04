@@ -1,4 +1,3 @@
-
 module Factorial where
 
 factorial :: Integer -> Integer

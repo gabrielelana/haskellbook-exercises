@@ -1,4 +1,3 @@
-
 module Fibonacci where
 
 fibonacci :: Integral a => a -> a

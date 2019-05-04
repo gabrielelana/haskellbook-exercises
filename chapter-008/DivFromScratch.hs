@@ -1,4 +1,3 @@
-
 module DivFromScratch where
 
 type Numerator = Integer

@@ -340,6 +340,31 @@ applications of existing functions.
 addOne = (+) 1
 #+END_SRC
 
+* Chapter 08
+** What is the /Bottom/?                                                                    :drill:
+*** Answer
+In type theory, the bottom type is the type that has no values. It's
+also called zero or empty and sometimes denoted with "falsum" ⊥ ("UP
+TACK" UTF-8 symbol)
+** What should be the result type of a f that returns ~Int~ but also can raise an error?    :drill:
+*** Answer
+The return type should be ~Int | ⊥~
+** Write the function ~fibonacci~ to calculate the fibonacci numbers                        :drill:
+*** Answer
+#+BEGIN_SRC haskell :results none
+:{
+fibonacci :: Integral a => a -> a -> a
+fibonacci 0 = 0
+fibonacci 1 = 1
+fibonacci n = fibonacci (n - 1) + fibonacci (n - 2)
+:}
+#+END_SRC
+** What keyword will declare a type synonym or a type alias?                                :drill:
+*** Answer
+~type~ ex ~type Numerator = Integer~
+** How is commonly named a support function created in a where clause?                      :drill:
+*** Answer
+~go~
 * Chapter 11
 ** What are the kinds?                                                                      :drill:
 :PROPERTIES:
