@@ -1,3 +1,5 @@
+# -*- eval: (org-content 2); -*-
+
 #+TITLE: HaskellBook Flash Cards
 
 * Chapter 04
@@ -981,7 +983,3 @@ structures that can be folded to a summary value"
 ** What's the signature of ~foldl~
 ** What's the signature of ~foldr~
 ** What's the signature of ~foldMap~
-* Footer                                                                                  :noexport:
-# Local Variables:
-# eval: (org-content 2)
-# End:
