@@ -4,147 +4,261 @@
 
 * Chapter 04
 ** What are types?                                                                          :drill:
+:PROPERTIES:
+:ID:       2c2d67f2-ec90-4a5f-a5f7-b322bec5a247
+:END:
 *** Answer
 Are how we group a set of values together that share something in
 common
 ** What is ~data Bool = True | False~?                                                      :drill:
+:PROPERTIES:
+:ID:       56f87207-45ef-4590-85b3-6c4f73867521
+:END:
 *** Answer
 Is a /Data Declaration/
 ** What is ~Bool~ in ~data Bool = True | False~?                                            :drill:
+:PROPERTIES:
+:ID:       be1821b2-2773-492a-8b16-0ac5393c59be
+:END:
 *** Answer
 Is a /Type Constructor/
 ** What is ~True~ in ~data Bool = True | False~?                                            :drill:
+:PROPERTIES:
+:ID:       88419a7e-e35e-4ea1-b7ee-ddddec40873a
+:END:
 *** Answer
 Is a /Data Constructor/
 ** What's a Data Declaration?                                                               :drill:
+:PROPERTIES:
+:ID:       665a09cb-092f-4d47-ae95-bba993381897
+:END:
 *** Answer
 How datatypes are defined
 ** What's a Type Constructor                                                                :drill:
+:PROPERTIES:
+:ID:       56eaab13-4f63-4b6d-8949-5a06dd869ffd
+:END:
 *** Answer
 How we define the name of a type. Type constructors are used at type
 level
 ** What's a Data Constructor?                                                               :drill:
+:PROPERTIES:
+:ID:       b9079175-a6f3-46bc-a25b-6746a661fd45
+:END:
 *** Answer
 Are the values that inhabit the type they are defined in. Data
 constructors are used at term level.
 ** What's the type of ~8~?                                                                  :drill:
+:PROPERTIES:
+:ID:       30603e40-ebf4-44ef-ae11-83450fb7c1e0
+:END:
 *** Answer
 Numbers are polymorphic, the compiler doesn't assign them a concrete
 type until is not forced to do so. In this case we cannot tell
 ** What are the ~Integral~ number types                                                     :drill:
+:PROPERTIES:
+:ID:       b03fd700-6876-4c67-bfa2-28d16d7ff405
+:END:
 *** Answer
 Int, Integer, Word
 ** What are the ~Fractional~ number types                                                   :drill:
+:PROPERTIES:
+:ID:       9408ed3c-593f-45a8-98b6-c82c6a4e8315
+:END:
 *** Answer
 Float, Double, Rational, Fixed, Scientific
 ** What's the type signature of ~==~                                                        :drill:
+:PROPERTIES:
+:ID:       0826e63c-0b5c-4c27-bcbd-c6eaeb8a5ba8
+:END:
 *** Answer
 ~(==) :: Eq a => a -> a -> Bool~
 ** What's the type signature of ~<~                                                         :drill:
+:PROPERTIES:
+:ID:       ff12a4b8-05fa-4014-8402-ba62bbb6d624
+:END:
 *** Answer
 ~(<) :: Ord a => a -> a -> Bool~
 ** ~if~ it's a statement or an expression?                                                  :drill:
+:PROPERTIES:
+:ID:       62d15637-c5d0-4442-a29f-d8ff2073cf3e
+:END:
 *** Answer
 It's an expression
 ** What's the type signature of ~fst~?                                                      :drill:
+:PROPERTIES:
+:ID:       595d15bf-64a4-4897-b53d-985366992a94
+:END:
 *** Answer
 ~fst :: (a, b) -> a~
 ** What's the type signature of ~snd~                                                       :drill:
+:PROPERTIES:
+:ID:       8de0c7e8-25df-4276-8608-941fce812c34
+:END:
 *** Answer
 ~snd :: (a, b) -> b~
 ** What's the type signature of ~swap~?                                                     :drill:
+:PROPERTIES:
+:ID:       4a59f7d2-7dc2-4805-8a98-db2747991849
+:END:
 *** Answer
 ~swap :: (a, b) -> (b, a)~
 * Chapter 05
 ** What's the output of ~:t 13~                                                             :drill:
+:PROPERTIES:
+:ID:       1f1e2410-fe95-4d3c-9403-ad7e1185846b
+:END:
 *** Answer
 ~13 :: Num p => p~
 ** What's the arrow (~->~)                                                                  :drill:
+:PROPERTIES:
+:ID:       c6e5b127-7dfb-487a-b902-b905092309b5
+:END:
 *** Answer
 It's a /Type Constructor/ without a /Data Constructor/, it shows up only at type level and not at term level.
 ** The arrow ~(->)~ is left of right associative?                                           :drill:
+:PROPERTIES:
+:ID:       3f690bd9-927b-4c19-ba3f-e834e2bd0328
+:END:
 *** Answer
 Is right associative, it means that ~(+) :: a -> a -> a~ it takes an
 ~a~ and returns a function ~(a -> a)~
 ** Function application is left or right associative?                                       :drill:
+:PROPERTIES:
+:ID:       62a423e6-8ff4-4a08-8620-a946a9af1651
+:END:
 *** Answer
 If left associative, it means that ~f g 5~ will be applied as ~(f g) 5~
 ** What it means that a /Type Class/ is constraining a /Type Variable/?                     :drill:
+:PROPERTIES:
+:ID:       b5f3dfa9-c7b0-4aaf-aa25-84294dd9ad05
+:END:
 *** Answer
 It means that the variable represents one of the types that have
 instances of that /Type Class/
 ** How do you write that the /Type Variable/ ~a~ is constrained with /Type Class/ ~Num~?    :drill:
+:PROPERTIES:
+:ID:       d206609a-1e04-4cda-8f1b-224b29198671
+:END:
 *** Answer
 ~Num a => a~
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       43e2f362-849f-44f8-a404-af0d845d6e1d
+:END:
 All <[functions]> in Haskell take <[one]> argument and return <[one]>
 result
 ** Describe in words ~(+) :: Num a => a -> a -> a~                                          :drill:
+:PROPERTIES:
+:ID:       ab7ffc67-30cf-40df-836a-d11c9be4ebc5
+:END:
 *** Answer
 It's a function that takes and argument of type ~a~ constrained by
 ~Num a~ and returns a function that takes and argument of the same
 type ~a~ and returns a value of the same type ~a~.
 ** Describe in words ~map :: (a -> b) -> [a] -> [b]~                                        :drill:
+:PROPERTIES:
+:ID:       9211875b-d323-4a8d-95f7-d56c5b5dea3a
+:END:
 *** Answer
 It's a function that takes a function from type ~a~ to type ~b~ and
 returns a function that takes a list of values of type ~a~ and returns
 a list of values ~b~
 ** Transformation from ~f :: (t1, t2) -> t3~ to ~f' :: t1 -> t2 -> t3~ is called...         :drill:
+:PROPERTIES:
+:ID:       13ec56c5-2f89-489b-8c14-5fcf068b0531
+:END:
 *** Answer
 Curring
 ** Transformation from ~f :: t1 -> t2 -> t3~ to ~f' :: (t1, t2) -> t3~ is called...         :drill:
+:PROPERTIES:
+:ID:       6ac4dce2-46d1-4df5-a171-58cb50b2dc92
+:END:
 *** Answer
 Unurring
 ** Write a function to curry a function ~(t1, t2) -> t3~                                    :drill:
+:PROPERTIES:
+:ID:       e7cae766-9d1a-4007-b1a8-be26fee5774a
+:END:
 *** Answer
 #+BEGIN_SRC haskell :eval never
 curry :: ((t1, t2) -> t3) -> t1 -> t2 -> t3
 curry f a b = f (a, b)
 #+END_SRC
 ** Write a function to uncurry a function ~t1 -> t2 -> t3~                                  :drill:
+:PROPERTIES:
+:ID:       8b03d20b-505a-43be-94ca-8cb0546e3ab6
+:END:
 *** Answer
 #+BEGIN_SRC haskell
 uncurry :: (t1 -> t2 -> t3) -> (t1, t2) -> t3
 uncurry f (a, b) = f a b
 #+END_SRC
 ** What's /Sectioning/?                                                                     :drill:
+:PROPERTIES:
+:ID:       d810fee9-1955-43e8-8594-6ece718d9d06
+:END:
 *** Answer
 Partial application of infix operators. ~(2^)~ leaves the remaining
 argument to the right or ~(^2)~ leaving the remaining argument to the
 left.
 ** What means /Polymorphic/?                                                                :drill:
+:PROPERTIES:
+:ID:       74302f15-0ea0-4c75-b972-cc4395f3f38d
+:END:
 *** Answer
 It means "made of many forms". Polymorphic type variables give us the
 ability to implement expressions that can accept arguments of many
 types and results of many types without rewriting the expression for
 every type.
 ** Type variables can be: ...                                                               :drill:
+:PROPERTIES:
+:ID:       20eaf096-8900-480a-86ed-e51b203fbf0d
+:END:
 *** Answer
 - Concrete
 - Constrained Polymorphic (also called /Ad-Hoc Polymorphism/)
 - Parametric Polymorphic
 ** A function is /Polymorphic/ when?                                                        :drill:
+:PROPERTIES:
+:ID:       c7f05602-864d-4804-9454-db7bde34d9c2
+:END:
 *** Answer
 A function is polymorphic when its type signature has variables that
 can represent more than one type.
 ** What's the /Parametricity/ property?                                                     :drill:
+:PROPERTIES:
+:ID:       c37ce399-d331-41b3-a4ba-2b204f0ce4d7
+:END:
 *** Answer
 Parametricity is the property we get from having parametric
 polymorphism. Parametricity means that the behavior of a function with
 respect to the types of its arguments is uniform. The behavior cannot
 change just because it was applied to an argument of a different type.
 ** What's a /Polymorphic Constant/?                                                         :drill:
+:PROPERTIES:
+:ID:       fa04ad83-d5d0-4ba6-8176-0cc03b59def5
+:END:
 *** Answer
 A value whose concrete type is left to be decided. Ex ~[]~ which has
 type ~[a]~ or ~1~ which has type ~Num a => a~.
 ** What's a /Principal Type/?                                                               :drill:
+:PROPERTIES:
+:ID:       614d06ae-ecd6-4977-9247-ae160014c097
+:END:
 *** Answer
 Is the most generic type which still type checks.
 ** What's a /Type Class/?                                                                   :drill:
+:PROPERTIES:
+:ID:       60107c70-6056-47af-b09c-e14113e1abf0
+:END:
 *** Answer
 Is a means of expressing faculties or interfaces that multiple
 datatypes have in common.
 ** What's a /Module/?                                                                       :drill:
+:PROPERTIES:
+:ID:       b20dd244-9ccd-4a3b-8f71-d2a3decf14d6
+:END:
 *** Answer
 Is the unit of organization that Haskell uses to collect together
 declarations of values, functions, datatypes, type classes, and type
@@ -152,20 +266,32 @@ classes instances.
 
 * Chapter 06
 ** In what sense Typeclasses are the opposite of Datatypes?                                 :drill:
+:PROPERTIES:
+:ID:       91055e7a-1f5a-4a2f-b961-9fe795ac3752
+:END:
 *** Answer
 Because /Datatypes/ defines how /Types/ are created whereas
 /Typeclasses/ defines how /Types/ are consumed (used in a
 computation).
 ** What's the relationship between Typeclasses and their instances?                         :drill:
+:PROPERTIES:
+:ID:       31129382-0564-4817-856a-2dee25618d78
+:END:
 *** Answer
 /Typeclasses/ defines functions and values. /Typeclasses/ instances
 supply an implementation of those functions and values for a specific
 /Type/.
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       dd25510c-4c3d-4047-a9c0-898ae4cf12b8
+:END:
 Typeclasses allow us to <[generalize]> over a set of <[/types/]> in
 order to define and execute a standard set of <[functions]> for those
 <[types]>
 ** List some well known Typeclasses                                                         :drill:
+:PROPERTIES:
+:ID:       3ecc0dc9-4695-4984-b23d-73af3f5c6737
+:END:
 *** Answer
 - Eq
 - Show
@@ -174,14 +300,23 @@ order to define and execute a standard set of <[functions]> for those
 - Bounded
 - Num
 ** What does it mean for a Type to have an instance of a Typeclass?                         :drill:
+:PROPERTIES:
+:ID:       6363288a-2388-4d38-8244-4269f46e148f
+:END:
 *** Answer
 To have an implementation of every (required) function defined in the
 Typeclass.
 ** List all the methods defined in ~Eq~ Typeclass                                           :drill:
+:PROPERTIES:
+:ID:       9140d1a7-501a-4445-a9e1-375e3276308d
+:END:
 *** Answer
 - ~(==) :: a -> a -> Bool~
 - ~(/=) :: a -> a -> Bool~
 ** Define an instance of Typeclass ~Eq~ for the following Type                              :drill:
+:PROPERTIES:
+:ID:       a0d39dd2-13a3-40ab-997b-680dd199cfc9
+:END:
 #+BEGIN_SRC haskell
 data Trivial = Trivial
 #+END_SRC
@@ -191,14 +326,23 @@ instance Eq Trivial where
   (==) Trivial Trivial = True
 #+END_SRC
 ** What are partial functions?                                                              :drill:
+:PROPERTIES:
+:ID:       d414f081-be84-4fa7-9548-a8981ff9d5c0
+:END:
 *** Answer
 Functions that are not defined for all possible input. Haskell will
 refuse to compile such functions.
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       906c121e-ced1-4a97-bc7c-eaebfb06a86e
+:END:
 *** Answer
 For a <[polymorphic]> datatype we can ask, for one or more <[type
 argument]>, to implement one or more <[Typeclass]>
 ** Write an instance of Typeclass ~Eq~ for the following Datatype                           :drill:
+:PROPERTIES:
+:ID:       0f0a2a72-bda0-4cd5-9087-d28bb7d32366
+:END:
 #+BEGIN_SRC haskell
 data Pair a = Pair a a
 #+END_SRC
@@ -209,6 +353,9 @@ instance Eq a => Eq (Pair a) where
     l1 == r1 && l2 == r2
 #+END_SRC
 ** How can a Typeclass inherith from another?                                               :drill:
+:PROPERTIES:
+:ID:       ca5d7efe-df2c-4954-af75-b0b22f020459
+:END:
 *** Answer
 In the definition of a /Typeclass/ you can require the /Type/ to
 already implement another /Typeclass/ (NOTE: that is not the same as
@@ -222,10 +369,16 @@ class (Real a, Enum a) => Integral a where ...
 Any type that implements ~Integral~ must implement already ~Real~ and
 ~Enum~
 ** Why Typeclasses don't suffer from multiple inheritance problems?                         :drill:
+:PROPERTIES:
+:ID:       0e89feb7-be9d-469d-ae9f-9d99aed588ad
+:END:
 *** Answer
 Because /Typeclasses/ inheritance is addictive, an implementation of a
 method of a /Typeclass/ cannot override the implementation of another.
 ** What is /Type Defaulting/?                                                               :drill:
+:PROPERTIES:
+:ID:       09241a11-3199-42aa-a4dd-116ce303e185
+:END:
 *** Answer
 Is when a /Typeclass/ constrained polymorphic value needs to be
 resolved and it cannot be resolved either by declaration (~5 ::
@@ -233,15 +386,24 @@ Double~) or by type inference then the polymorphism is resolved using
 the /Typeclass/ default type value (ex. for ~5~ the /Typeclass/ is
 ~Num~ and the default type of ~Num~ is ~Integer~)
 ** Question?                                                                                :drill:
+:PROPERTIES:
+:ID:       e0779f8d-fdd8-4ea4-a89f-048f37adb543
+:END:
 What is used, besides declaration and type inference, to resolve the
 polymorphism of a value?
 *** Answer
 /Type Defaulting/, every Typeclass have a default type value, ~Enum~
 has ~Integer~ as default, ~Fractional~ has ~Double~ as default.
 ** What's ~Ord~ /Typeclass/ for?                                                            :drill:
+:PROPERTIES:
+:ID:       c76bc27f-e151-4243-ac54-c215b4718e17
+:END:
 *** Answer
 For things that can be put in order
 ** List all the methods in ~Ord~ /Typeclass/                                                :drill:
+:PROPERTIES:
+:ID:       1c9a1c10-7e48-4a09-9e1d-2b978ba11beb
+:END:
 *** Answer
 - ~compare :: a -> a -> Ordering~
 - ~(<) :: a -> a -> Bool~
@@ -251,28 +413,49 @@ For things that can be put in order
 - ~max :: a -> a -> a~
 - ~min :: a -> a -> a~
 ** What's ~Enum~ /Typeclass/ for?                                                           :drill:
+:PROPERTIES:
+:ID:       5ec1663f-2b30-4e73-960a-437eddbba34d
+:END:
 *** Answer
 For things that have a predecessor and a successor
 ** What's ~Show~ /Typeclass/ for?                                                           :drill:
+:PROPERTIES:
+:ID:       8de4ca42-df7b-4c8f-a1f7-c89411d38023
+:END:
 *** Answer
 To provide human readable string representations of structured data.
 ** What's ~()~?                                                                             :drill:
+:PROPERTIES:
+:ID:       39cd56e1-166c-4207-bfb5-1911dd1c10a4
+:END:
 *** Answer
 Is called /Unit/, it's a value and also a type that has only one
 habitant, it essentially represents nothing.
 ** What's the most representative method of ~Show~ /Typeclass/?                             :drill:
+:PROPERTIES:
+:ID:       6e5ef46b-e0e1-4ce5-9ace-3f2f515b150e
+:END:
 *** Answer
 ~show :: a -> String~
 ** What's ~Read~ /Typeclass/ for?                                                           :drill:
+:PROPERTIES:
+:ID:       320bfb02-7341-4e2e-8886-f52cefe4d51d
+:END:
 *** Answer
 Interpret a string into a structured data.
 ** What's the most representative method of ~Read~ /Typeclass/?                             :drill:
+:PROPERTIES:
+:ID:       ac31c492-45c2-41ca-83eb-6f1ea9a56698
+:END:
 *** Answer
 ~read :: String -> a~ which is a partial function (we cannot guarantee
 that for every string we can create a value of type ~a~) so it should
 be avoided.
 * Chapter 07
 ** How variables get bound to values?                                                       :drill:
+:PROPERTIES:
+:ID:       b59abd8d-5a7b-43cb-8f59-76c1f3ec4b95
+:END:
 *** Answer
 - Apply arguments values to function parameters (~f x = x; f 5~)
 - ~let~ expressions (~let x = 5 in ...~)
@@ -280,27 +463,57 @@ be avoided.
 - Pattern matching (~x:_ = [5, 6, 7]~)
 - Declaration (~x = 5~)
 ** Sentence                                                                                 :drill:
+SCHEDULED: <2019-05-09 Thu>
+:PROPERTIES:
+:ID:       047c0400-84be-458f-b0e8-ecbe03cf6764
+:DRILL_LAST_INTERVAL: 4.9644
+:DRILL_REPEATS_SINCE_FAIL: 2
+:DRILL_TOTAL_REPEATS: 1
+:DRILL_FAILURE_COUNT: 0
+:DRILL_AVERAGE_QUALITY: 5.0
+:DRILL_EASE: 2.6
+:DRILL_LAST_QUALITY: 5
+:DRILL_LAST_REVIEWED: [2019-05-04 Sat 10:29]
+:END:
 Haskell is a <[lexically]> scoped language.
 ** Write ~triple~ as an anonimous function                                                  :drill:
+:PROPERTIES:
+:ID:       50bdd368-c864-4c23-94d4-d541ca3abb9d
+:END:
 *** Answer
 ~triple = \x -> x * 3~
 ** When it's useful an anonymous function?                                                  :drill:
+:PROPERTIES:
+:ID:       b65afc8a-ae5f-41fd-b256-74c25a115e5b
+:END:
 *** Answer
 - When you need to pass it to another function.
 - When it's not called anywhere else.
 ** What's /Pattern Matching/?                                                               :drill:
+:PROPERTIES:
+:ID:       b46e847f-49dd-4f05-876e-a8f850fd77c7
+:END:
 *** Answer
 A way of matching values against patterns and where appropriate
 binding values to successful matches.
 ** What /Pattern Matching/ is used for?                                                     :drill:
+:PROPERTIES:
+:ID:       358e59ec-df22-4b51-bdfa-d38f24fafd86
+:END:
 *** Answer
 - Vary what a function does given different input.
 - Unpack and expose the contents of our data.
 ** What's the meaning of ~_~ in a pattern for a /Pattern Match/                             :drill:
+:PROPERTIES:
+:ID:       fa198000-9dbb-4ed7-bf9d-ad6a1cdb4248
+:END:
 *** Answer
 It's the /Universal Pattern/ that matches everything and doesn't bound
 any variable.
 ** Recall the syntax of a case expression                                                   :drill:
+:PROPERTIES:
+:ID:       4286d5c2-f481-4df1-9a37-c87d8a61d697
+:END:
 *** Answer
 #+BEGIN_SRC haskell :results none
 :{
@@ -310,11 +523,17 @@ case 5 > 7 of
 :}
 #+END_SRC
 ** What's an /High Order/ function?                                                         :drill:
+:PROPERTIES:
+:ID:       60bbe065-32cc-4149-bc9f-0f3fc2da06df
+:END:
 *** Answer
 A function that takes another function as an argument and / or returns
 a function as result. Due to currying, in Haskell any function that
 appears to take more than one argument is an high order funciton.
 ** Recall the syntax for /Guard Clauses/                                                    :drill:
+:PROPERTIES:
+:ID:       76dd7d7a-4aa6-4577-ade4-edb4f6b652b6
+:END:
 *** Answer
 #+BEGIN_SRC haskell :results none
 :{
@@ -325,10 +544,16 @@ myAbs x
 :}
 #+END_SRC
 ** What's the type of ~(.)~ and how it's called?                                            :drill:
+:PROPERTIES:
+:ID:       c166deee-f821-42e5-8971-6b400780806a
+:END:
 *** Answer
 /Function Composition/
 ~(.) :: (b -> c) -> (a -> b) -> a -> c~
 ** What it means for a function to be written in a /Pointfree Style/?                       :drill:
+:PROPERTIES:
+:ID:       9a7c7d88-9194-4849-b597-16b48b91b0a9
+:END:
 *** Answer
 It means that is written without specifying the arguments (derives
 from topology where there are spaces made of points and functions
@@ -474,6 +699,7 @@ value of a list like ~_ = [1, 2, 3]~?
 :DRILL_EASE: 2.5
 :DRILL_LAST_QUALITY: 4
 :DRILL_LAST_REVIEWED: [2018-08-19 Sun 18:34]
+:ID:       2f11d70a-8a29-4541-95ce-8ed756efa163
 :END:
 How can you ignore a part of a match in a pattern
 *** Answer
@@ -482,131 +708,245 @@ list we can use a pattern like ~(_:t) = [1, 2, 3]~
 
 * Chapter 12
 ** What's the definition of ~Maybe~?                                                        :drill:
+:PROPERTIES:
+:ID:       13dfc99b-44c2-440c-9159-6bbc3dda93b8
+:END:
 *** Answer
 ~data Maybe a = Nothing | Just a~
 
 ** When should be used ~Maybe~?                                                             :drill:
+:PROPERTIES:
+:ID:       da6182bc-cde5-49c7-9512-da6bb86c5798
+:END:
 *** Answer
 To encode the effect of failure
 
 ** What's the definition of ~Either~?                                                       :drill:
+:PROPERTIES:
+:ID:       7f75cf4a-f3da-4526-9f14-22bd8ed28207
+:END:
 *** Answer
 ~data Either a b = Left a | Right b~
 
 ** When should be used ~Either~?                                                            :drill:
+:PROPERTIES:
+:ID:       1cb9e4fe-b145-4441-a1e2-e39199cc923a
+:END:
 *** Answer
 To encode the effect of failure when we want more informations
 about the error
 
 ** What do you put on the ~Left~ side of ~Either~?                                          :drill:
+:PROPERTIES:
+:ID:       1181da3d-cf16-49c4-93fe-1f420e3bc0d6
+:END:
 *** Answer
 The error
 
 ** What do you put on the ~Right~ side of ~Either~?                                         :drill:
+:PROPERTIES:
+:ID:       a25ee471-3ca5-4f20-91fa-ebbb8c96ace6
+:END:
 *** Answer
 The value
 
 ** Why the error type is always on the ~Left~ side of ~Either~?                             :drill:
+:PROPERTIES:
+:ID:       243efcac-3047-432f-9943-0f0e05f7e067
+:END:
 *** Answer
 So that with typeclasses like ~Functor~ that works with a type
 constructor with one type parameter we can give it a partially
 applied ~Either~ with the error part leaving the success part to
 work with.
 ** What are the /Kinds/?                                                                    :drill:
+:PROPERTIES:
+:ID:       6d832698-a7b7-47d5-8a95-27752d5ea5d6
+:END:
 *** Answer
 Kinds are type types of types, or types one level up
 ** What are /Kinds/ for?                                                                    :drill:
+:PROPERTIES:
+:ID:       459b9fef-9cb6-47f4-a235-07fbcb3c5ab4
+:END:
 *** Answer
 To generalize behaviour over data with an unknown type
 ** How do we represent /Kinds/ in Haskell?                                                  :drill:
+:PROPERTIES:
+:ID:       a2728aaa-f14c-414e-a7db-1631542c77cc
+:END:
 *** Answer
 With the symbol ~*~
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       26fadaf0-3926-4871-b352-c0bb7124b232
+:END:
 We know that something is a fully applied, and therefore concrete
 type when it is represent as <[~*~]>
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       2ffb77b4-8d78-42b3-bb4b-1e89fe2525f4
+:END:
 Type constructors operate at <[type]> level. Types are resolved at
 <[compile-time]>
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       9e809b96-2c2c-4b49-b415-0d8e9ce6c62b
+:END:
 Type constructors are <[functions]> that operate <[type]> level
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       a73cd5b8-658b-4860-b380-a1bf60e27d61
+:END:
 Data constructors operate at <[term]> level. Values can be
 interacted with at <[run-time]>
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       809a5248-224a-47db-857a-050a85aaed64
+:END:
 In a datatype definition what comes before the ~=~ is a <[type constructor]>
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       2c179350-155b-445c-b587-8f4f998655d9
+:END:
 In a datatype definition what comes after the ~=~ is a <[data constructor]>
 ** The term /Type Constant/ is used to refer to...                                          :drill:
+:PROPERTIES:
+:ID:       5244b399-cb50-4700-8c84-0eaf065cdc6b
+:END:
 *** Answer
 A type constructor that takes no arguments.
 ** The term /Data Constant/ is used to refer to...                                          :drill:
+:PROPERTIES:
+:ID:       45fa0c20-213e-4013-8574-d6302fb4f000
+:END:
 *** Answer
 A data constructor that takes no arguments.
 ** The term /Type Constructor/ is used to refer to...                                       :drill:
+:PROPERTIES:
+:ID:       c0e0b4ae-da4d-4a5a-9750-4a919446f4a7
+:END:
 *** Answer
 Denotes a type in a /data declaration/
 ** Give some examples of /Type Constants/                                                   :drill:
+:PROPERTIES:
+:ID:       aaa4d161-7b09-4ac0-a46c-dc1287083984
+:END:
 *** Answer
 ~Bool~, ~Integer~, ~Char~, ~Float~, ~Double~
 ** Give some examples of /Type Constructors/                                                :drill:
+:PROPERTIES:
+:ID:       eb94a80b-ac1c-4f48-9cdb-19990f38e1ed
+:END:
 *** Answer
 ~Maybe~, ~(,)~, ~[]~, ~Either~
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       727d8a93-a9f9-4d02-8ca0-5b915f2cc4aa
+:END:
 The Haskell Report uses the term <[type constant]> to refer to
 types that take no arguments and are already types. In the Report,
 <[type constructor]> is used to refer to types which must have
 arguments applied to become a type.
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       904f300b-67f4-45fe-b197-70fc9b2df7ea
+:END:
 The syntax ~::~ usually means <["has type of"]>
 ** What are the /lifted/ types?                                                             :drill:
+:PROPERTIES:
+:ID:       e7409301-08f1-4693-8034-ad41c1aa2ad0
+:END:
 *** Aswer
 Have kind ~*~, they include every type that can be user defined
 and they are every type that can be inhabited by /bottom/ (⊥)
 ** What are the /unlifted/ types?                                                           :drill:
+:PROPERTIES:
+:ID:       ac0f8a55-8d29-463e-8fe7-6d09b972bf2f
+:END:
 *** Anwer
 Have kind ~#~, they are types that cannot be inhabited by /bottom/
 (⊥) like machine types or raw pointers
 ** What kind are the /newtypes/? Are they lifted or not? Why?                               :drill:
+:PROPERTIES:
+:ID:       f1096dbf-d6b3-464e-8bc8-0344f9e4c2ad
+:END:
 *** Answer
 They have kind ~*~ but they are not /lifted/ becase they cannot
 contain /bottom/ only they type they contain can contain /bottom/
 so they are /unlifted/
 * Chapter 13
 ** What's the name of ~<-~ in a ~do~ block?                                                 :drill:
+:PROPERTIES:
+:ID:       989addc1-0730-4f7d-b5b0-e9d2ee51fb72
+:END:
 The name is /bind/.
 ** What's the role of ~<-~ in a ~do~ block?                                                 :drill:
+:PROPERTIES:
+:ID:       daa048f1-9164-4332-acb5-d07a94fda11f
+:END:
 Binds a name to the ~𝑎~ of an ~m a~ value, where ~𝑚~ is some monadic structure.
 ** What's the type of ~return~?                                                             :drill:
+:PROPERTIES:
+:ID:       0675106d-9839-483f-8bf9-ed88d148f37f
+:END:
 ~Monad m => a -> m a~
 ** What's the command to create a new simple project name "awesome" with Stack?             :drill:
+:PROPERTIES:
+:ID:       1f1be699-a613-451a-9c2c-85092e95089b
+:END:
 ~stack new awesome simple~
 ** What's called ~>>=~?                                                                     :drill:
+:PROPERTIES:
+:ID:       33841793-1dbd-41b9-99fe-2c7fb1ce704c
+:END:
 The name is /bind/.
 ** What's the use of ~>>=~?                                                                 :drill:
+:PROPERTIES:
+:ID:       c6e4bf89-0cc8-412d-b5f9-62790b93ea26
+:END:
 It will sequentially compose two actions so that a value generated
 from the first will become an argument of the second
 * Chapter 15
 ** What's an /algebra/?                                                                     :drill:
+:PROPERTIES:
+:ID:       3ed6014a-2c3d-4ac7-a7e1-ddac69f8c9cf
+:END:
 *** Answer
 - A /set/ of values
 - Some /operations/ that operates over those values
 - Some /laws/ followed by those operations
 ** How can be implemented /algebras/ in Haskell                                             :drill:
+:PROPERTIES:
+:ID:       f1751910-1836-4372-9e87-f7b8bce97556
+:END:
 *** Answer
 Algebras can be implemented with /typeclasses/. The values that
 inhabit the /types/ that have an instance of the typeclass are the
 /sets/ of values associated to the algebra. The functions defined
 in the typeclass are the /operations/ of the algebra.
 ** What's a Monoid                                                                          :drill:
+:PROPERTIES:
+:ID:       ca8c6146-5278-4495-b06f-4e73afe9bffe
+:END:
 *** Answer
 An algebra with a binary associative operation and an identity
 ** What's a Semigroup                                                                       :drill:
+:PROPERTIES:
+:ID:       acdfd3a5-51cb-4b0e-831d-f95db18a270e
+:END:
 *** Answer
 An algebra with a binary associative operation
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       0d40332d-8b29-4c63-9e76-e01ef01693ef
+:END:
 Data constructors with only <[nonalphanumeric]> characters that
 begins with colon (~:~) are <[infix]> by default
 ** Definition of Monoid typeclass                                                           :drill:
+:PROPERTIES:
+:ID:       47c2dcc6-34be-42f4-b87a-831b8ab6525d
+:END:
 *** Answer
 #+BEGIN_SRC haskell
 class Monoid a where
@@ -616,35 +956,65 @@ class Monoid a where
 #+END_SRC
 ~mconcat~ can be derived
 ** Derive the implementation of ~mconcat~ given ~mempty~ and ~mappend~                      :drill:
+:PROPERTIES:
+:ID:       0adfa3a6-4d18-4c36-b966-a8df4838b15b
+:END:
 *** Answer
 #+BEGIN_SRC haskell
 mconcat :: [a] -> a
 mconcat = foldr mappend mempty
 #+END_SRC
 ** What we mean when we say that some datatype is a monoid?                                 :drill:
+:PROPERTIES:
+:ID:       3f849830-e34e-4fca-917d-7d965febb3e4
+:END:
 *** Answer
 That it admits a lawful instance of the Monoid typeclass.
 ** What's the intuitive meaning of the Monoid operation ~mappend~                           :drill:
+:PROPERTIES:
+:ID:       8393477d-50d2-4d60-86c6-c3ceea6efebb
+:END:
 *** Answer
 Join two values of a type into another value of the same type.
 ** How does the idenity value ~mempty~ work?                                                :drill:
+:PROPERTIES:
+:ID:       321b36e9-dd03-4876-a6ac-a1ff5ea90c05
+:END:
 *** Answer
 Using ~mempty~ as a value in ~mappend~ with another value the
 result is always the other value.
 ** Can a type have multiple instances of Monoid?                                            :drill:
+:PROPERTIES:
+:ID:       41079187-2e72-4b7a-ae6d-f5b07114a58c
+:END:
 *** Answer
 No, every type has one and only one instance of a typeclass
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       d4831771-aa1d-4f60-9021-59d8ea14c784
+:END:
 Type with instances of ~Num~ form a <[~Monoid~]> under
 multiplication and summation.
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       c5aca050-7ffe-4999-a738-9426c5669432
+:END:
 ~List~ form a ~Monoid~ under <[concatenation]>
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       a2c55761-683b-4304-a943-05acef407370
+:END:
 ~String~ form a ~Monoid~ under <[concatenation]>
 ** The infix operator ~<>~ is syntactic sugar for                                           :drill:
+:PROPERTIES:
+:ID:       3c5c0cc5-095c-4423-b332-c0a48cdfd9b7
+:END:
 *** Answer
 ~Data.Monoid.mappend~
 ** How can you give to a type multiple instances of a typeclass?                            :drill:
+:PROPERTIES:
+:ID:       081f061c-c428-449c-b457-9eae74757533
+:END:
 *** Answer
 By wrapping the type in a newtype.
 #+BEGIN_SRC haskell :eval never
@@ -659,6 +1029,9 @@ Product 3 <> Product 2 -- => Product {getProduct=6}
    (x <> y) <> z = x <> (y <> z)
    #+END_SRC
 ** State the ~Monoid~ laws                                                                  :drill:
+:PROPERTIES:
+:ID:       693277e4-b087-4327-985f-869d82fdc75a
+:END:
 *** Answer
 1. Identity
    #+BEGIN_SRC haskell :eval never
@@ -669,61 +1042,101 @@ Product 3 <> Product 2 -- => Product {getProduct=6}
    (x <> y) <> z = x <> (y <> z)
    #+END_SRC
 ** Write the identity property of ~Monoid~                                                  :drill:
+:PROPERTIES:
+:ID:       a1f36547-f20d-4194-8eed-934c2e58ad53
+:END:
 *** Answer
 #+BEGIN_SRC haskell
 monoidIdentityProperty :: Monoid a => a -> Bool
 monoidIdentityProperty x = mempty <> x == x && x <> mempty == x
 #+END_SRC
 ** Write the associativity property of ~Monoid~                                             :drill:
+:PROPERTIES:
+:ID:       8bb1cca2-b2f5-4248-986c-75ad2cbc37a3
+:END:
 *** Answer
 #+BEGIN_SRC haskell
 monoidAssociativityProperty :: Monoid a => a -> a -> a -> Bool
 monoidAssociativityProperty x y z = (x <> y) <> z == x <> (y <> z)
 #+END_SRC
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       deea5030-cb28-420e-8967-64b6f8200910
+:END:
 - Laws define <[algebras]>.
 - Laws provide guardatees and solid foundations.
 - Guarantees provide predictable <[composition]> of programs.
 - Ability to <[combine]> programs give us the ability to <[reuse]>
   programs in different context.
 ** What kind of composition will give the newtype ~Sum~ to instances of ~Num~               :drill:
+:PROPERTIES:
+:ID:       511acebb-f912-415f-9ff7-b9cd33463e74
+:END:
 *** Answer
 Summation.
 ** What kind of composition will give the newtype ~Product~ to instances of ~Num~           :drill:
+:PROPERTIES:
+:ID:       afab7789-dc85-4080-a192-5fa3521740aa
+:END:
 *** Answer
 Multiplication.
 ** What kind of composition will give the newtype ~All~ to boolean values                   :drill:
+:PROPERTIES:
+:ID:       ce339e44-db11-43df-a9be-d4d83e0de436
+:END:
 *** Answer
 Boolean conjuction aka ~and~ or ~&&~.
 ** What kind of composition will give the newtype ~Any~ to boolean values                   :drill:
+:PROPERTIES:
+:ID:       0497bb60-6776-42c3-bc86-02c42614a792
+:END:
 *** Answer
 Boolean disjunction aka ~or~ or ~||~.
 ** What kind of composition will give the newtype ~First~ to instances of ~Maybe~           :drill:
+:PROPERTIES:
+:ID:       45da31c1-4726-40ef-a309-0b2e00a01e51
+:END:
 *** Answer
 Keep the first non ~Nothing~ value.
 ** What kind of composition will give the newtype ~Last~ to instances of ~Maybe~            :drill:
+:PROPERTIES:
+:ID:       9e5687c1-792e-4c16-8885-d1c26191219d
+:END:
 *** Answer
 Keep the last non ~Nothing~ value.
 ** What's the definition of /orphan instance/?                                              :drill:
+:PROPERTIES:
+:ID:       6853a8b1-f44d-469d-9fde-434beb38af64
+:END:
 *** Answer
 Is when an instance of a typeclass is defined for a datatype but
 the definition of the typeclass and the definition of the datatype
 are not in the same module of the instance.
 ** What can be done to avoid problems with orphan instances?                                :drill:
+:PROPERTIES:
+:ID:       ebdf61c2-45f5-4d82-b91c-febf21b7d295
+:END:
 *** Answer
 1. Define types and instances of known typeclasses in the same file.
 2. Define typeclasses and their instances for known types in the same file.
 3. Wrap known types to define instances of known typeclasses.
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       fb0f9423-96aa-4e65-baf8-3b4cea15ae6b
+:END:
 An /algebra/ is /stronger/ than another when it provides <[more]>
 operations, aka is /stronger/ when we can do more without knowing
 the <[specific type]> we are working with.
 ** Algebras Strength                                                                        :drill:
 :PROPERTIES:
 :DRILL_CARD_TYPE: hide1cloze
+:ID:       e08f5dbc-0448-422a-ba1e-0bb60cfc04aa
 :END:
 <[/Magma/]> -> <[/Semigroup/]> -> <[/Monoid/]> -> <[/AbelianMonoid/]>
 ** Exercise                                                                                 :drill:
+:PROPERTIES:
+:ID:       c5f0e93d-7a3a-4231-8e7f-205763c788de
+:END:
 Write a instance of ~Semigroup~ for the following type
 #+BEGIN_SRC haskell :eval never
 data Two a b = Two a b deriving (Eq, Show)
@@ -734,6 +1147,9 @@ instance (Semigroup a, Semigroup b) => Semigroup (Two a b) where
   mappend (Two x1 y1) (Two x2 y2) = Two (x1 <> x2) (y1 <> y2)
 #+END_SRC
 ** Exercise                                                                                 :drill:
+:PROPERTIES:
+:ID:       e32d8060-558a-4a71-aaa5-d1f5b4b483c7
+:END:
 Write a instance of ~Monoid~ for the following type
 #+BEGIN_SRC haskell :eval never
 data Two a b = Two a b deriving (Eq, Show)
@@ -748,22 +1164,31 @@ instance (Monoid a, Monoid b) => Monoid (Two a b) where
 ** Sentence                                                                                 :drill:
 :PROPERTIES:
 :DRILL_CARD_TYPE: show1cloze
+:ID:       d3daf458-67bc-4916-b7c2-e9f9a1b3984f
 :END:
 A <[type constant or a fully applied type]> have kind <[~*~]>
 ** Sentence                                                                                 :drill:
 :PROPERTIES:
 :DRILL_CARD_TYPE: show1cloze
+:ID:       2158f567-f960-4796-b8f4-8783c6bc4ad9
 :END:
 <[Types]> classify <[values]>
 ** Sentence                                                                                 :drill:
 :PROPERTIES:
 :DRILL_CARD_TYPE: show1cloze
+:ID:       266ea23b-47ad-4601-81dc-a942df377475
 :END:
 <[Kinds]> classify <[types]>
 ** What kind must have a function argument?                                                 :drill:
+:PROPERTIES:
+:ID:       36d57755-b1ba-4978-aa3a-3c71c55a7bd5
+:END:
 *** Answer
 Must be a type constant or a fully applied type with kind ~*~
 ** The ~(<$>)~ is the alias of?                                                             :drill:
+:PROPERTIES:
+:ID:       b336817f-3e04-420e-bd59-18a5e8afe85e
+:END:
 *** Answer
 ~fmap~ of the ~Functor~ typeclass
 ** State the ~Functor~ laws
@@ -777,33 +1202,63 @@ Must be a type constant or a fully applied type with kind ~*~
    fmap (f . g) == (fmap f) . (fmap g)
    #+END_SRC
 ** Write the ~Functor~'s identity law                                                       :drill:
+:PROPERTIES:
+:ID:       3474b7de-32f0-49fc-8593-5c2b4a7d3f23
+:END:
 *** Answer
 #+BEGIN_SRC haskell :eval never
 fmap id == id
 #+END_SRC
 ** Write the ~Functor~'s composability law                                                  :drill:
+:PROPERTIES:
+:ID:       c2ef6b68-2161-414f-a4de-ddd5385cd60e
+:END:
 *** Answer
 #+BEGIN_SRC haskell :eval never
 fmap (f . g) == (fmap f) . (fmap g)
 #+END_SRC
 ** What gives us the identity law of ~Functor~?                                             :drill:
+:PROPERTIES:
+:ID:       beb8ea04-681d-4008-a8a2-59eee64deeee
+:END:
 *** Answer
 The preservation of the functorial structure.
 ** What gives us the composability law of ~Functor~?                                        :drill:
+:PROPERTIES:
+:ID:       b8140000-cc69-4fe7-8cd0-ab5e57df7323
+:END:
 *** Answer
 The composability of functions is preserved.
 ** Question                                                                                 :drill:
+SCHEDULED: <2019-05-08 Wed>
+:PROPERTIES:
+:ID:       72095cde-308f-4b32-976b-3ba5d415076a
+:DRILL_LAST_INTERVAL: 3.6614
+:DRILL_REPEATS_SINCE_FAIL: 2
+:DRILL_TOTAL_REPEATS: 1
+:DRILL_FAILURE_COUNT: 0
+:DRILL_AVERAGE_QUALITY: 4.0
+:DRILL_EASE: 2.5
+:DRILL_LAST_QUALITY: 4
+:DRILL_LAST_REVIEWED: [2019-05-04 Sat 10:29]
+:END:
 Can you write an instance of a typeclass that requires a type with
 kind ~* -> *~ for a type with a higher kind? If yes, how?
 *** Answer
 Yes, by partially applying the type constructor with a concrete
 type or with a type variable
 ** Question                                                                                 :drill:
+:PROPERTIES:
+:ID:       0ebbe693-ddf4-4440-b8aa-3f9df2bc8262
+:END:
 Can you write an instance of a typeclass that requires a type with
 kind ~* -> *~ for a type with a lower kind? If yes, how?
 *** Answer
 No
 ** Exercise                                                                                 :drill:
+:PROPERTIES:
+:ID:       e184467f-336b-4333-bc0d-d7e83a45c6fe
+:END:
 Write an instance of ~Functor~ for the following type
 #+BEGIN_SRC haskell :eval never
 data Two a b = Two a b deriving (Eq, Show)
@@ -815,6 +1270,9 @@ instance Functor (Two a) where
   fmap f (Two a x) = Two a (f x)
 #+END_SRC
 ** Question                                                                                 :drill:
+:PROPERTIES:
+:ID:       196eef6a-a61e-4e32-871e-30e85131c203
+:END:
 1. What's the type of ~fmap show~?
 2. What we are doing by partially applying ~fmap~ to a function?
 *** Answer
@@ -822,10 +1280,16 @@ instance Functor (Two a) where
 2. We are /lifting/ that function, ~show~ in this case, to work
    with all types that admit an instance of ~Functor~
 ** What's a /natural transformation/?                                                       :drill:
+:PROPERTIES:
+:ID:       7f259e97-b3a2-495b-a65b-0191b57e0b66
+:END:
 *** Answer
 When you transofrm the /structure/ and leave the /type argument/ alone.
 * Chapter 17
 ** Describe the types of ~$~, ~<>~, ~<$>~, ~<*>~                                            :drill:
+:PROPERTIES:
+:ID:       cca33d2c-a9a4-4f0c-a771-1143ab3a3ed4
+:END:
 *** Answer
 #+BEGIN_SRC haskell :eval never
  $  ::   (a -> b) ->   a ->   b
@@ -834,6 +1298,9 @@ When you transofrm the /structure/ and leave the /type argument/ alone.
 <*> :: f (a -> b) -> f a -> f b
 #+END_SRC
 ** Why ~Applicative~ is described as monoidal ~Functor~?                                    :drill:
+:PROPERTIES:
+:ID:       04603444-6fc0-4d86-8e84-4a27438afadc
+:END:
 *** Answer
 Because it needs to combine two piece of functorial structure, one
 that wraps the function and one that wraps the value, this
@@ -845,6 +1312,9 @@ combination can be (or can be seen) as the monoidal ~mappend~.
 #+END_SRC
 
 ** State the ~Applicative~ laws                                                             :drill:
+:PROPERTIES:
+:ID:       6c2f2549-e64b-4623-869c-95832d9fda6f
+:END:
 *** Answer
 1. Identity
    #+BEGIN_SRC haskell :eval never
@@ -863,23 +1333,35 @@ combination can be (or can be seen) as the monoidal ~mappend~.
    u <*> pure y = pure ($ y) <*> v
    #+END_SRC
 ** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       d9ffe903-9f7d-4813-967a-af54eb5d7468
+:END:
 It is not guaranteed that the <[monoidal]> behaviour of the
 applicative instance is the same as the <[monoid]> instance of the
 involved type.
 
 ** What is the signature of ~Applicative~'s ~pure~ method?                                  :drill:
+:PROPERTIES:
+:ID:       2dcca1e8-0d68-4f3f-b2d1-736744fec242
+:END:
 *** Answer
 #+BEGIN_SRC haskell :eval never
 pure :: a -> f a
 pure = undefined
 #+END_SRC
 ** What is the signature of ~Applicative~'s ~apply~ method?                                 :drill:
+:PROPERTIES:
+:ID:       2000e143-d48d-4dfd-ae25-05069261aabc
+:END:
 *** Answer
 #+BEGIN_SRC haskell :eval never
 (<*>) :: f (a -> b) -> f a -> f b
 (<*>) = undefined
 #+END_SRC
 ** What is the signature of ~liftA2~? What it does? Write and usage example                 :drill:
+:PROPERTIES:
+:ID:       c74ff363-df13-4a02-8b78-eaed0c4ae39d
+:END:
 *** Answer
 It let us apply functions with more than one arguments to values
 wrapped in functorial structure
@@ -890,12 +1372,18 @@ liftA2 = undefined
 liftA2 (+) (Just 1) (Just 2) == (Just 3)
 #+END_SRC
 ** Implement ~liftA2~ using ~<$>~ and ~<*>~                                                 :drill:
+:PROPERTIES:
+:ID:       5ab115f8-d1bb-4ffc-a16e-2e5f7470c0c6
+:END:
 *** Answer
 #+BEGIN_SRC haskell
 liftA2 :: (a -> b -> c) -> f a -> f b -> f c
 liftA2 f fa fb = f <$> fa <*> fb
 #+END_SRC
 ** Exercise                                                                                 :drill:
+:PROPERTIES:
+:ID:       4b3495a9-bbe9-4a5b-a97f-6e5919041197
+:END:
 Write an instance of ~Applicative~ for the following type
 #+BEGIN_SRC haskell :eval never
 data Two a b = Two a b deriving (Eq, Show)
@@ -910,6 +1398,9 @@ instance Monoid a => Applicative (Two a) where
 #+END_SRC
 * Chapter 18
 ** Write the definition of ~Monad~ typeclass                                                :drill:
+:PROPERTIES:
+:ID:       cc540456-9a69-4c14-adb6-8e15c390ac8e
+:END:
 *** Answer
 #+BEGIN_SRC haskell :eval never
 class Applicative m => Monad m where
@@ -918,6 +1409,9 @@ class Applicative m => Monad m where
   (>>) :: m a -> m b -> m b
 #+END_SRC
 ** Desugar the following function without using ~do~ notation                               :drill:
+:PROPERTIES:
+:ID:       7a7345f5-934b-42bd-a40b-6b6e827b129d
+:END:
 #+BEGIN_SRC haskell :eval never
 bindingAndSequencing :: IO ()
 bindingAndSequencing = do
@@ -935,6 +1429,9 @@ bindingAndSequencing = do
         putStrLn $ "Hello: " ++ name
 #+END_SRC
 ** What's the difference between ~(*>)~ and ~(>>)~ operator?                                :drill:
+:PROPERTIES:
+:ID:       a3176968-ef45-41a9-b1c5-a6875d42bbca
+:END:
 *** Answer
 They are the same the only thing that differs is the constraint,
 ~(*>)~ works on ~Applicative~, ~(>>)~ works on ~Monad~ (and
@@ -944,6 +1441,9 @@ therefore on ~Applicative~ too)
 (>>) :: Monad m => m a -> m b -> m b
 #+END_SRC
 ** State the ~Monad~ laws                                                                   :drill:
+:PROPERTIES:
+:ID:       6f1436c6-af2a-4411-ab25-65f101f5fa8d
+:END:
 *** Answer
 1. Left Identity
    #+BEGIN_SRC haskell :eval never
@@ -958,10 +1458,16 @@ therefore on ~Applicative~ too)
    (m >>= f) >>= g = m >>= (\x -> f x >>= g)
    #+END_SRC
 ** What's a monadic function?                                                               :drill:
+:PROPERTIES:
+:ID:       d1567c25-2b91-4108-b745-c9421a9854a3
+:END:
 *** Answer
 A function that returns more structure after being lifted over
 monadic structure
 ** What's the Kleisli operator? What's the signature? What's is good for?                   :drill:
+:PROPERTIES:
+:ID:       8db4d588-44e2-4cad-a71f-965761f97c4e
+:END:
 *** Answer
 Provides composition for function that return a monadic value
 (/monadic function/)
