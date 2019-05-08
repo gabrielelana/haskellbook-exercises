@@ -1,4 +1,3 @@
-
 module EnumFromTo where
 
 eftBool :: Bool -> Bool -> [Bool]

@@ -592,6 +592,114 @@ fibonacci n = fibonacci (n - 1) + fibonacci (n - 2)
 ** How is commonly named a support function created in a where clause?                      :drill:
 *** Answer
 ~go~
+* Chapter 09
+** How do you declare the types of a list of ~Integer~?                                     :drill:
+*** Answer
+~[Integer]~
+** Write the definition of list datatype                                                    :drill:
+*** Answer
+~data [] a = [] | a : [a]~
+** List datatype is a sum type or a prod type?                                              :drill:
+*** Answer
+Both. It's a sum type because ~[] | a : [a]~ and it's a prod type
+because ~:~ data constructor takes two arguments.
+** How can you pattern match the head and the tail of a list ~xs~?                          :drill:
+*** Answer
+~(head : tail) = xs~
+** How would you define the list ~[1, 2, 3]~ without using the ~[]~ syntactic sugar?        :drill:
+*** Answer
+~1 : 2 : 3 : []~
+** How is it called the ~:~ data contructor for lists?                                      :drill:
+*** Answer
+It's called /cons/ and ~x : []~ is called a /cons cell/
+** What's a list's /Spine/?                                                                 :drill:
+*** Answer
+The spine is the connective structure that holds the cons cells
+together and in place. In general that holds together a data
+structure.
+** Write a list of numbers from 1 to 10 using sugared ranges                                :drill:
+*** Answer
+~[1..10]~
+** Write a list of numbers from 1 to 10 using desugared ranges                              :drill:
+*** Answer
+~enumFromTo 1 10~
+** Write a recursive function with the following signature and expected behaviour           :drill:
+~eft :: (Enum a, Ord a) => a -> a -> [a]~
+where
+~eft 1 10 == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]~
+~eft 3 1 == []~
+*** Answer
+#+BEGIN_SRC haskell :eval never
+eft :: (Enum a, Ord a) => a -> a -> [a]
+eft x y
+  | x > y = []
+  | x == y = [x]
+  | otherwise = x : (eft (succ x) y)
+#+END_SRC
+** What's the signature of ~take~? And what's the behaviour?                                :drill:
+*** Answer
+~take :: Int -> [a] -> [a]~
+
+It will take the first ~n~ elements out of a given list. It works on
+the spine of the list.
+** What's the signature of ~dropWhile~? And what's the behaviour?                           :drill:
+*** Answer
+~dropWhile :: (a -> Bool) -> [a] -> [a]~
+
+It will drop elements from a given list until the given predicate is
+satisfied and it will return the rest of the list. It works on the
+spine.
+** What's a list comprehension? Create a list of first 10 odd naturals squared              :drill:
+*** Answer
+A kind of expression meant to create a new list starting from one or
+more lists and optional predicates.
+
+#+BEGIN_SRC haskell
+take 10 [ x ^ 2 | x <- [1..], mod 2 x == 0]
+#+END_SRC
+** Define the condition of /Weak Head Normal Form/                                          :drill:
+*** Answer
+- The expression is already fully evaluated (/Normal Form/).
+- The expression has been evaluated to the point of arriving at a data
+  constructor or lambda awaiting an argument.
+** Tell in what form (WHNF, NF, NONE) the following expressions are                         :drill:
+1. ~(1, 2)~
+2. ~(1, 1 + 1)~
+3. ~\x -> x * 10~
+4. ~"Fizz" ++ "Buzz"~
+5. ~[1..10]~
+*** Answer
+1. WHNF & NF.
+2. WHNF. outermost is a data constructor ~(,)~ but arguments are
+   not fully evaluated so it is not in NF.
+3. WHNF & NF.
+4. NONE. there's no lambda or data constructor, only ~+~ not applied
+   to arguments fully evaluated.
+5. WHNF. outermost is a data constructor ~:~ applied to the rest of
+   the list not yet evaluated.
+** What it means for a function to be /Spine Strict/?                                       :drill:
+*** Answer
+It means that it uses only the /Spine/ of the data structure and not
+the values contained.
+** What it means for a function to be /Value Strict/?                                       :drill:
+*** Answer
+To be dependent on the values of the data structure.
+** What function do we use to transform elements of a list?                                 :drill:
+*** Answer
+~map :: (a -> b) -> [a] -> [b]~
+** What function do we use to filter elements of a list?                                    :drill:
+*** Answer
+~filter :: (a -> Bool) -> [a] -> [a]~
+** What function can we use to generally "combine" two lists together?                      :drill:
+*** Answer
+~zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]~
+** Implement the function ~reverse~ to reverse a list                                       :drill:
+*** Answer
+#+BEGIN_SRC haskell :eval never
+reverse :: [a] -> [a]
+reverse = undefined
+#+END_SRC
+
 * Chapter 11
 ** What are the kinds?                                                                      :drill:
 :PROPERTIES:

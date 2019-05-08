@@ -1,5 +1,6 @@
-
 module PoemLines where
+
+import Prelude hiding (lines)
 
 firstSen = "Tyger Tyger, burning bright\n"
 secondSen = "In the forests of the night\n"
