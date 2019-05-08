@@ -1,4 +1,3 @@
-
 module Database where
 
 import Data.Time

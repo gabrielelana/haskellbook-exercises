@@ -700,6 +700,111 @@ reverse :: [a] -> [a]
 reverse = undefined
 #+END_SRC
 
+* Chapter 10
+** Sentence                                                                                 :drill:
+Folds as a general concept are called <[Catamorphism]>, where <["cata"]>
+means "down" and <["morphism"]> means <["transformation"]>
+
+** Implement ~foldr~ for lists                                                              :drill:
+*** Answer
+#+BEGIN_SRC haskell :eval never
+foldr :: (a -> b -> b) -> b -> [a] -> b
+foldr _ z [] = z
+foldr f z (x:xs) = f x (foldr f z xs)
+#+END_SRC
+
+** Unroll the evaluation of the following expression                                        :drill:
+~foldr (+) 0 [1, 2, 3]~
+*** Answer
+#+BEGIN_SRC haskell :eval never
+foldr (+) 0 [1, 2, 3]
+(+) 1 (foldr (+) 0 [2, 3])
+(+) 1 ((+) 2 (foldr (+) 0 [3]))
+(+) 1 ((+) 2 ((+) 3 (foldr (+) 0 [])))
+(+) 1 ((+) 2 ((+) 3 0))
+(+) 1 ((+) 2 3)
+(+) 1 5
+6
+#+END_SRC
+
+** Sentence                                                                                 :drill:
+Folding happens in two staging <[/Traversing/]> (fold recurses over
+the spine) and <[/Folding/]> (fold reduce of the function over the
+values)
+
+** Can a ~foldr~ operate on an infinite list? If yes, why and in what cases?                :drill:
+*** Answer
+Yes, when the function used is not strict on both the arguments.
+#+BEGIN_SRC haskell :eval never
+foldr (\x b -> f x || b) False xs
+#+END_SRC
+
+** Implement ~foldl~ for lists                                                              :drill:
+*** Answer
+#+BEGIN_SRC haskell :eval never
+foldl :: (b -> a -> b) -> b -> [a] -> b
+foldl _ acc [] = acc
+foldl f acc (x:xs) = foldl f (f acc x) xs
+#+END_SRC
+
+** Unroll the evaluation of the following expression                                        :drill:
+*** Answer
+#+BEGIN_EXAMPLE
+foldl (+) 0 [1, 2, 3]
+foldl (+) ((+) 0 1) [2, 3]
+foldl (+) 1 [2, 3]
+foldl (+) ((+) 1 2) [3]
+foldl (+) 3 [3]
+foldl (+) ((+) 3 3) []
+foldl (+) 6 []
+6
+#+END_EXAMPLE
+
+** What kind of fold can be applied to infinite lists? Why?                                 :drill:
+*** Answer
+~foldr~ because since it's associative to the right the first thing it
+does is to execute the function with the first element of the list and
+on the rest of the fold, if the function is not strict and doesn't
+need the second argument for the result the rest of the fold can be
+left not evaluated.
+#+BEGIN_EXAMPLE
+foldr (||) False (repeat True)
+(||) True _ -- don't need to evaluate what's on the right
+True
+#+END_EXAMPLE
+
+** What kind of fold cannot be applied to infinite lists? Why?                              :drill:
+*** Answer
+~foldl~ because since it's associative to the left the first thing it
+does is to make the recursive function so you have no chance to stop
+the computation
+#+BEGIN_EXAMPLE
+foldl (||) False (repeat True)
+foldl (||) ((||) False True) (repeat True)
+foldl (||) True (repeat True)
+foldl (||) ((||) True True) (repeat True)
+foldl (||) True (repeat True)
+foldl (||) ((||) True True) (repeat True)
+foldl (||) True (repeat True)
+foldl (||) ((||) True True) (repeat True)
+...
+#+END_EXAMPLE
+** Implement ~scanr~ for lists                                                              :drill:
+*** Answer
+#+BEGIN_SRC haskell :eval never
+scanr :: (a -> b -> b) -> b -> [a] -> [b]
+scanr _ z [] = [z]
+scanr f z (x:xs) = (f x (head rest)) : rest
+  where rest = scanr f z xs
+#+END_SRC
+** Implement ~scanl~ for lists                                                              :drill:
+*** Answer
+#+BEGIN_SRC haskell :eval never
+scanl :: (b -> a -> b) -> b -> [a] -> [b]
+scanl _ acc [] = [acc]
+scanl f acc (x:xs) = acc : (scanl f (f acc x) xs)
+#+END_SRC
+
 * Chapter 11
 ** What are the kinds?                                                                      :drill:
 :PROPERTIES:
