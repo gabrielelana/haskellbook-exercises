@@ -657,7 +657,10 @@ more lists and optional predicates.
 #+BEGIN_SRC haskell
 take 10 [ x ^ 2 | x <- [1..], mod 2 x == 0]
 #+END_SRC
-** Define the condition of /Weak Head Normal Form/                                          :drill:
+** Define the condition of an expression to be in /Normal Form/                             :drill:
+*** Answer
+- The expression is already fully evaluated
+** Define the condition of an expression to be in /Weak Head Normal Form/                   :drill:
 *** Answer
 - The expression is already fully evaluated (/Normal Form/).
 - The expression has been evaluated to the point of arriving at a data
@@ -804,16 +807,103 @@ scanl :: (b -> a -> b) -> b -> [a] -> [b]
 scanl _ acc [] = [acc]
 scanl f acc (x:xs) = acc : (scanl f (f acc x) xs)
 #+END_SRC
+** Sentence                                                                                 :drill:
+When all /Data Constructors/ in a Datatype don't need values of types
+mentioned in the /Type Constructor/, those types are called <[Phantom
+Types]> or we say that they <[Have No Witness]>
+
+#+BEGIN_SRC haskell :eval never
+data Silly a = Silly
+#+END_SRC
 
 * Chapter 11
+** The term /Type Constant/ is used to refer to...                                          :drill:
+:PROPERTIES:
+:ID:       5244b399-cb50-4700-8c84-0eaf065cdc6b
+:END:
+*** Answer
+A type constructor that takes no arguments.
+** The term /Data Constant/ is used to refer to...                                          :drill:
+:PROPERTIES:
+:ID:       45fa0c20-213e-4013-8574-d6302fb4f000
+:END:
+*** Answer
+A data constructor that takes no arguments.
+** The term /Type Constructor/ is used to refer to...                                       :drill:
+:PROPERTIES:
+:ID:       c0e0b4ae-da4d-4a5a-9750-4a919446f4a7
+:END:
+*** Answer
+Denotes a type in a /Data Declaration/
+** Give some examples of /Type Constants/                                                   :drill:
+:PROPERTIES:
+:ID:       aaa4d161-7b09-4ac0-a46c-dc1287083984
+:END:
+*** Answer
+~Bool~, ~Integer~, ~Char~, ~Float~, ~Double~
+** Give some examples of /Type Constructors/                                                :drill:
+:PROPERTIES:
+:ID:       eb94a80b-ac1c-4f48-9cdb-19990f38e1ed
+:END:
+*** Answer
+~Maybe~, ~(,)~, ~[]~, ~Either~
+
+** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       26fadaf0-3926-4871-b352-c0bb7124b232
+:END:
+We know that /Type Constructor/ is a fully applied, and therefore a
+/Concrete Type/ when it is represent as <[~*~]>
+** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       2ffb77b4-8d78-42b3-bb4b-1e89fe2525f4
+:END:
+/Type Constructors/ operate at <[type]> level. Types are resolved at
+<[compile-time]>
+** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       9e809b96-2c2c-4b49-b415-0d8e9ce6c62b
+:END:
+/Type Constructors/ are <[functions]> that operate <[type]> level
+** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       a73cd5b8-658b-4860-b380-a1bf60e27d61
+:END:
+/Data Constructors/ operate at <[term]> level. Values can be
+interacted with at <[run-time]>
+** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       809a5248-224a-47db-857a-050a85aaed64
+:END:
+In a /Datatype Definition/ what comes before the ~=~ is a <[type
+constructor]>
+** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       2c179350-155b-445c-b587-8f4f998655d9
+:END:
+In a /Datatype Definition/ what comes after the ~=~ is a <[data
+constructor]>
+** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       727d8a93-a9f9-4d02-8ca0-5b915f2cc4aa
+:END:
+The Haskell Report uses the term <[/Type Constant/]> to refer to types
+that take no arguments and are already types. In the Report, <[/Type
+Constructor/]> is used to refer to types which must have arguments
+applied to become a type.
+** Sentence                                                                                 :drill:
+:PROPERTIES:
+:ID:       904f300b-67f4-45fe-b197-70fc9b2df7ea
+:END:
+The syntax ~::~ usually means <["has type of"]>
 ** What are the kinds?                                                                      :drill:
 :PROPERTIES:
 :ID:       96250e86-196d-4046-be99-130e9938eb34
 :VISIBILITY: folded
 :END:
 *** Answer
-Kinds are the types of type constructors, primarly encoding the number
-of arguments they take.
+Kinds are the types of /Type Constructors/, primarly encoding the
+number of arguments they take.
 
 ** When kinds become types?                                                                 :drill:
 :PROPERTIES:
@@ -840,7 +930,7 @@ How many time the kind ~* -> * -> *~ must be applied to become a type?
 *** Answer
 2
 
-** What is an higher-kinded type?                                                           :drill:
+** What is an Higher-Kinded type?                                                           :drill:
 :PROPERTIES:
 :ID:       ed1e41cb-de7f-4c23-9931-4e57316b32ad
 :VISIBILITY: folded
@@ -848,11 +938,16 @@ How many time the kind ~* -> * -> *~ must be applied to become a type?
 *** Answer
 A kind that needs to be applied more than once to become a type
 
-** What kind has ~data Silly a b c = Silly a b c deriving Show~?                            :drill:
+** What kind has the following Datatype?                                                    :drill:
 :PROPERTIES:
 :ID:       2a17521b-99d1-4eff-8317-3aeee32c023d
 :VISIBILITY: folded
 :END:
+#+BEGIN_SRC haskell :eval never
+data Silly a b c =
+  Silly a b c
+  deriving Show
+#+END_SRC
 *** Answer
 ~Silly :: * -> * -> * -> *~
 
@@ -871,21 +966,21 @@ A kind that needs to be applied more than once to become a type
 *** Answer
 ~[] :: [a]~
 
-** What are arguments taken from polymorphic type constructors?                             :drill:
+** What are arguments taken from /Type Constructors/?                                       :drill:
 :PROPERTIES:
 :ID:       efae5cf1-3e93-46c4-81df-f7a62bcbb67e
 :END:
 *** Answer
 Types
 
-** What are arguments taken from data constructors?                                         :drill:
+** What are arguments taken from /Data Constructors/?                                       :drill:
 :PROPERTIES:
 :ID:       c178f70e-9e5d-4d10-8e13-4e60364edc81
 :END:
 *** Answer
 Values
 
-** Naming a patterns                                                                        :drill:
+** Naming in patterns                                                                       :drill:
 :PROPERTIES:
 :ID:       b91b750e-8c4a-4c43-8cfd-79cddff624a2
 :DRILL_LAST_INTERVAL: 5.1613
@@ -898,7 +993,7 @@ Values
 :DRILL_LAST_REVIEWED: [2018-08-19 Sun 18:27]
 :END:
 How can you, with a single pattern, match the head, tail and the whole
-value of a list like ~_ = [1, 2, 3]~?
+value of a list like ~_ = [1, 2, 3]~? Also called /As-Pattern/
 *** Answer
 ~l@(h:t) = [1, 2, 3]~
 
@@ -918,6 +1013,111 @@ How can you ignore a part of a match in a pattern
 *** Answer
 With an underscore ~_~. If we are interested only in the tail of a
 list we can use a pattern like ~(_:t) = [1, 2, 3]~
+
+** Why should we say, in the /Data Declaration/ below, that ~Price~ depends on ~Integer~?   :drill:
+#+BEGIN_SRC haskell :eval never
+data Price = Price Integer deriving (Eq, Show)
+#+END_SRC
+*** Answer
+Because you cannot construct ~Price~ values if ~Integer~ is not in the
+scope
+
+** Sentence                                                                                 :drill:
+A type can be thought as an <[enumeration]> of <[/Data Constructors/]>
+that have zero or more arguments.
+** Sentence                                                                                 :drill:
+Algebraic datatype in Haskell are algebraic because we can describe
+the patterns of argument structures using two basic operations:
+- sum (ex. ~A | B~)
+- product (ex. ~(A, B)~)
+** Sentence                                                                                 :drill:
+Newtypes
+- Only allows a single <[unary]> /Data Constructor/.
+- The cardinality is the cardinality of the <[type given as argument]>.
+- It only exists at <[compile]> time.
+- It has no <[run]> time overhead.
+- It uses the same representation of the <[type given as argument]>.
+- We can define <[/Typeclasses/]> on it.
+** Can you derive /Typeclasses/ on a /Newtype/?                                             :drill:
+*** Answer
+Yes, with ~GeneralizedNewtypeDeriving~ language extension
+** What's the symbol used to define a /Sum Type/?                                           :drill:
+*** Answer
+~|~ as in ~data Bool = True | False~
+** What's the cardinality of a /Sum Type/?                                                  :drill:
+*** Answer
+The sum of the cardinality of its inhabitants.
+** Sentence                                                                                 :drill:
+/Product Types/ express <[conjunction]> that is the logic operator
+<[and]>.
+** Sentence                                                                                 :drill:
+/Sum Types/ express <[disjunction]> that is the logic operator <[or]>.
+** What's the symbol used to define a /Product Type/?                                       :drill:
+*** Answer
+There's no special symbol, every /Data Constructor/ with two or more
+arguments it's a product.
+** What's the cardinality of a /Product Type/?                                              :drill:
+*** Answer
+The product of the cardinality of its inhabitants.
+** Define a /Datatype/ ~Person~ with age and name with record syntax                        :drill:
+*** Answer
+#+BEGIN_SRC haskell
+data Person =
+  Person { name :: String
+         , age :: String
+         }
+  deriving (Eq, Show)
+#+END_SRC
+** What defines implicitly a record syntax?                                                 :drill:
+*** Answer
+One function for each field called the same as the record.
+** When a /Data Declaration/ is in /Normal Form/?                                           :drill:
+*** Answer
+When we have the /Sum/ of the /Product Types/
+
+#+BEGIN_SRC haskell :results none
+:{
+data Expression =
+    Number Int
+  | Add Expression Expression
+  | Minus Expression Expression
+  | Mul Expression Expression
+  | Div Expression Expression
+:}
+#+END_SRC
+** Give an example of accidental bottom in records                                          :drill:
+*** Answer
+#+BEGIN_SRC haskell
+data Car = NotCar | Car {model :: String, year :: String}
+
+model Car {model = "Porche Boxter", year = 2016}
+model NotCar
+#+END_SRC
+** How can the accidental bottom problem can be avoided in records?                         :drill:
+*** Answer
+By ensuring the completeness of the generated functions for the
+records (all the values of that defined type must be records).
+
+#+BEGIN_SRC haskell
+data Car = Car {model :: String, year :: Integer}
+data Automobile = NotCar | Automobile Car
+
+-- The following will not compile ;-)
+-- model NotCar
+#+END_SRC
+** How can you pattern match a record?                                                      :drill:
+*** Answer
+By selecting the field and pattern match on the result with a ~case~ expression.
+
+
+
+** What's the cardinality of a /Function Type/?                                             :drill:
+*** Answer
+If the function is ~a -> b~ then the cardinality is ~∥b∥ ^ ∥a∥~
+** When a /Kind/ becomes a /Type/?                                                          :drill:
+*** Answer
+When it's fully applied
+
 
 * Chapter 12
 ** What's the definition of ~Maybe~?                                                        :drill:
@@ -990,82 +1190,6 @@ To generalize behaviour over data with an unknown type
 :END:
 *** Answer
 With the symbol ~*~
-** Sentence                                                                                 :drill:
-:PROPERTIES:
-:ID:       26fadaf0-3926-4871-b352-c0bb7124b232
-:END:
-We know that something is a fully applied, and therefore concrete
-type when it is represent as <[~*~]>
-** Sentence                                                                                 :drill:
-:PROPERTIES:
-:ID:       2ffb77b4-8d78-42b3-bb4b-1e89fe2525f4
-:END:
-Type constructors operate at <[type]> level. Types are resolved at
-<[compile-time]>
-** Sentence                                                                                 :drill:
-:PROPERTIES:
-:ID:       9e809b96-2c2c-4b49-b415-0d8e9ce6c62b
-:END:
-Type constructors are <[functions]> that operate <[type]> level
-** Sentence                                                                                 :drill:
-:PROPERTIES:
-:ID:       a73cd5b8-658b-4860-b380-a1bf60e27d61
-:END:
-Data constructors operate at <[term]> level. Values can be
-interacted with at <[run-time]>
-** Sentence                                                                                 :drill:
-:PROPERTIES:
-:ID:       809a5248-224a-47db-857a-050a85aaed64
-:END:
-In a datatype definition what comes before the ~=~ is a <[type constructor]>
-** Sentence                                                                                 :drill:
-:PROPERTIES:
-:ID:       2c179350-155b-445c-b587-8f4f998655d9
-:END:
-In a datatype definition what comes after the ~=~ is a <[data constructor]>
-** The term /Type Constant/ is used to refer to...                                          :drill:
-:PROPERTIES:
-:ID:       5244b399-cb50-4700-8c84-0eaf065cdc6b
-:END:
-*** Answer
-A type constructor that takes no arguments.
-** The term /Data Constant/ is used to refer to...                                          :drill:
-:PROPERTIES:
-:ID:       45fa0c20-213e-4013-8574-d6302fb4f000
-:END:
-*** Answer
-A data constructor that takes no arguments.
-** The term /Type Constructor/ is used to refer to...                                       :drill:
-:PROPERTIES:
-:ID:       c0e0b4ae-da4d-4a5a-9750-4a919446f4a7
-:END:
-*** Answer
-Denotes a type in a /data declaration/
-** Give some examples of /Type Constants/                                                   :drill:
-:PROPERTIES:
-:ID:       aaa4d161-7b09-4ac0-a46c-dc1287083984
-:END:
-*** Answer
-~Bool~, ~Integer~, ~Char~, ~Float~, ~Double~
-** Give some examples of /Type Constructors/                                                :drill:
-:PROPERTIES:
-:ID:       eb94a80b-ac1c-4f48-9cdb-19990f38e1ed
-:END:
-*** Answer
-~Maybe~, ~(,)~, ~[]~, ~Either~
-** Sentence                                                                                 :drill:
-:PROPERTIES:
-:ID:       727d8a93-a9f9-4d02-8ca0-5b915f2cc4aa
-:END:
-The Haskell Report uses the term <[type constant]> to refer to
-types that take no arguments and are already types. In the Report,
-<[type constructor]> is used to refer to types which must have
-arguments applied to become a type.
-** Sentence                                                                                 :drill:
-:PROPERTIES:
-:ID:       904f300b-67f4-45fe-b197-70fc9b2df7ea
-:END:
-The syntax ~::~ usually means <["has type of"]>
 ** What are the /lifted/ types?                                                             :drill:
 :PROPERTIES:
 :ID:       e7409301-08f1-4693-8034-ad41c1aa2ad0

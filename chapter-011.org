@@ -1,182 +1,276 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
 #+TITLE: Algebraic Datatypes
 
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+#+PROPERTY: header-args:haskell+ :epilogue ":load"
+#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
+
 * 11.01 Algebraic datatypes
+A type can be tought of as an enumeration of constructors that have
+zero or more arguments.
 
-  #+BEGIN_QUOTE
-  A type can be tought of as an enumeration of constructors that have
-  zero or more arguments.
-  #+END_QUOTE
-
-  Expectations of current chapter:
-  - explain the "algebra" of /algebraic datatype/
-  - analyze the construction of data constructors
-  - spell out when and how to write your own datatypes
-  - clarify usage of /type synonyms/ and /newtypes/
-  - introduce kinds
+Expectations of current chapter:
+- explain the "algebra" of /Algebraic Datatype/
+- analyze the construction of /Data Constructors/
+- spell out when and how to write your own datatypes
+- clarify usage of /Type Synonyms/ and /Newtypes/
+- introduce /Kinds/
 
 * 11.02 Data declaration review
+#+BEGIN_EXAMPLE
+data Bool  =  False  |  True
+[1]  [2]  [3] [4]   [5] [6]
+#+END_EXAMPLE
 
-  #+BEGIN_EXAMPLE
-  data Bool  =  False  |  True
-  [1]  [2]  [3] [4]   [5] [6]
-  #+END_EXAMPLE
+1. What follows is a /Data Declaration/ or a declaration of a
+   /Datatype/
+2. Name of the /Type Constructor/ with no arguments.
+3. Divides the /Type Constructor/ from its /Data Constructors/
+4. /Data Constructor/ with no arguments. Also called /Nullary Data
+   constructor/. It's one of the possible values of this type.
+5. Denotes a /Sum Type/
+6. /Data Constructor/ with no arguments. Also called /Nullary Data
+   Constructor/. It's one of the value of this type.
 
-  1. What follows is a data declaration or a declaration of a
-     /datatype/
-  2. Name of the /type constructor/ with no arguments.
-  3. Divides the /type constructor/ from its /data constructors/
-  4. Data constructor with no arguments. Also called /nullary data
-     constructor/. It's one of the possible values of this type.
-  5. Denotes a /sum type/
-  6. Data constructor with no arguments. Also called /nullary data
-     constructor/. It's one of the value of this type.
+#+BEGIN_EXAMPLE
+data [] a = []  |  a : [a]
+[1]  [2]    [3]    [4]
+#+END_EXAMPLE
 
-  #+BEGIN_EXAMPLE
-  data [] a = []  |  a : [a]
-  [1]  [2]    [3]    [4]
-  #+END_EXAMPLE
+1. What follows is a /Data Declaration/ or a declaration of a
+   /datatype/
+2. /Type Constructor/ with one argument. Here the argument is a
+   polymorphic type variable so the list argument can be of different
+   types.
+3. /Data Constructor/ of the empty list with no arguments.
+4. /Data constructor/ of the not empty list with two arguments.
 
-  1. What follows is a data declaration or a declaration of a
-     /datatype/
-  2. Type constructor with one argument. Here the argument is a
-     polymorphic type variable so the list argument can be of
-     different types.
-  3. Data constructor of the empty list with no arguments.
-  4. Data constructor of the not empty list with two arguments.
+When we talk about /Data Declaration/ we talk about the definition of
+the entire type.
 
-  #+BEGIN_QUOTE
-  A type can be tought of as an enumeration of constructors that have
-  zero or more arguments.
-  #+END_QUOTE
-
-  - When we talk about /data declaration/ we talk about the definition
-    of the entire type.
-  - ~Bool~ is an enumeration of two possible constructors each of
-    which take zero arguments
-  - ~[] a~ is an enumeration of two possible constructors one of the
-    takes two arguments.
-  - The pipe (~|~) denotes a /sum types/ aka a type with more than one
-    data constructor.
+- ~Bool~ is an enumeration of two possible constructors each of
+  which take zero arguments
+- ~[] a~ is an enumeration of two possible constructors one of the
+  takes two arguments.
+- The pipe (~|~) denotes a /Sum Types/ aka a type with more than one
+  /Data Constructor/.
 
 * 11.03 Type and data constructors
-  Two kind of constructors in Haskell:
-  - Type constructor :: used at the type level, type signature,
-       typeclass declarations and instances. Static and resolves at
-       compile time.
-  - Data constructor :: construct values used at term level, values
-       with which we can interact at runtime.
+Two kind of constructors in Haskell:
 
-  Why *constructors*? Because they define a means of creating or
-  building types and values.
+- Type Constructor :: used at the type level, type signature,
+  typeclass declarations and instances. Static and resolves at
+  compile time.
+- Data Constructor :: construct values used at term level, values
+  with which we can interact at run time.
 
-  Constructors that take no arguments are called /nullary
-  constructors/ or /constants/. Ex. ~Bool~ is a /type constant/ and
-  ~True~ and ~False~ are /constants/
+Why constructors? Because they define a means of creating or
+building types and values.
 
-  When a constructor takes an argument than it behaves like a function
-  in the sense that must be /applied/ to become a /concrete type/ or a
-  /value/
+Constructors that take no arguments are called /Nullary Constructors/
+or /Constants/. Ex. ~Bool~ is a /Type Constant/ and ~True~ and ~False~
+are /Constants/
+
+When a constructor takes an argument than it behaves like a function
+in the sense that must be applied to become a /Concrete Type/ (for a
+/Type Constructor/) or a /Value/ (for a /Data Constructor/)
 
 * 11.04 Type constructors and kinds
+#+BEGIN_SRC haskell :eval never
+data [] a = [] | a : [a]
+#+END_SRC
 
-  #+BEGIN_SRC haskell :eval never
-  data [] a = [] | a : [a]
-  #+END_SRC
+This must be applied to a concrete type before we have a list.
 
-  This must be applied to a concrete type before we have a list.
+Kinds are the types of types, or types one level up. We represent
+kinds in Haskell with ~*~. We know something is a fully applied,
+concrete type when it is represented as ~*~. When it is ~* -> *~, it,
+like a function, is still waiting to be applied.
 
-  Kinds are the types of types, or types one level up. We represent
-  kinds in Haskell with ~*~. We know something is a fully applied,
-  concrete type when it is represented as ~*~. When it is ~* -> *~,
-  it, like a function, is still waiting to be applied.
+#+BEGIN_SRC haskell
+:k Bool
+:k [Int]
+:k []
+#+END_SRC
 
-  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load"
-  :k Bool
-  :k [Int]
-  :k []
-  #+END_SRC
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Bool :: *
+[Int] :: *
+[] :: * -> *
+#+END_EXAMPLE
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  Bool :: *
-  [Int] :: *
-  [] :: * -> *
-  #+END_EXAMPLE
-
-  ~Bool~ and ~[Int]~ are fully applied and therefore are /concrete
-  types/. ~[]~ still needs to be applied to become a concrete type,
-  this is what /constructor/ in "type constructor" stands for.
+~Bool~ and ~[Int]~ are fully applied and therefore are /Concrete
+Types/. ~[]~ still needs to be applied to become a concrete type, this
+is what constructor in "type constructor" stands for.
 
 * 11.05 Data constructors and values
+#+BEGIN_EXAMPLE
+data PugType = PugData
+--             [1]
 
-  #+BEGIN_SRC haskell :eval never
-  data PugType = PugData
-  --             [1]
+data HuskyType a = HuskyData
+--                 [2]
 
-  data HuskyType a = HuskyData
-  --                 [2]
+data DogueDeBordeaux doge = DogueDeBordeaux doge
+--                          [3]
+#+END_EXAMPLE
 
-  data DogueDeBordeaux doge = DogueDeBordeaux doge
-  --                          [3]
-  #+END_SRC
+1. /Data Constructor/ ~PugData~ takes no arguments so is /Nullary Data
+   Constructor/ or a /Constant Value/
+2. /Data Constructor/ ~HuskyData~ does not use the declared type
+   variable ~a~ this means that ~HuskyData~ is a /Constant Value/ and
+   the type argument ~a~ is a /Phantom/ or /Has No Witness/
+3. /Data Constructor/ ~DogueDeBordeaux~ shares the same name as its
+   type constructor but they are not the same thing
 
-  1. Data constructor ~PugData~ takes no arguments so is /nullary data
-     contructor/ or a /constant value/
-  2. Data constructor ~HuskyData~ does not use the declared type
-     variable ~a~ this means that ~HuskyData~ is a /constat value/ and
-     the type argument ~a~ is a /phantom/ or /has no witness/
-  3. Data constructor ~DogueDeBordeaux~ shares the same name as its
-     type constructor but they are not the same thing
-
-  So the behavior of constructors is such that if they don’t take any
-  arguments, they behave like (type or value-level) constants. If they
-  do take arguments, they act like (type or value-level) functions
-  that don’t do anything except get applied.
+So the behavior of constructors is such that if they don’t take any
+arguments, they behave like (type or value-level) constants. If they
+do take arguments, they act like (type or value-level) functions that
+don’t do anything except getting applied.
 
 ** Exercise: Dog Types
-   Given the following data declaration
+Given the following data declaration
 
-   #+BEGIN_SRC haskell :results none
-   :{
-   data Doggies a = Husky a
-                  | Mastiff a
-                  deriving (Eq, Show)
-   :}
-   data DogueDeBordeaux doge = DogueDeBordeaux doge
-   #+END_SRC
+#+BEGIN_EXAMPLE
+data Doggies a = Husky a
+               | Mastiff a
+               deriving (Eq, Show)
 
-   1. ~Doggies~ is a type constructor
-   2. ~Doggies~ has kind ~Doggies :: * -> *~
-   3. ~Doggies String~ has kind ~Doggies String :: *~
-   4. ~Husky 10~ has type ~Husky 10 :: Num a => Doggies a~
-   5. ~Husky (10 :: Integer)~ has type ~Husky (10 :: Integer) :: Doggies Integer~
-   6. ~Mastiff "Scooby Doo"~ has type ~Mastiff "Scooby Doo" :: Doggies [Char]~
-   7. ~DogueDeBordeaux~ is both a type and a data constructor
-   8. ~DogueDeBordeaux~ has type ~DogueDeBordeaux :: doge -> DogueDeBordeaux doge~
-   9. ~DogueDeBordeaux "doggie"~ has type ~DogueDeBordeaux "doggie" :: DogueDeBordeaux [Char]~
+data DogueDeBordeaux doge = DogueDeBordeaux doge
+#+END_EXAMPLE
 
-* 11.06 What's a type and what's data?
-  - Type constructors -> Compile time
-  - Data constructors -> Runtime
-  - They both begins with a capital letter
-  - In a /data declaration/ what comes before ~=~ is a type constructor
-  - In a /data declaration/ what comes after ~=~ is a data constructor
-  - Data constructors are usually generated by data declaration
-  - Data constructors cannot be totally generated by data declarations
-    when they take other types.
+1. Is ~Doggies~ a type constructor or a data constructor? Type constructor
+2. What is the kind of ~Doggies~? ~* -> *~
+3. What is the kind of ~Doggies String~? ~*~
+4. What is the type of ~Husky 10~? ~Num a => Doggies a~
+5. What is the type of ~Husky (10 :: Integer)~? ~Doggies Integer~
+6. What is the type of ~Mastiff "Scooby Doo"~? ~Doggies [Char]~
+7. Is ~DogueDeBordeaux~ a type constructor or a data constructor? Both
+8. What is the type of ~DogueDeBordeaux~? ~DogueDeBordeaux a~
+9. What is the type of ~DogueDeBordeaux "doggie!"~? ~DogueDeBordeaux [Char]~
 
-  #+BEGIN_SRC haskell :results none
-  data Price = Price Integer deriving (Eq, Show)
-  #+END_SRC
+* 11.06 What's a Type and what's Data?
+- /Type Constructors/ -> Compile time
+- /Data Constructors/ -> Run time
+- They both begins with a capital letter
+- In a /Data Declaration/ what comes before ~=~ is a /Type Constructor/
+- In a /Data Declaration/ what comes after ~=~ is a /Data Constructor/
+- /Data Constructors/ are usually generated by /Data Declaration/
+- /Data Constructors/ cannot be totally generated by data declarations
+  when they take other types.
 
-  Here ~Price~ doesn't depends only by the current datatype but also
-  on ~Integer~
+#+BEGIN_SRC haskell :results none
+data Price = Price Integer deriving (Eq, Show)
+#+END_SRC
+
+The value ~Price~ doesn't depend only on its datatype definition but
+also on ~Integer~, if ~Integer~ it's not in scope then you cannot
+build ~Price~ values.
 
 ** Exercise: Vehicles
+#+NAME: vehicles
+#+BEGIN_SRC haskell :eval never
+data Price = Price Integer deriving (Eq, Show)
 
-   #+NAME: vehicle
+:{
+data Manufacturer = Mini
+                  | Mazda
+                  | Tata
+                  deriving (Eq, Show)
+:}
+
+:{
+data Airline = PapuAir
+             | CatapultsR'Us
+             | TakeYourChancesUnited
+             deriving (Eq, Show)
+:}
+
+:{
+data Vehicle = Car Manufacturer Price
+             | Plane Airline
+             deriving (Eq, Show)
+:}
+
+myCar = Car Mini (Price 14000)
+urCar = Car Mazda (Price 20000)
+clownCar = Car Tata (Price 7000)
+doge = Plane PapuAir
+#+END_SRC
+
+1. What is the type of ~myCar~? ~myCar :: Vehicle~
+
+2. Given the following, define the functions:
+   #+BEGIN_SRC haskell :eval never
+   isCar :: Vehicle -> Bool
+   isCar = undefined
+
+   isPlane :: Vehicle -> Bool
+   isPlane = undefined
+
+   areCars :: [Vehicle] -> [Bool]
+   areCars = undefined
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results none
+   <<vehicles>>
+
+   :{
+   isCar :: Vehicle -> Bool
+   isCar (Car _ _) = True
+   isCar _ = False
+   :}
+
+   :{
+   isPlane :: Vehicle -> Bool
+   isPlane (Plane _) = True
+   isPlane _ = False
+   :}
+
+   :{
+   areCars :: [Vehicle] -> [Bool]
+   areCars = map isCar
+   :}
+
+   isCar myCar
+   isCar urCar
+   isCar doge
+
+   isPlane myCar
+   isPlane doge
+
+   areCars [myCar, urCar]
+   areCars [myCar, doge]
+   #+END_SRC
+
+3. Function to tell the manufacturer of a car
+   #+BEGIN_SRC haskell :results none
+   <<vehicles>>
+
+   :{
+   manufacturer :: Vehicle -> Manufacturer
+   manufacturer (Car m _) = m
+   manufacturer _ = error "Not a car"
+   :}
+
+   manufacturer myCar
+   manufacturer urCar
+   manufacturer doge
+   #+END_SRC
+
+4. Given that we’re returning the Manufacturer, what will happen if
+   you use this on Plane data? If you use the previous function on a
+   ~Plane~ data you get an error
+
+5. Change ~Plane~ to take also the size
    #+BEGIN_SRC haskell :results none
    data Price = Price Integer deriving (Eq, Show)
+
+   data Size = Size Integer deriving (Eq, Show)
 
    :{
    data Manufacturer = Mini
@@ -194,1360 +288,1336 @@
 
    :{
    data Vehicle = Car Manufacturer Price
-                | Plane Airline
+                | Plane Airline Size
                 deriving (Eq, Show)
    :}
 
    myCar = Car Mini (Price 14000)
    urCar = Car Mazda (Price 20000)
    clownCar = Car Tata (Price 7000)
-   doge = Plane PapuAir
+   doge = Plane PapuAir (Size 1000)
    #+END_SRC
 
-   1. ~myCar~ type is ~myCar :: Vehicle~
-   2. Define the following functions: ~isCar~, ~isPlane~, ~areCars~
-      #+BEGIN_SRC haskell :results none :noweb yes :epilogue ":load"
-      <<vehicle>>
+* 11.07 Data Constructor arities
+A type can be thought of as an enumeration of constructors that have
+zero or more arguments.
 
-      :{
-      isCar :: Vehicle -> Bool
-      isCar (Car _ _) = True
-      isCar _ = False
-      :}
+#+BEGIN_SRC haskell :results none
+-- nullary data constructor or costant
+data Example0 = Example0 deriving (Eq, Show)
 
-      :{
-      isPlane :: Vehicle -> Bool
-      isPlane (Plane _) = True
-      isPlane _ = False
-      :}
+-- unary data constructor
+data Example1 = Example1 Int deriving (Eq, Show)
 
-      :{
-      areCars :: [Vehicle] -> [Bool]
-      areCars = map isCar
-      :}
-
-      isCar myCar
-      isCar urCar
-      isCar doge
-
-      isPlane myCar
-      isPlane doge
-
-      areCars [myCar, urCar]
-      areCars [myCar, doge]
-      #+END_SRC
-   3. Function to tell the manufacturer of a car
-      #+BEGIN_SRC haskell :results none :noweb yes :epilogue ":load"
-      <<vehicle>>
-
-      :{
-      manufacturer :: Vehicle -> Manufacturer
-      manufacturer (Car m _) = m
-      manufacturer _ = error "Not a car"
-      :}
-
-      manufacturer myCar
-      manufacturer urCar
-      manufacturer doge
-      #+END_SRC
-   4. If you use the previous function on a ~Plane~ data you get an
-      error
-   5. Change ~Plane~ to take also the size
-      #+BEGIN_SRC haskell :results none
-      data Price = Price Integer deriving (Eq, Show)
-
-      data Size = Size Integer deriving (Eq, Show)
-
-      data Manufacturer = Mini
-                        | Mazda
-                        | Tata
-                        deriving (Eq, Show)
-
-      data Airline = PapuAir
-                   | CatapultsR'Us
-                   | TakeYourChancesUnited
-                   deriving (Eq, Show)
-
-      data Vehicle = Car Manufacturer Price
-                   | Plane Airline Size
-                   deriving (Eq, Show)
-
-      myCar = Car Mini (Price 14000)
-      urCar = Car Mazda (Price 20000)
-      clownCar = Car Tata (Price 7000)
-      doge = Plane PapuAir (Size 1000)
-      #+END_SRC
-
-* 11.07 Data constructor arities
-
-  #+BEGIN_QUOTE
-  A type can be tought of as an enumeration of constructors that have
-  zero or more arguments.
-  #+END_QUOTE
-
-  #+BEGIN_SRC haskell :results none
-  -- nullary data constructor or costant
-  data Example0 = Example0 deriving (Eq, Show)
-
-  -- unary data constructor
-  data Example1 = Example1 Int deriving (Eq, Show)
-
-  -- product data constructor of Int and String
-  data Example2 = Example2 Int String deriving (Eq, Show)
-  #+END_SRC
+-- product data constructor of Int and String
+data Example2 = Example2 Int String deriving (Eq, Show)
+#+END_SRC
 
 * 11.08 What makes these datatypes algebraic?
-  Algebraic datatypes in Haskell are algebraic because we can describe
-  the patterns of argument structures using two basic operations: sum
-  and product.
+Algebraic datatypes in Haskell are algebraic because we can describe
+the patterns of argument structures using two basic operations: /sum/
+and /product/.
 
 ** Exercise: Cardinality
+1. Cardinality of the following? 1
+   #+BEGIN_SRC haskell :results none
+   data PugType = PugData
+   #+END_SRC
 
-   1. Cardinality of the following? 1
-      #+BEGIN_SRC haskell :results none
-      data PugType = PugData
-      #+END_SRC
-   2. Cardinality of the following? 3
-      #+BEGIN_SRC haskell :results none
-      data Airline = PapuAir
-                   | CatapultsR'Us
-                   | TakeYourChancesUnited
-      #+END_SRC
-   3. Given that we know the cardinality of ~Int8~ what's the
-      cardinality of ~Int16~? ~∥Int8∥ ^ 2~
-   4. What can you say about the cardinality of ~Int~? That is limited
-      because it has an instance of the ~Bounded~ typeclass. What can
-      you say about the cardinality of ~Integer~? It's infinite.
-   5. What’s the connection between the ~8~ in ~Int8~ and that type’s
-      cardinality of ~256~? ~8~ is the amount of bits used to
-      represents values of ~Int8~ type, therefore you can represent
-      ~2^8~ or ~256~ possible values.
+2. Cardinality of the following? 3
+   #+BEGIN_SRC haskell :results none
+   data Airline = PapuAir
+                | CatapultsR'Us
+                | TakeYourChancesUnited
+   #+END_SRC
+
+3. Given that we know the cardinality of ~Int8~ what's the
+   cardinality of ~Int16~? ~∥Int8∥ ^ 2~
+
+4. What can you say about the cardinality of ~Int~? That is limited
+   because it has an instance of the ~Bounded~ typeclass. What can
+   you say about the cardinality of ~Integer~? It's infinite.
+
+5. What’s the connection between the ~8~ in ~Int8~ and that type’s
+   cardinality of ~256~? ~8~ is the amount of bits used to
+   represents values of ~Int8~ type, therefore you can represent
+   ~2^8~ or ~256~ possible values.
 
 ** Exercise: For Example
-   #+BEGIN_SRC haskell :results none
-   data Example = MakeExample deriving (Eq, Show)
-   #+END_SRC
+#+BEGIN_SRC haskell :results none
+data Example = MakeExample deriving (Eq, Show)
+#+END_SRC
 
-   1. The type of data constructor ~MakeExample~ is
-      ~MakeExample :: Example~. What happens when you request the
-      type of Example? You get an error because ~Example~ data
-      constructor is not in scope
-   2. Using ~:i Example~ you can tell that ~Example~ is type
-      constructor, you get the data declaration and you can tell which
-      are the typeclasses implemented
-   3. Create an example of a unary data constructor
-      #+BEGIN_SRC haskell :results none
-      data AnotherExample = MakeAnotherExample Int deriving (Eq, Show)
-      #+END_SRC
-      The type is ~MakeAnotherExample :: Int -> AnotherExample~
+1. The type of data constructor ~MakeExample~ is ~MakeExample ::
+   Example~. What happens when you request the type of Example? You
+   get an error because ~Example~ data constructor is not in scope
+   (aka in this case it doesn't exists)
+
+2. Using ~:i Example~ you can tell that ~Example~ is type constructor,
+   you get the data declaration and you can tell which are the
+   typeclasses implemented
+
+3. Create an example of a unary data constructor
+   #+BEGIN_SRC haskell :results none
+   data AnotherExample = MakeAnotherExample Int deriving (Eq, Show)
+   #+END_SRC
+   The type is ~MakeAnotherExample :: Int -> AnotherExample~
 
 * 11.09 Newtype
-  - It only allows data constructor with one argument.
-  - The cardinality is the cardinality of the type given as argument.
-  - It only exists at compile time.
-  - It has no runtime overhead.
-  - It reuses the representation of the type it contains. The
-    difference between newtype and the type it contains is gone by the
-    time the compiler generates the code.
-  - We can define typeclasses on newtypes but not on aliases.
+- It only allows a single unary /Data Constructor/.
+- The cardinality is the cardinality of the type given as argument.
+- It only exists at compile time.
+- It has no runtime overhead.
+- It reuses the representation of the type it contains. The difference
+  between newtype and the type it contains is gone by the time the
+  compiler generates the code.
+- We can define /Typeclasses/ on /Newtypes/ but not on aliases.
 
-  #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
-  tooManyGoats :: Int -> Bool
-  tooManyGoats n = n > 42
-  #+END_SRC
+With the following code
 
-  The problem is we can mix up the number of cows with the number of goats
+#+BEGIN_SRC haskell :results none
+:{
+tooManyGoats :: Int -> Bool
+tooManyGoats n = n > 42
+:}
+#+END_SRC
 
-  #+BEGIN_SRC haskell :results none
-  tooManyGoats 10   -- number of goats
-  tooManyGoats 100  -- number of cows
-  #+END_SRC
+The problem is we can mix up the number of cows with the number of
+goats
 
-  Solution
+#+BEGIN_SRC haskell :results none
+tooManyGoats 10   -- number of goats
+tooManyGoats 100  -- number of cows
+#+END_SRC
 
-  #+BEGIN_SRC haskell :results none
-  newtype Goats = Goats Int deriving (Eq, Show)
-  newtype Cows = Cows Int deriving (Eq, Show)
-  #+END_SRC
+Solution
 
-  Then
+#+NAME: newtypes
+#+BEGIN_SRC haskell :results none
+newtype Goats = Goats Int deriving (Eq, Show)
+newtype Cows = Cows Int deriving (Eq, Show)
+#+END_SRC
 
-  #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
-  tooManyGoats' :: Goats -> Bool
-  tooManyGoats' (Goats n) = n > 42
-  #+END_SRC
+Then
 
-  This works
+#+NAME: toomany
+#+BEGIN_SRC haskell :results none
+:{
+<<newtypes>>
+tooManyGoats' :: Goats -> Bool
+tooManyGoats' (Goats n) = n > 42
+:}
+#+END_SRC
 
-  #+BEGIN_SRC haskell :results none
-  tooManyGoats' (Goats 10)
-  #+END_SRC
+This works
 
-  This doesn't compile
+#+BEGIN_SRC haskell :results none
+<<toomany>>
+tooManyGoats' (Goats 10)
+#+END_SRC
 
-  #+BEGIN_SRC haskell :results none
-  tooManyGoats' (Cows 43)
-  #+END_SRC
+This doesn't compile
 
-  We can define a /typeclass/ for a /newtype/
+#+BEGIN_SRC haskell :results none
+<<toomany>>
+tooManyGoats' (Cows 43)
+#+END_SRC
 
-  #+BEGIN_SRC haskell :results none
-  class TooMany a where tooMany :: a -> Bool
+We can define a /Typeclass/ for a /Newtype/
 
-  instance TooMany Int where tooMany n = n > 42
+#+BEGIN_SRC haskell :results none
+class TooMany a where tooMany :: a -> Bool
 
-  tooMany (11 :: Int)
-  tooMany (43 :: Int)
+instance TooMany Int where tooMany n = n > 42
 
-  instance TooMany Goats where tooMany (Goats n) = n > 43
+tooMany (11 :: Int)
+tooMany (43 :: Int)
 
-  tooMany (Goats 11)
-  tooMany (Goats 43)
+instance TooMany Goats where tooMany (Goats n) = n > 43
 
-  :t tooMany
-  #+END_SRC
+tooMany (Goats 11)
+tooMany (Goats 43)
 
-  Since /newtypes/ are thin wrappers around a preexisting type for
-  /newtypes/ we can derive the /typeclasses/ implementations of the
-  wrapped type with a language extension called
-  ~GeneralizedNewtypeDeriving~
+:t tooMany
+#+END_SRC
 
-  #+BEGIN_SRC haskell :results none
-  {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+Since /Newtypes/ are thin wrappers around a preexisting type for
+/Newtypes/ we can derive the /Typeclasses/ implementations of the
+wrapped type with a language extension called
+~GeneralizedNewtypeDeriving~
 
-  class TooMany a where tooMany :: a -> Bool
+#+BEGIN_SRC haskell :results none
+:set -XGeneralizedNewtypeDeriving
 
-  instance TooMany Int where tooMany n = n > 42
+class TooMany a where tooMany :: a -> Bool
 
-  newtype Goats = Goats Int deriving (Eq, Show, TooMany)
+instance TooMany Int where tooMany n = n > 42
 
-  tooMany (Goats 11)
-  tooMany (Goats 43)
-  #+END_SRC
+newtype Goats = Goats Int deriving (Eq, Show, TooMany)
+
+tooMany (Goats 11)
+tooMany (Goats 43)
+#+END_SRC
 
 ** Exercise: Logic Goats
+1. Write an instance of typeclass ~TooMany~ for ~(Int, String)~
+   #+BEGIN_SRC haskell :results none
+   :set -XFlexibleInstances
 
-   1. Write an instance of typeclass ~TooMany~ for ~(Int, String)~
+   class TooMany a where tooMany :: a -> Bool
 
-      #+BEGIN_SRC haskell :results none
-      {-# LANGUAGE FlexibleInstances #-}
+   instance TooMany (Int, String) where tooMany (n, _) = n > 42
 
-      instance TooMany (Int, String) where tooMany (n, _) = n > 42
+   tooMany (11 :: Int, "Hello Mike")
+   #+END_SRC
 
-      tooMany (11 :: Int, "Hello Mike")
-      #+END_SRC
+2. Write an instance of typeclass ~TooMany~ for ~(Int, Int)~ summing
+   the values together.
+   #+BEGIN_SRC haskell :results none
+   :set -XFlexibleInstances
 
-   2. Write an instance of typeclass ~TooMany~ for ~(Int, Int)~
-      summing the values together.
+   class TooMany a where tooMany :: a -> Bool
 
-      #+BEGIN_SRC haskell :results none
-      {-# LANGUAGE FlexibleInstances #-}
+   instance TooMany (Int, Int) where tooMany (n, m) = (n + m) > 42
 
-      instance TooMany (Int, Int) where tooMany (n, m) = (n + m) > 42
+   tooMany (5 :: Int, 6 :: Int)
+   tooMany (5 :: Int, 40 :: Int)
+   #+END_SRC
 
-      tooMany (5 :: Int, 6 :: Int)
-      tooMany (5 :: Int, 40 :: Int)
-      #+END_SRC
+3. Write an instance of typeclass ~TooMany~ for ~(Num a, TooMany a)~
+   #+BEGIN_SRC haskell :results none
+   :set -XFlexibleInstances
 
-   3. Write an instance of typeclass ~TooMany~ for ~(Num a, TooMany a)~
+   class TooMany a where tooMany :: a -> Bool
 
-      #+BEGIN_SRC haskell :results none
-      {-# LANGUAGE FlexibleInstances #-}
+   instance TooMany Int where tooMany n = n > 42
 
-      instance TooMany Int where tooMany n = n > 42
+   instance (Num a, TooMany a) => TooMany (a, a) where tooMany (n, m) = tooMany (n + m)
 
-      instance (Num a, TooMany a) => TooMany (a, a) where tooMany (n, m) = tooMany (n + m)
-
-      tooMany (50 :: Int, 10 :: Int)
-      #+END_SRC
+   tooMany (50 :: Int, 10 :: Int)
+   #+END_SRC
 
 * 11.10 Sum Types
-  - The ~|~ represents the /disjunction/ that is "/or/".
-  - The cardinality of a sum type is the sum of the cardinality of
-    its inhabitants.
+Ready to define the algebra of algebraic datatypes.
+
+- The ~|~ represents the /disjunction/ that is an /or/.
+- The cardinality of a sum type is the sum of the cardinality of its
+  inhabitants.
 
 ** Exercise: Pity the Bool
+1. Given a datatype
+   #+BEGIN_SRC haskell :results none
+   :{
+   data BigSmall
+     = Big Bool
+     | Small Bool
+     deriving (Eq, Show)
+   :}
+   #+END_SRC
 
-   1. Given a datatype
-      #+BEGIN_SRC haskell :results none
-      data BigSmall
-        = Big Bool
-        | Small Bool
-        deriving (Eq, Show)
-      #+END_SRC
+   What's the cardinality of this datatype? 4
 
-      What's the cardinality of this datatype? 4
+   #+BEGIN_EXAMPLE
+   Big Bool | Small Bool = ??
+   Big (True | False) | Small (True | False) = ??
+   Big (True + False) | Small (True + False) = ??
+   Big (1 + 1) | Small (1 + 1) = ??
+   Big 2 | Small 2 = ??
+   2 | 2 = ??
+   2 + 2 = 4
+   #+END_EXAMPLE
 
-      #+BEGIN_EXAMPLE
-      Big Bool | Small Bool = ??
-      Big (True | False) | Small (True | False) = ??
-      Big (True + False) | Small (True + False) = ??
-      Big (1 + 1) | Small (1 + 1) = ??
-      Big 2 | Small 2 = ??
-      2 | 2 = ??
-      2 + 2 = 4
-      #+END_EXAMPLE
+2. Given a datatype
+   #+BEGIN_SRC haskell :results none
+   import Data.Int -- bring Int8 in scope
 
-   2. Given a datatype
-      #+BEGIN_SRC haskell :results none :prologue ":{" :epilogue ":}"
-      import Data.Int -- bring Int8 in scope
+   :{
+   data NumberOrBool
+     = Numba Int8
+     | BoolyBool Bool
+     deriving (Eq, Show)
+   :}
+   #+END_SRC
 
-      data NumberOrBool
-        = Numba Int8
-        | BoolyBool Bool
-        deriving (Eq, Show)
-      #+END_SRC
-
-      1. What is the cardinality of ~NumberOrBool~? 258
-      2. What happens if you try to create a Numba with a numeric
-         literal larger than 127? Error. And with a numeric literal
-         smaller than (-128)? Error.
+   1. What is the cardinality of ~NumberOrBool~? (256 + 2) = 258
+   2. What happens if you try to create a Numba with a numeric literal
+      larger than 127? A warning and the result is ~mod n 256~. And
+      with a numeric literal smaller than (-128)? Same thing.
 
 * 11.11 Product Types
-  - The cardinality of a product type is the product of the
-    cardinality of its inhabitants.
-  - Product types express /conjunction/ that is "/and/".
-  - Any data constructor with two or more type arguments it's a
-    product.
-  - Product types do not have speciali syntax like ~|~ for sum types.
+What does it mean to be a product?
+- Product types express /conjunction/ that is /and/.
+- The cardinality of a /Product Type/ is the product of the
+  cardinality of its inhabitants.
+- Any /Data Constructor/ with two or more arguments it's a product.
+- Product types do not have special syntax like ~|~ for sum types.
 
 ** Record Syntax
+The following solution to represent a person
+#+BEGIN_SRC haskell
+data Person = Person String Int deriving (Eq, Show)
 
-   The following solution to represent a person
-   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
-   data Person = Person String Int deriving (Eq, Show)
+jm = Person "Julie" 27
+rk = Person "Rick" 42
 
-   jm = Person "Julie" 27
-   rk = Person "Rick" 42
+:{
+name :: Person -> String
+name (Person n _) = n
+:}
 
-   :{
-   name :: Person -> String
-   name (Person n _) = n
-   :}
+:t name
+name jm
+#+END_SRC
 
-   :t name
-   name jm
-   #+END_SRC
+#+RESULTS:
+#+BEGIN_EXAMPLE
+name :: Person -> String
+Julie
+#+END_EXAMPLE
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   name :: Person -> String
-   Julie
-   #+END_EXAMPLE
+Can be replaced with a /Record Syntax/, a function for each field (in
+this case ~name~ and ~age~) will be implicitly defined
 
-   Can be replaced with a record syntax, a function for each field
-   (in this case ~name~ and ~age~) will be implicitly defined
-   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
-   data Person = Person {name :: String, age :: Int} deriving (Eq, Show)
+#+BEGIN_SRC haskell
+data Person = Person {name :: String, age :: Int} deriving (Eq, Show)
 
-   jm = Person "Julie" 27
-   rk = Person "Rick" 42
+jm = Person "Julie" 27
+rk = Person "Rick" 42
 
-   :t name
-   :t age
+:t name
+:t age
 
-   name jm
-   #+END_SRC
+name jm
+#+END_SRC
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   name :: Person -> String
-   age :: Person -> Int
-   Julie
-   #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+name :: Person -> String
+age :: Person -> Int
+Julie
+#+END_EXAMPLE
 
 * 11.12 Normal Form
-  As in normal arithmetic multiplication distributes over addition
-  #+BEGIN_EXAMPLE
-  a * (b + c) = (a * b) + (a * c)
-  #+END_EXAMPLE
+As in normal arithmetic multiplication distributes over addition
+#+BEGIN_EXAMPLE
+a * (b + c) = (a * b) + (a * c)
+#+END_EXAMPLE
 
-  In haskell product types distributes over sum types. The sum of the
-  product types is called the /normal form/
+In haskell /Product Types/ distributes over /Sum Types/. The sum of the
+product types is called the /Normal Form/
 
-  ~Author~ it is a product of a sum type
-  #+BEGIN_SRC haskell :results none :epilogue ":load"
-  data Fiction = Fiction deriving Show
-  data NonFiction = NonFiction deriving Show
+~Author~ it is a product of a sum type
+#+BEGIN_SRC haskell :results none
+data Fiction = Fiction deriving Show
+data NonFiction = NonFiction deriving Show
 
-  :{
-  data BookType = FictionBook Fiction
-                | NonFictionBook NonFiction
-                deriving Show
-  :}
+:{
+data BookType = FictionBook Fiction
+              | NonFictionBook NonFiction
+              deriving Show
+:}
 
-  type AuthorName = String
+type AuthorName = String
 
-  data Author = Author (AuthorName, BookType) deriving Show
-  #+END_SRC
+data Author = Author (AuthorName, BookType) deriving Show
+#+END_SRC
 
-  In normal form it will become like that
-  #+BEGIN_SRC haskell :results none :epilogue ":load"
-  type AuthorName = String
-  data Author = Fiction AuthorName
-              | NonFiction AuthorName
-              deriving (Eq, Show)
-  #+END_SRC
+The ~Author~ it's not a /Normal Form/, a /Normal Form/ for ~Author~
+could be.
+
+#+BEGIN_SRC haskell :results none
+data Fiction = Fiction deriving Show
+data NonFiction = NonFiction deriving Show
+type AuthorName = String
+
+:{
+data Author = Fiction AuthorName
+            | NonFiction AuthorName
+            deriving (Eq, Show)
+:}
+#+END_SRC
 
 ** Exercises: How Does Your Garden Grow?
+1. Given the type
+   #+BEGIN_SRC haskell :results none
+   :{
+   data FlowerType = Gardenia
+                   | Daisy
+                   | Rose
+                   | Lilac
+                   deriving Show
+   :}
 
-   1. Given the type
-      #+BEGIN_SRC haskell :results none :epilogue ":load"
-      :{
-      data FlowerType = Gardenia
-                      | Daisy
-                      | Rose
-                      | Lilac
-                      deriving Show
-      :}
+   type Gardener = String
 
-      type Gardener = String
+   data Garden = Garden Gardener FlowerType deriving (Eq, Show)
+   #+END_SRC
 
-      data Garden = Garden Gardener FlowerType deriving Show
-      #+END_SRC
+   What is the normal form of Garden?
 
-      What is the normal form of Garden?
-      #+BEGIN_SRC haskell :results none :epilogue ":load"
-      type Gardener = String
+   #+BEGIN_SRC haskell :results none
+   type Gardener = String
 
-      :{
-      data Garden = Gardenia Gardener
-                  | Daisy Gardener
-                  | Rose Gardener
-                  | Lilac Gardener
-                  deriving Show
-      :}
-      #+END_SRC
+   :{
+   data Garden = Gardenia Gardener
+               | Daisy Gardener
+               | Rose Gardener
+               | Lilac Gardener
+               deriving (Eq, Show)
+   :}
+   #+END_SRC
 
 * 11.13 Constructing and Deconstructiong Values
+See how ~Sum~ and ~Product~ can generalise sum and product types
 
-   See how ~Sum~ and ~Product~ can generalise sum and product types
-   #+BEGIN_SRC haskell :results none
-   data Sum a b = First a | Second b deriving (Eq, Show)
-   data Product a b = Product a b deriving (Eq, Show)
-   #+END_SRC
+#+NAME: sum-and-product
+#+BEGIN_SRC haskell :results none
+data Sum a b = First a | Second b deriving (Eq, Show)
+data Product a b = Product a b deriving (Eq, Show)
+#+END_SRC
 
-   How to use them
-   #+BEGIN_SRC haskell :results none
-   data Twitter = Twitter deriving (Eq, Show)
-   data Reddit = Reddit deriving (Eq, Show)
-   type SocialNetwork = Sum Twitter Reddit
-   #+END_SRC
+How to use them
 
-   How to construct values
-   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
-   First Twitter :: SocialNetwork
-   Second Reddit :: SocialNetwork
+#+NAME: social-network
+#+BEGIN_SRC haskell :results none
+<<sum-and-product>>
+data Twitter = Twitter deriving (Eq, Show)
+data Reddit = Reddit deriving (Eq, Show)
+type SocialNetwork = Sum Twitter Reddit
+#+END_SRC
 
-   -- the following are not valid
-   First Reddit :: SocialNetwork
-   Second Twitter :: SocialNetwork
-   #+END_SRC
+How to construct values
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   First Twitter
-   Second Reddit
-   <interactive>:328:1: error:
-       • Couldn't match type ‘Reddit’ with ‘Twitter’
-         Expected type: SocialNetwork
-           Actual type: Sum Reddit Reddit
-       • In the expression: First Reddit :: SocialNetwork
-         In an equation for ‘it’: it = First Reddit :: SocialNetwork
-   <interactive>:329:1: error:
-       • Couldn't match type ‘Twitter’ with ‘Reddit’
-         Expected type: SocialNetwork
-           Actual type: Sum Twitter Twitter
-       • In the expression: Second Twitter :: SocialNetwork
-         In an equation for ‘it’: it = Second Twitter :: SocialNetwork
-   #+END_EXAMPLE
+#+BEGIN_SRC haskell
+<<social-network>>
+First Twitter :: SocialNetwork
+Second Reddit :: SocialNetwork
 
-   Type aliases will let to create what you will consider the wrong
-   types
-   #+BEGIN_SRC haskell :results none
-   data Sum a b = First a | Second b deriving (Eq, Show)
-   type Twitter = String
-   type Reddit = String
-   type SocialNetwork = Sum Twitter Reddit
+-- the following are not valid
+First Reddit :: SocialNetwork
+Second Twitter :: SocialNetwork
+#+END_SRC
 
-   First "Twitter" :: SocialNetwork
-   Second "Reddit" :: SocialNetwork
+#+RESULTS:
+#+BEGIN_EXAMPLE
+First Twitter
+Second Reddit
 
-   First "Reddit" :: SocialNetwork
-   Second "Twitter" :: SocialNetwork
-   #+END_SRC
+<interactive>:729:1: error:
+    • Couldn't match type ‘Reddit’ with ‘Twitter’
+      Expected type: SocialNetwork
+        Actual type: Sum Reddit Reddit
+    • In the expression: First Reddit :: SocialNetwork
+      In an equation for ‘it’: it = First Reddit :: SocialNetwork
+<interactive>:730:1: error:
+    • Couldn't match type ‘Twitter’ with ‘Reddit’
+      Expected type: SocialNetwork
+        Actual type: Sum Twitter Twitter
+    • In the expression: Second Twitter :: SocialNetwork
+      In an equation for ‘it’: it = Second Twitter :: SocialNetwork
+#+END_EXAMPLE
 
-   Accidental bottoms in records
-   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
-   data Car = Null | Car {model :: String , year :: Integer}
+Type aliases will let to create what you will consider the wrong types
 
-   :t model
-   :t Null
+#+BEGIN_SRC haskell :results none
+data Sum a b = First a | Second b deriving (Eq, Show)
+type Twitter = String
+type Reddit = String
+type SocialNetwork = Sum Twitter Reddit
 
-   -- So the type system will let us do this
-   model Null
-   #+END_SRC
+First "Twitter" :: SocialNetwork
+Second "Reddit" :: SocialNetwork
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   model :: Car -> String
-   Null :: Car
-   "*** Exception: No match in record selector model
-   #+END_EXAMPLE
+First "Reddit" :: SocialNetwork
+Second "Twitter" :: SocialNetwork
+#+END_SRC
 
-   Avoid accidental bottoms in records
-   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
-   data Car = Car {model :: String, year :: Integer} deriving (Eq, Show)
-   data Automobile = Null | Automobile Car
+** Accidental Bottoms in  Records
+#+BEGIN_SRC haskell
+data Car = NotCar | Car {model :: String , year :: Integer}
 
-   boxter = Car {model = "Porche Boxter", year = 2016}
-   :t model
-   model boxter
-   model Null
-   #+END_SRC
+:t model
+:t NotCar
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   model :: Car -> String
-   Porche Boxter
-   <interactive>:771:7: error:
-       • Couldn't match expected type ‘Car’ with actual type ‘Automobile’
-       • In the first argument of ‘model’, namely ‘Null’
-         In the expression: model Null
-         In an equation for ‘it’: it = model Null
-   #+END_EXAMPLE
+-- So the type system will let us do this
+model NotCar
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+model :: Car -> String
+NotCar :: Car
+"*** Exception: No match in record selector model
+#+END_EXAMPLE
+
+Avoid accidental bottoms in records
+
+#+BEGIN_SRC haskell
+data Car = Car {model :: String, year :: Integer} deriving (Eq, Show)
+data Automobile = NotCar | Automobile Car
+
+boxter = Car {model = "Porche Boxter", year = 2016}
+:t model
+model boxter
+model NotCar
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+model :: Car -> String
+Porche Boxter
+<interactive>:769:7: error:
+    • Couldn't match expected type ‘Car’ with actual type ‘Automobile’
+    • In the first argument of ‘model’, namely ‘NotCar’
+      In the expression: model NotCar
+      In an equation for ‘it’: it = model NotCar
+#+END_EXAMPLE
 
 ** Exercises: Programmers
-   Given the types
-   #+BEGIN_SRC haskell :results none
-   :{
-   data OperatingSystem = GnuPlusLinux
-                        | OpenBSD
-                        | Mac
-                        | Windows
-                        deriving (Eq, Show)
-   :}
-
-   :{
-   data ProgrammingLanguage = Haskell
-                            | Agda
-                            | Idris
-                            | PureScript
-                            deriving (Eq, Show)
-   :}
-
-   :{
-   data Programmer = Programmer { lang :: ProgrammingLanguage
-                                , os :: OperatingSystem
-                                }
+Given the types
+#+NAME: programmer
+#+BEGIN_SRC haskell :results none
+:{
+data OperatingSystem = GnuPlusLinux
+                     | OpenBSD
+                     | Mac
+                     | Windows
                      deriving (Eq, Show)
-   :}
-   #+END_SRC
+:}
 
-   Write a function that generates all possible values of
-   ~Programmer~. Use the provided lists of inhabitants of
-   ~OperatingSystem~ and ~ProgrammingLanguages~.
-   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
-   :{
-   allOperatingSystems :: [OperatingSystem]
-   allOperatingSystems = [ GnuPlusLinux
-                         , OpenBSD
-                         , Mac
-                         , Windows
-                         ]
-   :}
+:{
+data ProgrammingLanguage = Haskell
+                         | Agda
+                         | Idris
+                         | PureScript
+                         deriving (Eq, Show)
+:}
 
-   :{
-   allProgrammingLanguages :: [ProgrammingLanguage]
-   allProgrammingLanguages = [ Haskell
-                             , Agda
-                             , Idris
-                             , PureScript
-                             ]
-   :}
+:{
+data Programmer = Programmer { lang :: ProgrammingLanguage
+                             , os :: OperatingSystem
+                             }
+                deriving (Eq, Show)
+:}
+#+END_SRC
 
-   :{
-   allProgrammers :: [Programmer]
-   allProgrammers = [ Programmer { os = os, lang = lang } | os <- allOperatingSystems, lang <- allProgrammingLanguages ]
-   :}
+Write a function that generates all possible values of
+~Programmer~. Use the provided lists of inhabitants of
+~OperatingSystem~ and ~ProgrammingLanguages~.
 
-   allProgrammers
-   #+END_SRC
+#+BEGIN_SRC haskell :results none
+<<programmer>>
+:{
+allOperatingSystems :: [OperatingSystem]
+allOperatingSystems = [ GnuPlusLinux
+                      , OpenBSD
+                      , Mac
+                      , Windows
+                      ]
+:}
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   [Programmer {lang = Haskell, os = GnuPlusLinux},
-    Programmer {lang = Agda, os = GnuPlusLinux},
-    Programmer {lang = Idris, os = GnuPlusLinux},
-    Programmer {lang = PureScript, os = GnuPlusLinux},
-    Programmer {lang = Haskell, os = OpenBSD},
-    Programmer {lang = Agda, os = OpenBSD},
-    Programmer {lang = Idris, os = OpenBSD},
-    Programmer {lang = PureScript, os = OpenBSD},
-    Programmer {lang = Haskell, os = Mac},
-    Programmer {lang = Agda, os = Mac},
-    Programmer {lang = Idris, os = Mac},
-    Programmer {lang = PureScript, os = Mac},
-    Programmer {lang = Haskell, os = Windows},
-    Programmer {lang = Agda, os = Windows},
-    Programmer {lang = Idris, os = Windows},
-    Programmer {lang = PureScript, os = Windows}]
-   #+END_EXAMPLE
+:{
+allProgrammingLanguages :: [ProgrammingLanguage]
+allProgrammingLanguages = [ Haskell
+                          , Agda
+                          , Idris
+                          , PureScript
+                          ]
+:}
+
+:{
+allProgrammers :: [Programmer]
+allProgrammers = [ Programmer { os = os, lang = lang } | os <- allOperatingSystems, lang <- allProgrammingLanguages ]
+:}
+
+allProgrammers
+#+END_SRC
+
+** Deconstructing Values
+Consider the following types
+#+NAME: farmer-dependencies
+#+BEGIN_SRC haskell :eval never
+newtype Name = Name String deriving Show
+newtype Acres = Acres Integer deriving Show
+
+:{
+data FarmerType = DairyFarmer
+                | WheatFarmer
+                | SoybeanFarmer
+                deriving Show
+:}
+#+END_SRC
+
+You can have ~Farmer~ type defined as a straightforward product type
+
+#+NAME: straightforward-farmer
+#+BEGIN_SRC haskell :eval never
+<<farmer-dependencies>>
+
+data Farmer = Farmer Name Acres FarmerType
+#+END_SRC
+
+And define a function ~isDairyFarmer~ to detect if the farmer is a
+specific kind of farmer
+
+#+BEGIN_SRC haskell :results none
+<<straightforward-farmer>>
+
+:{
+isDairyFarmer :: Farmer -> Bool
+isDairyFarmer (Farmer _ _ DairyFarmer) = True
+isDairyFarmer _ = False
+:}
+#+END_SRC
+
+Otherwise you can define a ~Farmer~ type base on record syntax
+
+#+NAME: record-farmer
+#+BEGIN_SRC haskell :eval never
+<<farmer-dependencies>>
+
+:{
+data Farmer = Farmer { name :: Name
+                     , acres :: Acres
+                     , farmerType :: FarmerType
+                     }
+                     deriving Show
+:}
+#+END_SRC
+
+And define the same function matching with a ~case~ expression
+
+#+BEGIN_SRC haskell :results none
+<<record-farmer>>
+
+:{
+isDairyFarmer :: Farmer -> Bool
+isDairyFarmer farmer =
+  case farmerType farmer of
+    DairyFarmer -> True
+    _ -> False
+:}
+#+END_SRC
 
 * 11.14 Function Type is Exponential
-  In the arithmetic of calculating inhabitants of types, function type
-  (~->~) is the exponent operator. Given a function ~a -> b~ and given
-  that the cardinality operator ~|x|~ then
-  #+BEGIN_EXAMPLE
-  |a -> b| = |b| ^ |a|
-  #+END_EXAMPLE
+In the arithmetic of calculating inhabitants of types, function type
+(~->~) is the exponent operator. Given a function ~a -> b~ and given
+that the cardinality operator ~|x|~ then
+#+BEGIN_EXAMPLE
+|a -> b| = |b| ^ |a|
+#+END_EXAMPLE
 
-  Given the type
-  #+BEGIN_SRC haskell :results none
-  data Quantum = Yes | No | Both deriving (Eq, Show)
-  #+END_SRC
+Given the type
+#+BEGIN_SRC haskell :results none
+data Quantum = Yes | No | Both deriving (Eq, Show)
+#+END_SRC
 
-  Cardinality of sum (~Either~) of ~Quantum~ is
-  ~|Quantum| + |Quantum|~ = ~3 + 3~ = ~6~
-  #+BEGIN_SRC haskell :results none
-  type QuantumSum = Either Quantum Quantum
+Cardinality of ~Either Quantum Quantum~ is ~|Quantum| + |Quantum|~ =
+~3 + 3~ = ~6~
 
-  quantumSum1 :: QuantumSum; quantumSum1 = Left Yes
-  quantumSum2 :: QuantumSum; quantumSum2 = Left No
-  quantumSum3 :: QuantumSum; quantumSum3 = Left Both
-  quantumSum4 :: QuantumSum; quantumSum4 = Right Yes
-  quantumSum5 :: QuantumSum; quantumSum5 = Right No
-  quantumSum6 :: QuantumSum; quantumSum6 = Right Both
-  #+END_SRC
+#+BEGIN_SRC haskell :results none
+type QuantumSum = Either Quantum Quantum
 
-  Cardinality of product (~(,)~) of ~Quantum~ is
-  ~|Quantum| * |Quantum|~ = ~3 * 3~ = ~9~
-  #+BEGIN_SRC haskell :results none
-  type QuantumProduct = (Quantum, Quantum)
+quantumSum1 :: QuantumSum; quantumSum1 = Left Yes
+quantumSum2 :: QuantumSum; quantumSum2 = Left No
+quantumSum3 :: QuantumSum; quantumSum3 = Left Both
+quantumSum4 :: QuantumSum; quantumSum4 = Right Yes
+quantumSum5 :: QuantumSum; quantumSum5 = Right No
+quantumSum6 :: QuantumSum; quantumSum6 = Right Both
+#+END_SRC
 
-  quantumProduct1 :: QuantumProduct; quantumProduct1 = (Yes, Yes)
-  quantumProduct2 :: QuantumProduct; quantumProduct2 = (Yes, No)
-  quantumProduct3 :: QuantumProduct; quantumProduct3 = (Yes, Both)
-  quantumProduct4 :: QuantumProduct; quantumProduct4 = (No, Yes)
-  quantumProduct5 :: QuantumProduct; quantumProduct5 = (No, No)
-  quantumProduct6 :: QuantumProduct; quantumProduct6 = (No, Both)
-  quantumProduct7 :: QuantumProduct; quantumProduct7 = (Both, Yes)
-  quantumProduct8 :: QuantumProduct; quantumProduct8 = (Both, No)
-  quantumProduct9 :: QuantumProduct; quantumProduct9 = (Both, Both)
-  #+END_SRC
+Cardinality of product (~(,)~) of ~Quantum~ is ~|Quantum| * |Quantum|~
+= ~3 * 3~ = ~9~
 
-  Cardinality of function ~Quantum -> Quantum~ is
-  ~|Quantum| ^ |Quantum|~ = ~3 ^ 3~ = ~27~
-  #+BEGIN_SRC haskell :results none
-  type QuantumFunction = Quantum -> Quantum
+#+BEGIN_SRC haskell :results none
+type QuantumProduct = (Quantum, Quantum)
 
-  :{
-  quantumFunction1 :: QuantumFunction
-  quantumFunction1 Yes = Yes
-  quantumFunction1 No = Yes
-  quantumFunction1 Both = Yes
-  :}
+quantumProduct1 :: QuantumProduct; quantumProduct1 = (Yes, Yes)
+quantumProduct2 :: QuantumProduct; quantumProduct2 = (Yes, No)
+quantumProduct3 :: QuantumProduct; quantumProduct3 = (Yes, Both)
+quantumProduct4 :: QuantumProduct; quantumProduct4 = (No, Yes)
+quantumProduct5 :: QuantumProduct; quantumProduct5 = (No, No)
+quantumProduct6 :: QuantumProduct; quantumProduct6 = (No, Both)
+quantumProduct7 :: QuantumProduct; quantumProduct7 = (Both, Yes)
+quantumProduct8 :: QuantumProduct; quantumProduct8 = (Both, No)
+quantumProduct9 :: QuantumProduct; quantumProduct9 = (Both, Both)
+#+END_SRC
 
-  :{
-  quantumFunction2 :: QuantumFunction
-  quantumFunction2 Yes = No
-  quantumFunction2 No = Yes
-  quantumFunction2 Both = Yes
-  :}
+Cardinality of function ~Quantum -> Quantum~ is
+~|Quantum| ^ |Quantum|~ = ~3 ^ 3~ = ~27~
+#+BEGIN_SRC haskell :results none
+type QuantumFunction = Quantum -> Quantum
 
-  :{
-  quantumFunction3 :: QuantumFunction
-  quantumFunction3 Yes = Both
-  quantumFunction3 No = Yes
-  quantumFunction3 Both = Yes
-  :}
+:{
+quantumFunction1 :: QuantumFunction
+quantumFunction1 Yes = Yes
+quantumFunction1 No = Yes
+quantumFunction1 Both = Yes
+:}
 
-  :{
-  quantumFunction4 :: QuantumFunction
-  quantumFunction4 Yes = Yes
-  quantumFunction4 No = No
-  quantumFunction4 Both = Yes
-  :}
+:{
+quantumFunction2 :: QuantumFunction
+quantumFunction2 Yes = No
+quantumFunction2 No = Yes
+quantumFunction2 Both = Yes
+:}
 
-  -- We can continue like that...
-  #+END_SRC
+:{
+quantumFunction3 :: QuantumFunction
+quantumFunction3 Yes = Both
+quantumFunction3 No = Yes
+quantumFunction3 Both = Yes
+:}
+
+:{
+quantumFunction4 :: QuantumFunction
+quantumFunction4 Yes = Yes
+quantumFunction4 No = No
+quantumFunction4 Both = Yes
+:}
+
+-- We can continue like that...
+#+END_SRC
 
 ** Exercise: Exponentiation in what Order?
-   What the cardinality of the following type? ~2^3~. Prove it
-   #+BEGIN_SRC haskell :result none
-   data Quantum = Yes | No | Both deriving (Eq, Show)
-   type convertFunction :: Quantum -> Bool
+Consider the following function
 
-   :{
-   convert1 Yes = True
-   convert1 No = True
-   convert1 Both = True
-   :}
+#+BEGIN_SRC haskell :eval never
+data Quantum = Yes | No | both deriving (Eq, Show)
 
-   :{
-   convert2 Yes = False
-   convert2 No = True
-   convert2 Both = True
-   :}
+:{
+convert :: Quantum -> Bool
+convert = undefined
+:}
+#+END_SRC
 
-   :{
-   convert3 Yes = True
-   convert3 No = False
-   convert3 Both = True
-   :}
+The cardinality should be ~|Bool| ^ |Quantum|~ = ~2^3~ = ~8~. Prove it
 
-   :{
-   convert4 Yes = True
-   convert4 No = True
-   convert4 Both = False
-   :}
+#+BEGIN_SRC haskell :eval never
+:{
+convert1 Yes = True
+convert1 No = True
+convert1 Both = True
+:}
 
-   :{
-   convert5 Yes = False
-   convert5 No = False
-   convert5 Both = True
-   :}
+:{
+convert2 Yes = False
+convert2 No = True
+convert2 Both = True
+:}
 
-   :{
-   convert6 Yes = True
-   convert6 No = False
-   convert6 Both = False
-   :}
+:{
+convert3 Yes = True
+convert3 No = False
+convert3 Both = True
+:}
 
-   :{
-   convert7 Yes = False
-   convert7 No = True
-   convert7 Both = False
-   :}
+:{
+convert4 Yes = True
+convert4 No = True
+convert4 Both = False
+:}
 
-   :{
-   convert8 Yes = False
-   convert8 No = False
-   convert8 Both = False
-   :}
-   #+END_SRC
+:{
+convert5 Yes = False
+convert5 No = False
+convert5 Both = True
+:}
+
+:{
+convert6 Yes = True
+convert6 No = False
+convert6 Both = False
+:}
+
+:{
+convert7 Yes = False
+convert7 No = True
+convert7 Both = False
+:}
+
+:{
+convert8 Yes = False
+convert8 No = False
+convert8 Both = False
+:}
+#+END_SRC
 
 ** Exercise: The Quad
-   Given the type
+Given the type
+#+BEGIN_SRC haskell :results none
+data Quad = One | Two | Three | Four deriving (Eq, Show)
+#+END_SRC
+
+1. Determine how many inhabitants the following type has
    #+BEGIN_SRC haskell :results none
-   data Quad = One | Two | Three | Four deriving (Eq, Show)
+   sumQuad :: Either Quad Quad
+   sumQuad = undefined
    #+END_SRC
+   It's a sum type, so: ~|Quad| + |Quad|~ = ~4 + 4~ = ~8~
 
-   1. Determine how many inhabitants the following type has. It is a
-      sum type so its cardinality is the sum of the cardinalities of
-      the types ~4 + 4 = 8~
-      #+BEGIN_SRC haskell :results none
-      sumQuad :: Either Quad Quad
-      sumQuad = undefined
-      #+END_SRC
+2. Determine how many inhabitants the following type has.
+   #+BEGIN_SRC haskell :results none
+   prodQuad :: (Quad, Quad)
+   #+END_SRC
+   It's a product type, so: ~|Quad| * |Quad|~ = ~4 * 4~ = ~16~
 
-   2. Determine how many inhabitants the following type has. It is a
-      product type so its cardinality is product of the cardinality of
-      the the types ~4 * 4 = 16~
-      #+BEGIN_SRC haskell :results none
-      prodQuad :: (Quad, Quad)
-      #+END_SRC
+3. Determine how many inhabitants the following type has.
+   #+BEGIN_SRC haskell :results none
+   funcQuad :: Quad -> Quad
+   #+END_SRC
+   It's a function type, so: ~|Quad| ^ |Quad|~ = ~4 ^ 4~ = ~256~
 
-   3. Determine how many inhabitants the following type has. It is a
-      function type so its cardinality is ~4 ^ 4 = 256~
-      #+BEGIN_SRC haskell :results none
-      funcQuad :: Quad -> Quad
-      #+END_SRC
+4. Determine how many inhabitants the following type has.
+   #+BEGIN_SRC haskell :results none
+   prod3Bool :: (Bool, Bool, Bool)
+   #+END_SRC
+   It's a product type so: ~|Bool| * |Bool| * |Bool|~ = ~2 * 2 * 2~ =
+   ~8~
 
-   4. Determine how many inhabitants the following type has. It is a
-      product type so ~2 * 2 * 2 = 8~
-      #+BEGIN_SRC haskell :results none
-      prod3Bool :: (Bool, Bool, Bool)
-      #+END_SRC
+5. Determine how many inhabitants the following type has.
+   #+BEGIN_SRC haskell :results none
+   gTwo :: Bool -> Bool -> Bool
+   #+END_SRC
+   It's a function type: so ~|Bool| ^ |Bool| ^ |Bool|~ = ~2 ^ 2 ^ 2~ =
+   ~16~
 
-   5. Determine how many inhabitants the following type has. It is a
-      function type so ~(2 ^ 2) ^ 2 = 16~
-      #+BEGIN_SRC haskell :results none
-      gTwo :: Bool -> Bool -> Bool
-      #+END_SRC
-
-   6. Determine how many inhabitants the following type has. It is a
-      function type so ~(4 ^ 4) ^ 2 = 65536~
-      #+BEGIN_SRC haskell :results none
-      fTwo :: Bool -> Quad -> Quad
-      #+END_SRC
+6. Determine how many inhabitants the following type has.
+   #+BEGIN_SRC haskell :results none
+   fTwo :: Bool -> Quad -> Quad
+   #+END_SRC
+   It's a function type so: ~(|Quad| ^ |Quad|) ^ |Bool|~ = ~(4 ^ 4) ^
+   2~ = ~65536~
 
 * 11.15 Higher-Kinded Types
-  - Kinds are the types of type constructors, primarily encoding the
-    number of arguments they take
-  - The default kind in Haskell is ~*~
-  - Kinds are not types until they are fully applied
-  - Only types have inhabitants at the term level
-  - Higher-Kinded types are the kinds that need to be applied more
-    than once to become types
+- Kinds are the /Types/ of /Type Constructors/, primarily encoding the
+  number of arguments they take.
+- The default /Kind/ in Haskell is ~*~.
+- Kinds are not /Types/ until they are fully applied.
+- Only /Types/ have inhabitants at the term level.
+- /Higher-Kinded Types/ are the /Kinds/ that need to be applied more
+  than once to become /Types/.
 
-  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
-  data Silly a b c d = Silly a b c d deriving Show
+#+BEGIN_SRC haskell
+data Silly a b c d = Silly a b c d deriving Show
 
-  :kind Silly
+:kind Silly
+:kind Silly Int
+:kind Silly Int Int
+:kind Silly Int Int Int
+:kind Silly Int Int Int Int
+:kind Silly Int Int Int Int
+#+END_SRC
 
-  :kind (,,,)
-  :kind (,,,) Int
-  :kind (,,,) Int Int
-  :kind (,,,) Int Int Int
-  :kind (,,,) Int Int Int Int
-  #+END_SRC
-
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  Silly :: * -> * -> * -> * -> *
-  (,,,) :: * -> * -> * -> * -> *
-  (,,,) Int :: * -> * -> * -> *
-  (,,,) Int Int :: * -> * -> *
-  (,,,) Int Int Int :: * -> *
-  (,,,) Int Int Int Int :: *
-  #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Silly :: * -> * -> * -> * -> *
+Silly Int :: * -> * -> * -> *
+Silly Int Int :: * -> * -> *
+Silly Int Int Int :: * -> *
+Silly Int Int Int Int :: *
+Silly Int Int Int Int :: *
+#+END_EXAMPLE
 
 * 11.16 Lists are Polymorphic
-  Lists are polymorphic because they can contain values of any types
+Lists are polymorphic because they can contain values of any types
 
-  #+BEGIN_EXAMPLE
-  data [] a = [] | a : [a]
-  #+END_EXAMPLE
+#+BEGIN_EXAMPLE
+data [] a = [] | a : [a]
+#+END_EXAMPLE
 
-  The type constructor ~[]~ has an argument ~a~ which is not known
-  until the type constructor is fully applied.
+The /Type Constructor/ ~[]~ has an argument ~a~ which is not known
+until the /Type Constructor/ is fully applied.
 
-  #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue ":load"
-  :kind []
-  :kind [] Int
-  :kind [Int]
-  :t []
-  :t [] :: [Int]
-  :t [5 :: Int]
-  #+END_SRC
+#+BEGIN_SRC haskell
+:kind []
+:kind [] Int
+:kind [Int]
+:t []
+:t [] :: [Int]
+:t [5 :: Int]
+#+END_SRC
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  [] :: * -> *
-  [] Int :: *
-  [Int] :: *
-  [] :: [a]
-  [] :: [Int] :: [Int]
-  [5 :: Int] :: [Int]
-  #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[] :: * -> *
+[] Int :: *
+[Int] :: *
+[] :: [a]
+[] :: [Int] :: [Int]
+[5 :: Int] :: [Int]
+#+END_EXAMPLE
 
 * 11.17 Binary Trees
-  Another datatype like lists
+Another /Datatype/ like lists
 
-  #+BEGIN_SRC haskell :results none
-  data BinaryTree a = Leaf | Node (BinaryTree a) a (BinaryTree a) deriving (Eq, Ord, Show)
+#+NAME: binary-tree
+#+BEGIN_SRC haskell :eval never
+data BinaryTree a = Leaf | Node (BinaryTree a) a (BinaryTree a) deriving (Eq, Ord, Show)
+#+END_SRC
 
-  :kind BinaryTree
-  :kind BinaryTree Int
-  :t Leaf
-  :t Node Leaf (4 :: Int) Leaf
-  #+END_SRC
+#+BEGIN_SRC haskell
+<<binary-tree>>
+:kind BinaryTree
+:kind BinaryTree Int
+:t Leaf
+:t Node Leaf (4 :: Int) Leaf
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+BinaryTree :: * -> *
+BinaryTree Int :: *
+Leaf :: BinaryTree a
+Node Leaf (4 :: Int) Leaf :: BinaryTree Int
+#+END_EXAMPLE
 
 ** Exercise: Insert into ~BinaryTree~
+#+NAME: binary-tree-insert
+#+BEGIN_SRC haskell :eval never
+<<binary-tree>>
+:{
+insert :: Ord a => a -> BinaryTree a -> BinaryTree a
+insert x Leaf = Node Leaf x Leaf
+insert x (Node left v right)
+    | x < v = Node (insert x left) v right
+    | x > v = Node left v (insert x right)
+    | x == v = Node left v right
+:}
+#+END_SRC
 
-   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue "0"
-   :{
-   insert :: Ord a => a -> BinaryTree a -> BinaryTree a
-   insert x Leaf = Node Leaf x Leaf
-   insert x (Node left v right)
-       | x < v = Node (insert x left) v right
-       | x > v = Node left v (insert x right)
-       | x == v = Node left v right
-   :}
+#+BEGIN_SRC haskell
+<<binary-tree-insert>>
+insert 5 Leaf
+insert 5 $ insert 4 $ Leaf
+insert 5 $ insert 4 $ insert 6 $ Leaf
+#+END_SRC
 
-   insert 5 Leaf
-   insert 5 $ insert 4 $ Leaf
-   insert 5 $ insert 4 $ insert 6 $ Leaf
-   #+END_SRC
-
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   Node Leaf 5 Leaf
-   Node Leaf 4 (Node Leaf 5 Leaf)
-   Node (Node Leaf 4 (Node Leaf 5 Leaf)) 6 Leaf
-   #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Node Leaf 5 Leaf
+Node Leaf 4 (Node Leaf 5 Leaf)
+Node (Node Leaf 4 (Node Leaf 5 Leaf)) 6 Leaf
+#+END_EXAMPLE
 
 ** Exercise: Write a map function for ~BinaryTree~
+#+BEGIN_SRC haskell
+<<binary-tree-insert>>
+:{
+mapTree :: (a -> b) -> BinaryTree a -> BinaryTree b
+mapTree _ Leaf = Leaf
+mapTree a2b (Node left a right) = Node (mapTree a2b left) (a2b a) (mapTree a2b right)
+:}
 
-   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue "0"
-   :{
-   mapTree :: (a -> b) -> BinaryTree a -> BinaryTree b
-   mapTree _ Leaf = Leaf
-   mapTree a2b (Node left a right) = Node (mapTree a2b left) (a2b a) (mapTree a2b right)
-   :}
+t = insert 5 $ insert 4 $ insert 6 $ Leaf
+t
+mapTree (*2) t
+#+END_SRC
 
-   t = insert 5 $ insert 4 $ insert 6 $ Leaf
-   t
-   mapTree (*2) t
-   #+END_SRC
-
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   Node (Node Leaf 4 (Node Leaf 5 Leaf)) 6 Leaf
-   Node (Node Leaf 8 (Node Leaf 10 Leaf)) 12 Leaf
-   #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Node (Node Leaf 4 (Node Leaf 5 Leaf)) 6 Leaf
+Node (Node Leaf 8 (Node Leaf 10 Leaf)) 12 Leaf
+#+END_EXAMPLE
 
 ** Exercise: Convert ~BinaryTree~ to a List
+#+BEGIN_SRC haskell
+<<binary-tree-insert>>
+:{
+preorder :: BinaryTree a -> [a]
+preorder Leaf = []
+preorder (Node left v right) = [v] ++ (preorder left) ++ (preorder right)
+:}
 
-   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue "0"
-   :{
-   preorder :: BinaryTree a -> [a]
-   preorder Leaf = []
-   preorder (Node left v right) = [v] ++ (preorder left) ++ (preorder right)
-   :}
+:{
+inorder :: BinaryTree a -> [a]
+inorder Leaf = []
+inorder (Node left v right) = (inorder left) ++ [v] ++ (inorder right)
+:}
 
-   :{
-   inorder :: BinaryTree a -> [a]
-   inorder Leaf = []
-   inorder (Node left v right) = (inorder left) ++ [v] ++ (inorder right)
-   :}
+:{
+postorder :: BinaryTree a -> [a]
+postorder Leaf = []
+postorder (Node left v right) = (postorder left) ++ (postorder right) ++ [v]
+:}
 
-   :{
-   postorder :: BinaryTree a -> [a]
-   postorder Leaf = []
-   postorder (Node left v right) = (postorder left) ++ (postorder right) ++ [v]
-   :}
+t = insert 5 $ insert 4 $ insert 6 $ Leaf
+t
+preorder t
+inorder t
+postorder t
+#+END_SRC
 
-   t = insert 5 $ insert 4 $ insert 6 $ Leaf
-   t
-   preorder t
-   inorder t
-   postorder t
-   #+END_SRC
-
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   Node (Node Leaf 4 (Node Leaf 5 Leaf)) 6 Leaf
-   [6,4,5]
-   [4,5,6]
-   [5,4,6]
-   #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Node (Node Leaf 4 (Node Leaf 5 Leaf)) 6 Leaf
+[6,4,5]
+[4,5,6]
+[5,4,6]
+#+END_EXAMPLE
 
 ** Exercise: Write a fold function for ~BinaryTree~
+#+BEGIN_SRC haskell
+<<binary-tree-insert>>
+:{
+foldTree :: (a -> b -> b) -> b -> BinaryTree a -> b
+foldTree _ b Leaf = b
+foldTree f b (Node left a right) = foldTree f (f a (foldTree f b left)) right
+:}
 
-   #+BEGIN_SRC haskell :results output :wrap EXAMPLE :post ghci-clean(content=*this*) :epilogue "0"
-   :{
-   foldTree :: (a -> b -> b) -> b -> BinaryTree a -> b
-   foldTree _ b Leaf = b
-   foldTree f b (Node left a right) = foldTree f (f a (foldTree f b left)) right
-   :}
+t = insert 3 $ insert 4 $ insert 1 $ Leaf
+t
+foldTree (:) [] t
+foldTree (+) 0 t
+#+END_SRC
 
-   t = insert 5 $ insert 4 $ insert 6 $ Leaf
-   t
-   foldTree (:) [] t
-   #+END_SRC
-
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   Node (Node Leaf 4 (Node Leaf 5 Leaf)) 6 Leaf
-   [6,5,4]
-   #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Node Leaf 1 (Node (Node Leaf 3 Leaf) 4 Leaf)
+[4,3,1]
+8
+#+END_EXAMPLE
 
 * Exercises
-
-  #+NAME: ghci-clean
-  #+BEGIN_SRC emacs-lisp :var content="" :results raw
-  (defun report-compiling-module-p (line)
-    (string-match-p "\\[[0-9]+ of [0-9]+\\] Compiling" line))
-
-  (defun report-loaded-module-p (line)
-    (string-match-p "Ok, .+ modules? loaded\\." line))
-
-  (defun report-eoe-p (line)
-    (string-match-p "org-babel-haskell-eoe" line))
-
-  (defun clean-line (line)
-    (->> line remove-prompt unquote))
-
-  (defun remove-prompt (line)
-    (message (concat "remove-prompt>>> " line))
-    (let ((current-prompt (current-prompt line)))
-      (if (string-empty-p current-prompt)
-          line
-        (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
-
-  (defun current-prompt (line)
-    (if (string-match "\\(^[^|>]+\\)[|>]" line)
-        (match-string 1 line)
-      ""))
-
-  (defun unquote (line)
-    (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" line))
-
-  (string-join
-   (seq-map #'clean-line
-            (seq-filter
-             (lambda (line)
-               (and
-                (not (string-empty-p line))
-                (not (report-eoe-p line))
-                (not (report-compiling-module-p line))
-                (not (report-loaded-module-p line))))
-             (split-string content "\n")))
-   "\n")
-  #+END_SRC
-
-  #+NAME: add-current-chapter-directory-in-path
-  #+BEGIN_SRC emacs-lisp :output raw
-   (concat
-    ":set -i"
-    (file-name-as-directory (file-name-directory (buffer-file-name)))
-    (file-name-base (buffer-file-name)))
-  #+END_SRC
-
 ** Multiple Choice
+1. Given the following datatype
+   #+BEGIN_SRC haskell :results none
+   data Weekday
+       = Monday
+       | Tuesday
+       | Wednesday
+       | Thursday
+       | Friday
+   #+END_SRC
+   We can say:
+   a) ~Weekday~ is a type with 5 data constructors
 
-   1. Given the following datatype
-      #+BEGIN_SRC haskell :results none
-      data Weekday
-          = Monday
-          | Tuesday
-          | Wednesday
-          | Thursday
-          | Friday
-      #+END_SRC
-      a) ~Weekday~ is a type with 5 data constructors
+2. What is the type of the following function
+   #+BEGIN_SRC haskell :results none
+   f Friday = "Miller Time"
+   #+END_SRC
+   c) ~f :: Weekday -> String~
 
-   2. What is the type of the following function
-      #+BEGIN_SRC haskell :results none
-      f Friday = "Miller Time"
-      #+END_SRC
-      c) ~f :: Weekday -> String~
+3. Types defined with ~data~ keyword
+   b) Must begin with a capital letter
 
-   3. Types defined with ~data~ keyword
-      b) Must begin with a capital letter
-
-   4. The function ~g xs = xs !! (length xs - 1)~
-      c) Delivers the final element of ~xs~
+4. The function ~g xs = xs !! (length xs - 1)~
+   c) Delivers the final element of ~xs~
 
 ** Ciphers
-   Write a [[Vigenère cipher][Vigenère cipher]]. [[file:./chapter-011/Cipher.hs][Solution]]
+Write a [[Vigenère cipher][Vigenère cipher]]. [[file:./chapter-011/Cipher.hs][Solution]]
 
-   #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   <<add-current-chapter-directory-in-path()>>
-   :load Cipher
+#+BEGIN_SRC haskell
+<<add-current-chapter-directory-in-path()>>
+:load Cipher
 
-   vigenereEncode ['A'..'Z'] "ALLY" "MEET AT DAWN"
-   vigenereEncode ['A'..'Z'] "ALLY" "MEET AT 1234"
+vigenereEncode ['A'..'Z'] "ALLY" "MEET AT DAWN"
+vigenereEncode ['A'..'Z'] "ALLY" "MEET AT 1234"
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+MPPR AE OYWY
+MPPR AE 1234
+#+END_EXAMPLE
+
+** As-Pattern
+Is a way to pattern match on a data constructor but at the same time
+be able to refer to the entire original value
+
+1. Implement the following funciton with the as-pattern
+   #+BEGIN_SRC haskell :eval never
+   isSubsequenceOf :: (Eq a) => [a] -> [a] -> Bool
+   isSubsequenceOf = undefined
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :results output
+   :{
+   isSubsequenceOf :: (Eq a) => [a] -> [a] -> Bool
+   isSubsequenceOf [] _ = True
+   isSubsequenceOf _ [] = False
+   isSubsequenceOf ll@(hl:tl) (hr:tr)
+    | hl == hr = isSubsequenceOf tl tr
+    | otherwise = isSubsequenceOf ll tr
+   :}
+
+   isSubsequenceOf "blah" "blahwoot" == True
+   isSubsequenceOf "blah" "wootblah" == True
+   isSubsequenceOf "blah" "wboloath" == True
+   isSubsequenceOf "blah" "wootbla" == False
+   isSubsequenceOf "blah" "halbwoot" == False
+   isSubsequenceOf "blah" "blawhoot" == True
    #+END_SRC
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
-   MPPR AE OYWY
-   MPPR AE 1234
+   True
+   True
+   True
+   True
+   True
+   True
    #+END_EXAMPLE
 
-** As-Pattern
-   Is a way to pattern match on a data constructor but at the same
-   time be able to refer to the entire original value
-
-   1. Implement the following funciton with the as-pattern
-      #+BEGIN_SRC haskell :eval never
-      isSubsequenceOf :: (Eq a) => [a] -> [a] -> Bool
-      isSubsequenceOf = undefined
-      #+END_SRC
-
-      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      :{
-      isSubsequenceOf :: (Eq a) => [a] -> [a] -> Bool
-      isSubsequenceOf [] _ = True
-      isSubsequenceOf _ [] = False
-      isSubsequenceOf ll@(hl:tl) (hr:tr)
-       | hl == hr = isSubsequenceOf tl tr
-       | otherwise = isSubsequenceOf ll tr
-      :}
-
-      isSubsequenceOf "blah" "blahwoot" == True
-      isSubsequenceOf "blah" "wootblah" == True
-      isSubsequenceOf "blah" "wboloath" == True
-      isSubsequenceOf "blah" "wootbla" == False
-      isSubsequenceOf "blah" "halbwoot" == False
-      isSubsequenceOf "blah" "blawhoot" == True
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      True
-      True
-      True
-      True
-      True
-      True
-      #+END_EXAMPLE
-
-   2. Implement the following function with as-pattern. Split a
-      sentence into words and tuple them with their capitalized
-      version
-      #+BEGIN_SRC haskell :eval never
-      capitalizeWords :: String -> [(String, String)]
-      capitalizeWords = undefinedf
-      #+END_SRC
-
-      #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      import Data.Char (toUpper)
-
-      :{
-      capitalizeWords :: String -> [(String, String)]
-      capitalizeWords s = map (\w@(h:t) -> (w, (toUpper h) : t))  (words s)
-      :}
-
-      capitalizeWords "hello world"
-      capitalizeWords "greetings haskellers"
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      [("hello","Hello"),("world","World")]
-      [("greetings","Greetings"),("haskellers","Haskellers")]
-      #+END_EXAMPLE
-
-** Language Exercises
-
-   1. Write a function that capitalize a word
-
-      #+NAME: capitalize-word
-      #+BEGIN_SRC haskell :eval never
-      import Data.Char (toUpper)
-
-      :{
-      capitalizeWord :: String -> String
-      capitalizeWord "" = ""
-      capitalizeWord (' ':t) = ' ' : (capitalizeWord t)
-      capitalizeWord (h:t) = (toUpper h) : t
-      :}
-      #+END_SRC
-
-      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      <<capitalize-word>>
-      capitalizeWord "Chortle"
-      capitalizeWord "chortle"
-      capitalizeWord " chortle"
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      Chortle
-      Chortle
-       Chortle
-      #+END_EXAMPLE
-
-   2. Write a function that capitalize sentences (reuse ~capitalizeWord~)
-      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      <<capitalize-word>>
-
-      data Split = Whole String | Splitted String String deriving (Eq, Show)
-
-      :{
-      splitOn :: Char -> String -> Split
-      splitOn _ "" = Whole ""
-      splitOn d s =
-          case (dropWhile (/= d) s) of
-            "" -> Whole s
-            rest -> Splitted (takeWhile (/= d) s) (dropWhile (== d) rest)
-      :}
-
-      :{
-      sentences :: Char -> String -> [String]
-      sentences d s =
-          case splitOn d s of
-            Whole l -> [l]
-            Splitted l r -> l : (sentences d r)
-      :}
-
-      :{
-      unsentences :: Char -> [String] -> String
-      unsentences _ (s:ss) = foldl ((++) . (++ ['.'])) s ss
-      :}
-
-      :{
-      capitalizeParagraph :: String -> String
-      capitalizeParagraph s = unsentences '.' $ map capitalizeWord $ sentences '.' s
-      :}
-
-      capitalizeParagraph "blah. woot ha."
-      capitalizeParagraph "blah. woot ha." == "Blah. Woot ha."
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      Blah. Woot ha.
-      True
-      #+END_EXAMPLE
-
-** Phone
-   Remember old-fashioned phone inputs for writing text where you had
-   to press a button multiple times to get different letters to come
-   up? You’re going to write code to translate sequences of button
-   presses into strings and vice versa. Solution [[file:./chapter-011/Phone.hs][here]]
-
-   1. Create a data structure for the phone. [[file:./chapter-011/Phone.hs:18][Solution]]
-
-   2. Convert the following conversations into the keypresses required
-      to express them.
-      #+NAME: conversations
-      #+BEGIN_SRC haskell :eval never
-      conversations :: [String]
-      conversations =
-        ["Wanna play 20 questions",
-          "Ya",
-          "U 1st haha",
-          "Lol ok. Have u ever tasted alcohol",
-          "Lol ya",
-          "Wow ur cool haha. Ur turn",
-          "Ok. Do u think I am pretty Lol",
-          "Lol ya",
-          "Just making sure rofl ur turn"]
-      #+END_SRC
-
-      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      <<add-current-chapter-directory-in-path()>>
-      :load Phone
-
-      :{
-      <<conversations>>
-      :}
-
-      map (toTaps phone) conversations
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      [[('*',1),('9',1),('2',1),('6',2),('6',2),('2',1),('0',1),('7',1),('5',3),('2',1),('9',3),('0',1),('2',4),('0',3),('0',1),('7',2),('8',2),('3',2),('7',4),('8',1),('4',3),('6',3),('6',2),('7',4)],
-      [('*',1),('9',3),('2',1)],
-      [('*',1),('8',2),('0',1),('1',1),('7',4),('8',1),('0',1),('4',2),('2',1),('4',2),('2',1)],
-      [('*',1),('5',3),('6',3),('5',3),('0',1),('6',3),('5',2),('#',1),('0',1),('*',1),('4',2),('2',1),('8',3),('3',2),('0',1),('8',2),('0',1),('3',2),('8',3),('3',2),('7',3),('0',1),('8',1),('2',1),('7',4),('8',1),('3',2),('3',1),('0',1),('2',1),('5',3),('2',3),('6',3),('4',2),('6',3),('5',3)],
-      [('*',1),('5',3),('6',3),('5',3),('0',1),('9',3),('2',1)],
-      [('*',1),('9',1),('6',3),('9',1),('0',1),('8',2),('7',3),('0',1),('2',3),('6',3),('6',3),('5',3),('0',1),('4',2),('2',1),('4',2),('2',1),('#',1),('0',1),('*',1),('8',2),('7',3),('0',1),('8',1),('8',2),('7',3),('6',2)],
-      [('*',1),('6',3),('5',2),('#',1),('0',1),('*',1),('3',1),('6',3),('0',1),('8',2),('0',1),('8',1),('4',2),('4',3),('6',2),('5',2),('0',1),('*',1),('4',3),('0',1),('2',1),('6',1),('0',1),('7',1),('7',3),('3',2),('8',1),('8',1),('9',3),('0',1),('*',1),('5',3),('6',3),('5',3)],
-      [('*',1),('5',3),('6',3),('5',3),('0',1),('9',3),('2',1)],
-      [('*',1),('5',1),('8',2),('7',4),('8',1),('0',1),('6',1),('2',1),('5',2),('4',3),('6',2),('4',1),('0',1),('7',4),('8',2),('7',3),('3',2),('0',1),('7',3),('6',3),('3',3),('5',3),('0',1),('8',2),('7',3),('0',1),('8',1),('8',2),('7',3),('6',2)]]
-      #+END_EXAMPLE
-
-   3. How many times do digits need to be pressed for each message?
-      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      <<add-current-chapter-directory-in-path()>>
-      :load Phone
-
-      :{
-      <<conversations>>
-      :}
-
-      map (fingerTaps . toTaps phone) conversations
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      [49,5,17,71,15,49,58,15,60]
-      #+END_EXAMPLE
-
-   4. What was the most popular letter for each message? What was its
-      cost?
-      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      <<add-current-chapter-directory-in-path()>>
-      :load Phone
-
-      :{
-      <<conversations>>
-      :}
-
-      -- What was the most popular letter for each message?
-      map mostPopularLetter conversations
-
-      -- What was its cost?
-      map (costOfMostPopularLetter phone) conversations
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      nah y  y
-      [6,1,4,6,3,5,7,3,5]
-      #+END_EXAMPLE
-
-   5. What was the most popular letter overall? What was the most
-      popular word?
-      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      <<add-current-chapter-directory-in-path()>>
-      :load Phone
-
-      :{
-      <<conversations>>
-      :}
-
-      -- What was the most popular letter overall?
-      mostPopularLetter (concat conversations)
-
-      -- What was the most popular word?
-      mostPopularWord (concat conversations)
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      ' '
-      ur
-      #+END_EXAMPLE
-
-** Hutton's Razor
-   Given the type
-
-   #+NAME: hutton
+2. Implement the following function with as-pattern. Split a sentence
+   into words and tuple them with their capitalized version
    #+BEGIN_SRC haskell :eval never
-   data Expr
-     = Lit Integer
-     | Add Expr Expr
+   capitalizeWords :: String -> [(String, String)]
+   capitalizeWords = undefinedf
    #+END_SRC
 
-   1. Your first task is to write the “eval” function which reduces an
-      expression to a final sum.
+   #+BEGIN_SRC haskell
+   import Data.Char (toUpper)
 
-      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      :{
-      <<hutton>>
-      :}
+   :{
+   capitalizeWords :: String -> [(String, String)]
+   capitalizeWords s = map (\w@(h:t) -> (w, (toUpper h) : t)) $ words s
+   :}
 
-      :{
-      eval :: Expr -> Integer
-      eval (Lit n) = n
-      eval (Add e1 e2) = (eval e1) + (eval e2)
-      :}
+   capitalizeWords "hello world"
+   capitalizeWords "greetings haskellers"
+   #+END_SRC
 
-      eval (Add (Lit 1) (Lit 9001))
-      eval (Add (Lit 1) (Lit 9001)) == 9002
-      #+END_SRC
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [("hello","Hello"),("world","World")]
+   [("greetings","Greetings"),("haskellers","Haskellers")]
+   #+END_EXAMPLE
 
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      9002
-      True
-      #+END_EXAMPLE
+** Language Exercises
+1. Write a function that capitalize a word
+   #+NAME: capitalize-word
+   #+BEGIN_SRC haskell :eval never
+   import Data.Char (toUpper)
 
-   2. Write a printer for the expressions.
+   :{
+   capitalizeWord :: String -> String
+   capitalizeWord "" = ""
+   capitalizeWord (' ':t) = ' ' : (capitalizeWord t)
+   capitalizeWord (h:t) = (toUpper h) : t
+   :}
+   #+END_SRC
 
-      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      :{
-      <<hutton>>
-      :}
+   #+BEGIN_SRC haskell
+   <<capitalize-word>>
+   capitalizeWord "Chortle"
+   capitalizeWord "chortle"
+   capitalizeWord " chortle"
+   #+END_SRC
 
-      :{
-      printExpr :: Expr -> String
-      printExpr (Lit n) = show n
-      printExpr (Add e1 e2) = concat [(printExpr e1), " + ", (printExpr e2)]
-      :}
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Chortle
+   Chortle
+    Chortle
+   #+END_EXAMPLE
 
-      printExpr (Add (Lit 1) (Lit 9001))
-      printExpr (Add (Lit 1) (Lit 9001)) == "1 + 9001"
+2. Write a function that capitalize sentences (reuse ~capitalizeWord~)
+   #+BEGIN_SRC haskell
+   <<capitalize-word>>
 
-      let a1 = Add (Lit 9001) (Lit 1)
-      let a2 = Add a1 (Lit 20001)
-      let a3 = Add (Lit 1) a2
-      printExpr a3
-      printExpr a3 == "1 + 9001 + 1 + 20001"
-      #+END_SRC
+   data Split = Whole String | Splitted String String deriving (Eq, Show)
 
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      1 + 9001
-      True
-      1 + 9001 + 1 + 20001
-      True
-      #+END_EXAMPLE
+   :{
+   splitOn :: Char -> String -> Split
+   splitOn _ "" = Whole ""
+   splitOn d s =
+       case (dropWhile (/= d) s) of
+         "" -> Whole s
+         rest -> Splitted (takeWhile (/= d) s) (dropWhile (== d) rest)
+   :}
+
+   :{
+   sentences :: Char -> String -> [String]
+   sentences d s =
+       case splitOn d s of
+         Whole l -> [l]
+         Splitted l r -> l : (sentences d r)
+   :}
+
+   :{
+   unsentences :: Char -> [String] -> String
+   unsentences _ (s:ss) = foldl ((++) . (++ ['.'])) s ss
+   :}
+
+   :{
+   capitalizeParagraph :: String -> String
+   capitalizeParagraph s = unsentences '.' $ map capitalizeWord $ sentences '.' s
+   :}
+
+   capitalizeParagraph "blah. woot ha."
+   capitalizeParagraph "blah. woot ha." == "Blah. Woot ha."
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Blah. Woot ha.
+   True
+   #+END_EXAMPLE
+
+** Phone
+Remember old-fashioned phone inputs for writing text where you had to
+press a button multiple times to get different letters to come up?
+You’re going to write code to translate sequences of button presses
+into strings and vice versa. Solution [[file:./chapter-011/Phone.hs][here]]
+
+1. Create a data structure for the phone. [[file:./chapter-011/Phone.hs:18][Solution]]
+
+2. Convert the following conversations into the keypresses required
+   to express them.
+   #+NAME: conversations
+   #+BEGIN_SRC haskell :eval never
+   conversations :: [String]
+   conversations =
+     ["Wanna play 20 questions",
+       "Ya",
+       "U 1st haha",
+       "Lol ok. Have u ever tasted alcohol",
+       "Lol ya",
+       "Wow ur cool haha. Ur turn",
+       "Ok. Do u think I am pretty Lol",
+       "Lol ya",
+       "Just making sure rofl ur turn"]
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load Phone
+
+   :{
+   <<conversations>>
+   :}
+
+   map (toTaps phone) conversations
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [[('*',1),('9',1),('2',1),('6',2),('6',2),('2',1),('0',1),('7',1),('5',3),('2',1),('9',3),('0',1),('2',4),('0',3),('0',1),('7',2),('8',2),('3',2),('7',4),('8',1),('4',3),('6',3),('6',2),('7',4)],[('*',1),('9',3),('2',1)],[('*',1),('8',2),('0',1),('1',1),('7',4),('8',1),('0',1),('4',2),('2',1),('4',2),('2',1)],[('*',1),('5',3),('6',3),('5',3),('0',1),('6',3),('5',2),('#',1),('0',1),('*',1),('4',2),('2',1),('8',3),('3',2),('0',1),('8',2),('0',1),('3',2),('8',3),('3',2),('7',3),('0',1),('8',1),('2',1),('7',4),('8',1),('3',2),('3',1),('0',1),('2',1),('5',3),('2',3),('6',3),('4',2),('6',3),('5',3)],[('*',1),('5',3),('6',3),('5',3),('0',1),('9',3),('2',1)],[('*',1),('9',1),('6',3),('9',1),('0',1),('8',2),('7',3),('0',1),('2',3),('6',3),('6',3),('5',3),('0',1),('4',2),('2',1),('4',2),('2',1),('#',1),('0',1),('*',1),('8',2),('7',3),('0',1),('8',1),('8',2),('7',3),('6',2)],[('*',1),('6',3),('5',2),('#',1),('0',1),('*',1),('3',1),('6',3),('0',1),('8',2),('0',1),('8',1),('4',2),('4',3),('6',2),('5',2),('0',1),('*',1),('4',3),('0',1),('2',1),('6',1),('0',1),('7',1),('7',3),('3',2),('8',1),('8',1),('9',3),('0',1),('*',1),('5',3),('6',3),('5',3)],[('*',1),('5',3),('6',3),('5',3),('0',1),('9',3),('2',1)],[('*',1),('5',1),('8',2),('7',4),('8',1),('0',1),('6',1),('2',1),('5',2),('4',3),('6',2),('4',1),('0',1),('7',4),('8',2),('7',3),('3',2),('0',1),('7',3),('6',3),('3',3),('5',3),('0',1),('8',2),('7',3),('0',1),('8',1),('8',2),('7',3),('6',2)]]
+   #+END_EXAMPLE
+
+3. How many times do digits need to be pressed for each message?
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load Phone
+
+   :{
+   <<conversations>>
+   :}
+
+   map (fingerTaps . toTaps phone) conversations
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [49,5,17,71,15,49,58,15,60]
+   #+END_EXAMPLE
+
+4. What was the most popular letter for each message? What was its
+   cost?
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load Phone
+
+   :{
+   <<conversations>>
+   :}
+
+   -- What was the most popular letter for each message?
+   map mostPopularLetter conversations
+
+   -- What was its cost?
+   map (costOfMostPopularLetter phone) conversations
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   nah y  y
+   [6,1,4,6,3,5,7,3,5]
+   #+END_EXAMPLE
+
+5. What was the most popular letter overall? What was the most
+   popular word?
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load Phone
+
+   :{
+   <<conversations>>
+   :}
+
+   -- What was the most popular letter overall?
+   mostPopularLetter (concat conversations)
+
+   -- What was the most popular word?
+   mostPopularWord (concat conversations)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   ' '
+   ur
+   #+END_EXAMPLE
+
+** Hutton's Razor
+Given the type
+
+#+NAME: hutton
+#+BEGIN_SRC haskell :eval never
+data Expr
+  = Lit Integer
+  | Add Expr Expr
+#+END_SRC
+
+1. Your first task is to write the “eval” function which reduces an
+   expression to a final sum.
+   #+BEGIN_SRC haskell
+   :{
+   <<hutton>>
+   :}
+
+   :{
+   eval :: Expr -> Integer
+   eval (Lit n) = n
+   eval (Add e1 e2) = (eval e1) + (eval e2)
+   :}
+
+   eval (Add (Lit 1) (Lit 9001))
+   eval (Add (Lit 1) (Lit 9001)) == 9002
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   9002
+   True
+   #+END_EXAMPLE
+
+2. Write a printer for the expressions.
+   #+BEGIN_SRC haskell
+   :{
+   <<hutton>>
+   :}
+
+   :{
+   printExpr :: Expr -> String
+   printExpr (Lit n) = show n
+   printExpr (Add e1 e2) = concat [(printExpr e1), " + ", (printExpr e2)]
+   :}
+
+   printExpr (Add (Lit 1) (Lit 9001))
+   printExpr (Add (Lit 1) (Lit 9001)) == "1 + 9001"
+
+   let a1 = Add (Lit 9001) (Lit 1)
+   let a2 = Add a1 (Lit 20001)
+   let a3 = Add (Lit 1) a2
+   printExpr a3
+   printExpr a3 == "1 + 9001 + 1 + 20001"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   1 + 9001
+   True
+   1 + 9001 + 1 + 20001
+   True
+   #+END_EXAMPLE
