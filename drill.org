@@ -1118,7 +1118,6 @@ If the function is ~a -> b~ then the cardinality is ~∥b∥ ^ ∥a∥~
 *** Answer
 When it's fully applied
 
-
 * Chapter 12
 ** What's the definition of ~Maybe~?                                                        :drill:
 :PROPERTIES:
@@ -1132,7 +1131,7 @@ When it's fully applied
 :ID:       da6182bc-cde5-49c7-9512-da6bb86c5798
 :END:
 *** Answer
-To encode the effect of failure
+To encode the effect of failure.
 
 ** What's the definition of ~Either~?                                                       :drill:
 :PROPERTIES:
@@ -1146,8 +1145,8 @@ To encode the effect of failure
 :ID:       1cb9e4fe-b145-4441-a1e2-e39199cc923a
 :END:
 *** Answer
-To encode the effect of failure when we want more informations
-about the error
+To encode the effect of failure when we want more information about
+the error
 
 ** What do you put on the ~Left~ side of ~Either~?                                          :drill:
 :PROPERTIES:
@@ -1169,9 +1168,8 @@ The value
 :END:
 *** Answer
 So that with typeclasses like ~Functor~ that works with a type
-constructor with one type parameter we can give it a partially
-applied ~Either~ with the error part leaving the success part to
-work with.
+constructor with one type parameter we can give it a partially applied
+~Either~ with the error part leaving the success part to work with.
 ** What are the /Kinds/?                                                                    :drill:
 :PROPERTIES:
 :ID:       6d832698-a7b7-47d5-8a95-27752d5ea5d6
@@ -1194,9 +1192,9 @@ With the symbol ~*~
 :PROPERTIES:
 :ID:       e7409301-08f1-4693-8034-ad41c1aa2ad0
 :END:
-*** Aswer
-Have kind ~*~, they include every type that can be user defined
-and they are every type that can be inhabited by /bottom/ (⊥)
+*** Answer
+Have kind ~*~, they include every type that can be user defined and
+they are every type that can be inhabited by /bottom/ (⊥)
 ** What are the /unlifted/ types?                                                           :drill:
 :PROPERTIES:
 :ID:       ac0f8a55-8d29-463e-8fe7-6d09b972bf2f
@@ -1212,6 +1210,21 @@ Have kind ~#~, they are types that cannot be inhabited by /bottom/
 They have kind ~*~ but they are not /lifted/ becase they cannot
 contain /bottom/ only they type they contain can contain /bottom/
 so they are /unlifted/
+** Given the following code                                                                 :drill:
+#+BEGIN_SRC haskell :eval never
+r :: a -> f a
+#+END_SRC
+
+1. What is the kind of ~a~
+2. What is the kind of ~f a~
+3. What is the kind of ~f~
+
+*** Answer
+1. ~*~
+2. Since ~(->)~ has kind ~* -> * -> *~ each of applicable types must
+   have kind ~*~ so ~f a~ must have kind ~*~
+3. Since ~f a~ must have kind ~*~ then ~f~ must have kind ~* -> *~
+
 * Chapter 13
 ** What's the name of ~<-~ in a ~do~ block?                                                 :drill:
 :PROPERTIES:
