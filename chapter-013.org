@@ -1,609 +1,585 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
 #+TITLE: Building Projects
 
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+#+PROPERTY: header-args:haskell+ :epilogue ":load"
+#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
+
 * 13.01 Modules
-  - Haskell programs are organized into module.
-  - Every file name must be the same as the module it contains.
+- Haskell programs are organized into modules.
+- Every file name must be the same as the module it contains.
 
 * 13.02 Making Packages with Stack
-  - A package is a collection of modules and its dependencies.
-  - *Cabal* (Common Architecture to Build Applications and Libraries) is
-    the Haskell package manager.
-  - Cabal exists to describe a single package with a Cabal file that
-    has the ~.cabal~ file extension.
-  - *Stack* is a tool for developing Haskell projects, it's built on
-    top of Cabal and it will help with with large projects with
-    multiple dependencies.
-  - Stack relies on a configuration file called ~stack.yaml~
-  - Stack relies on LTS (Long Time Support) snapshot of packages that
-    are guaranteed to work together, those packages are from [[https://www.stackage.org][Stackage]]
-    instead of from [[https://hackage.haskell.org/][Hackage]] which may have conflicting
-    dependencies. The snapshot can be configured in the ~resolver~
-    field of ~stack.yaml~ file
+- A package is a collection of modules and its dependencies.
+- *Cabal* (Common Architecture to Build Applications and Libraries) is
+  the Haskell package manager.
+- Cabal exists to describe a single package with a Cabal file that
+  has the ~.cabal~ file extension.
+- *Stack* is a tool for developing Haskell projects, it's built on
+  top of Cabal and it will help with with large projects with
+  multiple dependencies.
+- Stack relies on a configuration file called ~stack.yaml~
+- Stack relies on LTS (Long Time Support) snapshot of packages that
+  are guaranteed to work together, those packages are from [[https://www.stackage.org][Stackage]]
+  instead of from [[https://hackage.haskell.org/][Hackage]] which may have conflicting dependencies. The
+  snapshot can be configured in the ~resolver~ field of ~stack.yaml~
+  file
 
 * 13.03 Working with a Basic Project
-  Given a project already configured like [[https://github.com/haskellbook/hello][hello]]
-  - ~$ stack build~ to build the project
-  - ~$ stack setup~ if you don't have alredy setup the GHC verion
-    specified in the project's stack file
-  - ~$ stack ghci~ to load the project into the REPL
-  - ~$ stack exec -- hello~ to run the project's executable ~hello~
+Given a project already configured like [[https://github.com/haskellbook/hello][hello]]
 
-  The executable above is created because in [[file:./chapter-13/hello/hello.cabal][hello.cabal]] there is a
-  /stanza/ (in the sense of /verse/ aka section of the configuration
-  file) like the following
+- ~$ stack build~ to build the project
+- ~$ stack setup~ if you don't have already setup the GHC version
+  specified in the project's stack file
+- ~$ stack ghci~ to load the project into the REPL
+- ~$ stack exec -- hello~ to run the project's executable ~hello~
 
-  #+BEGIN_EXAMPLE
-  executable hello
-          -- [1]
-    hs-source-dirs:      src
-    -- [2]
-    main-is:             Main.hs
-    -- [3]
-    default-language:    Haskell2010
-    -- [4]
-    build-depends:       base >= 4.7 && < 5
-    -- [5]
-  #+END_EXAMPLE
+The executable above is created because in [[file:./chapter-13/hello/hello.cabal][hello.cabal]] there is a
+/stanza/ (in the sense of /verse/ aka section of the configuration
+file) like the following
 
-  1. The name of the executable
-  2. Where to find the source of the modules
-  3. Version of the Haskell standard to expect
-  4. List of dependencies
+#+BEGIN_EXAMPLE
+executable hello
+        -- [1]
+  hs-source-dirs:      src
+  -- [2]
+  main-is:             Main.hs
+  -- [3]
+  default-language:    Haskell2010
+  -- [4]
+  build-depends:       base >= 4.7 && < 5
+  -- [5]
+#+END_EXAMPLE
+
+1. The name of the executable
+2. Where to find the source of the modules
+3. Where to find the main function
+4. Version of the Haskell standard to expect
+5. List of dependencies
 
 * 13.04 Making our Project a Library
-  We need to create a /library/ /stanza/ in the cabal file
+We need to create a /library/ /stanza/ in the cabal file
 
-  #+BEGIN_EXAMPLE
-  library
-    hs-source-dirs:       src
-    exposed-modules:      Hello
-    default-language:     Haskell2010
-    build-depends:        base >= 4.7 && < 5
-  #+END_EXAMPLE
+#+BEGIN_EXAMPLE
+library
+  hs-source-dirs:       src
+  exposed-modules:      Hello
+  default-language:     Haskell2010
+  build-depends:        base >= 4.7 && < 5
+#+END_EXAMPLE
 
-  The only exposed module of our library is ~Hello~ se we need to create
-  one in ~src/Hello.hs~ file
+The only exposed module of our library is ~Hello~ se we need to create
+one in ~src/Hello.hs~ file
 
-  If we had our ~Main~ module in another directory (ex. ~./bin~) using
-  the ~Hello~ module in ~./src~ directory then the project wont
-  compile because in the ~executable~ stanza we must tell Cabal where
-  is the ~Hello~ module, there are two ways
-  - Add ~./src~ to the list of ~hs-source-dirs~ in the ~executable~ stanza
-  - Add ~hello~ to the list of ~build-depends~ in the ~executable~ stanza
+If we had our ~Main~ module in another directory (ex. ~./bin~) using
+the ~Hello~ module in ~./src~ directory then the project wont compile
+because in the ~executable~ stanza we must tell Cabal where is the
+~Hello~ module, there are two ways
+- Add ~./src~ to the list of ~hs-source-dirs~ in the ~executable~ stanza
+- Add ~hello~ to the list of ~build-depends~ in the ~executable~ stanza
 
 * 13.05 Exposing Modules
-  - By default every top level binding are exported from a module and
-    can be imported/used from another module
-  - We can specify an /export list/ when defining a module, ex. ~module
-    XXX (a, b) where~ exporting only ~a~ and ~b~ from the ~XXX~ module
-  - Remember to add ~XXX~ to the list of ~exposed-modules~ in the
-    cabal file
+- By default every top level binding are exported from a module and
+  can be imported/used from another module
+- We can specify an /export list/ when defining a module, ex. ~module
+  XXX (a, b) where~ exporting only ~a~ and ~b~ from the ~XXX~ module
+- Remember to add ~XXX~ to the list of ~exposed-modules~ in the cabal
+  file
 
 * 13.06 More on Importing Modules
-  - In GHCi ~:browse Data.List~ will list all the exposed symbols of
-    the module ~Data.List~
-  - We can specify an /import list/ when importing a module,
-    ex. ~import Data.Bool (bool)~ importing only the symbol ~bool~
-    from ~Data.List~
-  - We can keep a prefix on imported symbols with a /qualified/ import
-    when importing a module, ex. ~import qualified Data.Bool~ will
-    import all the symbols from ~Data.Bool~ preserving the prefix
-    ~Data.Bool~
-  - With qualified imports we can customize the prefix with the ~as~
-    keyword, ex. ~import qualified Data.Bool as B~ will import all the
-    symbols from ~Data.Bool~ but with the prefix ~B~ so that to use
-    the ~bool~ function we should use ~B.bool~
-  - We can mix an /import list/ with a /qualified import/
-    ex. importing only the ~bool~ symbol from ~Data.Bool~ with the
-    prefix ~B~ with: ~import qualified Data.Bool as B (bool)~
-  - In GHCi when you import something the prompt changes we can reset
-    the imports and hence the prompt with ~:m~
+- In GHCi ~:browse Data.List~ will list all the exposed symbols of the
+  module ~Data.List~
+- We can specify an /import list/ when importing a module, ex. ~import
+  Data.Bool (bool)~ importing only the symbol ~bool~ from ~Data.List~
+- We can keep a prefix on imported symbols with a /qualified/ import
+  when importing a module, ex. ~import qualified Data.Bool~ will
+  import all the symbols from ~Data.Bool~ preserving the prefix
+  ~Data.Bool~
+- With qualified imports we can customize the prefix with the ~as~
+  keyword, ex. ~import qualified Data.Bool as B~ will import all the
+  symbols from ~Data.Bool~ but with the prefix ~B~ so that to use the
+  ~bool~ function we should use ~B.bool~
+- We can mix an /import list/ with a /qualified import/ ex. importing
+  only the ~bool~ symbol from ~Data.Bool~ with the prefix ~B~ with:
+  ~import qualified Data.Bool as B (bool)~
+- In GHCi when you import something the prompt changes we can reset
+  the imports and hence the prompt with ~:m~
 
 ** Exercise: Check your Understanding
-   Here is the import list from one of the modules of the ~blacktip~
-   library
+Here is the import list from one of the modules of the ~blacktip~
+library
+
+#+BEGIN_SRC haskell :eval never
+import qualified Control.Concurrent as CC
+import qualified Control.Concurrent.MVar as MV
+import qualified Data.ByteString.Char8 as B
+import qualified Data.Locator as DL
+import qualified Data.Time.Clock.POSIX as PSX
+import qualified Filesystem as FS
+import qualified Filesystem.Path.CurrentOS as FPC
+import qualified Network.Info as NI
+import qualified Safe
+import Control.Exception (mask, try)
+import Control.Monad (forever, when)
+import Data.Bits
+import Data.Bits.Bitwise (fromListBE)
+import Data.List.Split (chunksOf)
+import Database.Blacktip.Types
+import System.IO.Unsafe (unsafePerformIO)
+#+END_SRC
+
+1. What functions are being imported from ~Control.Monad~?
+
+   ~forever~ and ~when~
+
+2. Which imports are both unqualified and imported in their
+   entirety?
+
+   ~Data.Bits~ and ~Database.Blacktip.Types~
+
+3. From the name, what do you suppose importing blacktip’s Types
+   module brings in?
+
+   All the types of the library
+
+4. Now let’s compare a small part of blacktip’s code to the above
+   import list
 
    #+BEGIN_SRC haskell :eval never
-   import qualified Control.Concurrent as CC
-   import qualified Control.Concurrent.MVar as MV
-   import qualified Data.ByteString.Char8 as B
-   import qualified Data.Locator as DL
-   import qualified Data.Time.Clock.POSIX as PSX
-   import qualified Filesystem as FS
-   import qualified Filesystem.Path.CurrentOS as FPC
-   import qualified Network.Info as NI
-   import qualified Safe
-   import Control.Exception (mask, try)
-   import Control.Monad (forever, when)
-   import Data.Bits
-   import Data.Bits.Bitwise (fromListBE)
-   import Data.List.Split (chunksOf)
-   import Database.Blacktip.Types
-   import System.IO.Unsafe (unsafePerformIO)
+   writeTimestamp :: MV.MVar ServerState
+                  -> FPC.FilePath
+                  -> IO CC.ThreadId
+   writeTimestamp s path = do
+      CC.forkIO go
+      where go = forever $ do
+        ss <- MV.readMVar s
+        mask $ \_ -> do
+          FS.writeFile path
+          (B.pack (show (ssTime ss)))
+        -- sleep for 1 second
+        CC.threadDelay 1000000
    #+END_SRC
 
-   1. What functions are being imported from Control.Monad?
-      ~forever~ and ~when~
+   1. The type signature refers to three aliased imports. What modules
+      are named in those aliases?
 
-   2. Which imports are both unqualified and imported in their
-      entirety?
-      ~Data.Bits~ and ~Database.Blacktip.Types~
+      ~Control.Concurrent.MVar~, ~Filesystem.Path.CurrentOS~ and
+      ~Control.Concurrent~
 
-   3. From the name, what do you suppose importing blacktip’s Types
-      module brings in?
-      All the types of the library
+   2. Which import does FS.writeFile refer to?
 
-   4. Now let’s compare a small part of blacktip’s code to the above
-      import list
-      #+BEGIN_SRC haskell :eval never
-      writeTimestamp :: MV.MVar ServerState
-                     -> FPC.FilePath
-                     -> IO CC.ThreadId
-      writeTimestamp s path = do
-         CC.forkIO go
-         where go = forever $ do
-           ss <- MV.readMVar s
-           mask $ \_ -> do
-             FS.writeFile path
-             (B.pack (show (ssTime ss)))
-           -- sleep for 1 second
-           CC.threadDelay 1000000
-      #+END_SRC
+      ~import qualified Filesystem as FS~
 
-      1. The type signature refers to three aliased imports. What
-         modules are named in those aliases?
-         ~Control.Concurrent.MVar~, ~Filesystem.Path.CurrentOS~ and
-         ~Control.Concurrent~
+   3. Which import did forever come from?
 
-      2. Which import does FS.writeFile refer to?
-         ~import qualified Filesystem as FS~
-
-      3. Which import did forever come from?
-         ~import Control.Monad (forever, when)~
+      ~import Control.Monad (forever, when)~
 
 * 13.07 Making our Program Interactive
+We are going to make our program interactive by asking what is our
+name (omitting the non relevant parts)
 
-  We are going to make our program interactive by asking what is our
-  name (omitting the non relevant parts)
-  #+BEGIN_SRC haskell :eval never
-  main :: IO ()
-  main = do
-    --   [1]
-    putStr "Please input your name: "
-    name <- getLine
-    --  [2]
-    sayHello name
-  #+END_SRC
+#+BEGIN_SRC haskell :eval never
+main :: IO ()
+main = do
+  --   [1]
+  putStr "Please input your name: "
+  name <- getLine
+  --  [2]
+  sayHello name
+#+END_SRC
 
-  1. Begins the ~do~ block (syntactic sugar for?)
-  2. The symbol ~<-~ in a do block is called ~bind~, ~getLine~ has
-     type ~IO String~ because to produce a ~String~ it must perform an
-     ~IO~ operation, the ~bind~ "unwraps" the ~String~ from ~IO~ and
-     give you a ~String~
+1. Begins the ~do~ block (syntactic sugar for?)
+2. The symbol ~<-~ in a do block is called ~bind~, ~getLine~ has type
+   ~IO String~ because to produce a ~String~ it must perform an ~IO~
+   operation, the ~bind~ "unwraps" the ~String~ from ~IO~ and give you
+   a ~String~
 
 * 13.08 do Syntax and IO
-  #+BEGIN_SRC haskell :eval never
-  concatFromSTDIN :: IO String
-                     [1]
-  concatFromSTDIN = do
-    s1 <- getLine
-    s2 <- getLine
-    return (s1 ++ s2)
-    [2]
-  #+END_SRC
+#+BEGIN_SRC haskell :eval never
+concatFromSTDIN :: IO String
+                   [1]
+concatFromSTDIN = do
+  s1 <- getLine
+  s2 <- getLine
+  return (s1 ++ s2)
+  [2]
+#+END_SRC
 
-  1. Produces a ~String~ performing some ~IO~
-  2. Returns a value inside a monadic structure, in this case ~IO~, it
-     has type ~Monad m => a -> ma~
+1. Produces a ~String~ performing some ~IO~.
+2. Returns a value inside a monadic structure, in this case ~IO~, it
+   has type ~Monad m => a -> ma~.
 
-  Do notation is only a syntactic sugar, nothing more, it's not meant
-  to encourage an imperative programming style
+Do notation is only a syntactic sugar, nothing more, it's not meant to
+encourage an imperative programming style.
 
 * 13.09 Hangman Game
-  - To create a new project with stack use ~stack new <project-name> simple~
-  - Then you should edit the ~<project-name>.cabal~ file putting
-    personal and project information and the dependencies in
-    ~executable * > build-depends~
+- To create a new project with stack use ~stack new <project-name>
+  simple~
+- Then you should edit the ~<project-name>.cabal~ file putting
+  personal and project information and the dependencies in
+  ~executable * > build-depends~
 
 * 13.10 Step One: importing modules
+Import what you will need
 
-  Import what you will need
-  #+BEGIN_SRC haskell :eval never
-  module Main where
+#+BEGIN_SRC haskell :eval never
+module Main where
 
-  import Control.Monad (forever) -- [1]
-  import Data.Char (toLower) -- [2]
-  import Data.Maybe (isJust) -- [3]
-  import Data.List (intersperse) -- [4]
-  import System.Exit (exitSuccess) -- [5]
-  import System.Random (randomRIO) -- [6]
-  #+END_SRC
+import Control.Monad (forever) -- [1]
+import Data.Char (toLower) -- [2]
+import Data.Maybe (isJust) -- [3]
+import Data.List (intersperse) -- [4]
+import System.Exit (exitSuccess) -- [5]
+import System.Random (randomRIO) -- [6]
+#+END_SRC
 
-  1. To make an infinite loop
-  2. To get a lowercase version of a ~Char~
-  3. To tell if some ~Maybe a~ is ~Just a~ or not
-  4. To intersperse a value in a list, in this case to intersperse ~'
-     '~ between characters of a ~String~
-  5. To exit successfully from our program
-  6. To get a random value
-     #+BEGIN_SRC haskell :results output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-     import System.Random
+1. To make an infinite loop
+2. To get a lowercase version of a ~Char~
+3. To tell if some ~Maybe a~ is ~Just a~ or not
+4. To intersperse a value in a list, in this case to intersperse ~' '~
+   between characters of a ~String~
+5. To exit successfully from our program
+6. To get a random value
+   #+BEGIN_SRC haskell
+   import System.Random
 
-     :t randomRIO
-     randomRIO (5, 10)
-     randomRIO (1, 100)
-     randomRIO (1, 100)
-     #+END_SRC
+   :t randomRIO
+   randomRIO (5, 10)
+   randomRIO (1, 100)
+   randomRIO (1, 100)
+   #+END_SRC
 
-     #+RESULTS:
-     #+BEGIN_EXAMPLE
-     randomRIO :: Random a => (a, a) -> IO a
-     10
-     72
-     28
-     #+END_EXAMPLE
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   randomRIO :: Random a => (a, a) -> IO a
+   7
+   66
+   99
+   #+END_EXAMPLE
 
 * 13.11 Step Two: Generating a List of Words
+Get a list of all words in the dictionary
+#+BEGIN_SRC haskell :eval never
+type WordList = [String]
 
-  Get a list of all words in the dictionary
-  #+BEGIN_SRC haskell :eval never
-  type WordList = [String]
+allWords :: IO WordList
+allWords = do
+  dictionaryContent <- readFile "data/dict.txt"
+  return (lines dictionaryContent)
+#+END_SRC
 
-  allWords :: IO WordList
-  allWords = do
-    dictionaryContent <- readFile "data/dict.txt"
-    return (lines dictionaryContent)
-  #+END_SRC
+Filter the list from words that are too long or too short
+#+BEGIN_SRC haskell :eval never
+gameWords :: IO WordList
+gameWords = do
+  words <- allWords
+  return (filter (\w -> (wordIsTooLong w) or (wordIsTooShort w)) words)
+#+END_SRC
 
-  Filter the list from words that are too long or too short
-  #+BEGIN_SRC haskell :eval never
-  gameWords :: IO WordList
-  gameWords = do
-    words <- allWords
-    return (filter (\w -> (wordIsTooLong w) or (wordIsTooShort w)) words)
-  #+END_SRC
+Choose a random word
+#+BEGIN_SRC haskell :eval never
+randomWord :: WordList -> IO String
+randomWord wl = do
+  randomIndex <- randomRIO (0, (lenght wl) - 1)
+  return $ wl !! randomIndex
+#+END_SRC
 
-  Choose a random word
-  #+BEGIN_SRC haskell :eval never
-  randomWord :: WordList -> IO String
-  randomWord wl = do
-    randomIndex <- randomRIO (0, (lenght wl) - 1)
-    return $ wl !! randomIndex
-  #+END_SRC
-
-  The following function will bind the ~gameWords~ list to the
-  ~randomWord~ function. The operator /bind/ (~>>=~) will let us to
-  sequentially compose actions such that a value generated from the
-  first becomes and argument of the second.
-  #+BEGIN_SRC haskell :eval never
-  randomWord' :: IO String
-  randomWord' = gameWords >>= randomWord
-  #+END_SRC
+The following function will bind the ~gameWords~ list to the
+~randomWord~ function. The operator /bind/ (~>>=~) will let us to
+sequentially compose actions such that a value generated from the
+first becomes and argument of the second.
+#+BEGIN_SRC haskell :eval never
+randomWord' :: IO String
+randomWord' = gameWords >>= randomWord
+#+END_SRC
 
 * 13.12 Step Three: Making a Puzzle
+Start with a type for the puzzle/game state
+#+BEGIN_SRC haskell :eval never
+data Puzzle = Puzzle String [Maybe Char] [Char]
+--                   [1]    [2]          [3]
+#+END_SRC
 
-  Start with a type for the puzzle/game state
-  #+BEGIN_SRC haskell :eval never
-  data Puzzle = Puzzle String [Maybe Char] [Char]
-  --                   [1]    [2]          [3]
-  #+END_SRC
+1. The word the player need to guess
+2. The characters already discovered so far
+3. The characters guessed so far
 
-  1. The word the player need to guess
-  2. The characters already discovered so far
-  3. The characters guessed so far
+How to show the state of the puzzle/game we will provide an instance
+of the ~Show~ type class
+#+BEGIN_SRC haskell :eval never
+instance Show Puzzle where
+  show (Puzzle _ discovered guessed) =
+    (intersperse ' ' $ fmap showDiscovered discovered)
+    ++ " Guessed so far: " ++ guessed
 
-  How to show the state of the puzzle/game we will provide an instance
-  of the ~Show~ typeclass
-  #+BEGIN_SRC haskell :eval never
-  instance Show Puzzle where
-    show (Puzzle _ discovered guessed) =
-      (intersperse ' ' $ fmap showDiscovered discovered)
-      ++ " Guessed so far: " ++ guessed
+showDiscovered :: Maybe Char -> Char
+showDiscovered Nothing = '_'
+showDiscovered (Just c) = c
+#+END_SRC
 
-  showDiscovered :: Maybe Char -> Char
-  showDiscovered Nothing = '_'
-  showDiscovered (Just c) = c
-  #+END_SRC
+We need a function that will create the initial puzzle state given a
+word that should be guessed
+#+BEGIN_SRC haskell :eval never
+createPuzzle :: String -> Puzzle
+createPuzzle s = Puzzle s (hidden s) []
+  where hidden s = map (const Nothing) s
+#+END_SRC
 
-  We need a function that will create the initial puzzle state given a
-  word that should be guessed
-  #+BEGIN_SRC haskell :eval never
-  createPuzzle :: String -> Puzzle
-  createPuzzle s = Puzzle s (hidden s) []
-    where hidden s = map (const Nothing) s
-  #+END_SRC
+A function that tell us if a character is in the word to guess
+#+BEGIN_SRC haskell :eval never
+charInWord :: Puzzle -> Char -> Bool
+charInWord (Puzzle s _ _) c = elem c s
+#+END_SRC
 
-  A function that tell us if a character is in the word to guess
-  #+BEGIN_SRC haskell :eval never
-  charInWord :: Puzzle -> Char -> Bool
-  charInWord (Puzzle s _ _) c = elem c s
-  #+END_SRC
+A function that tell us if a character is already guessed
+#+BEGIN_SRC haskell :eval never
+alreadyGuessed :: Puzzle -> Char -> Bool
+alreadyGuessed (Puzzle _ _ s) c = elem c s
+#+END_SRC
 
-  A function that tell us if a character is already guessed
-  #+BEGIN_SRC haskell :eval never
-  alreadyGuessed :: Puzzle -> Char -> Bool
-  alreadyGuessed (Puzzle _ _ s) c = elem c s
-  #+END_SRC
+A function that will fill the part of the word guessed so far
+#+BEGIN_SRC haskell :eval never
+fillInCharacter :: Puzzle -> Char -> Puzzle
+fillInCharacter (Puzzle wordToGuess discoveredSoFar guessedSoFar) guessed =
+  Puzzle wordToGuess filled (guessed : guessedSoFar)
+  where zipper guessed charInWord charMaybeDiscovered
+          | guessed == charInWord = Just guessed
+          | otherwise = charMaybeDiscovered
+        filled = zipWith (zipper guessed) wordToGuess discoveredSoFar
+#+END_SRC
 
-  A function that will fill the part of the word guessed so far
-  #+BEGIN_SRC haskell :eval never
-  fillInCharacter :: Puzzle -> Char -> Puzzle
-  fillInCharacter (Puzzle wordToGuess discoveredSoFar guessedSoFar) guessed =
-    Puzzle wordToGuess filled (guessed : guessedSoFar)
-    where zipper guessed charInWord charMaybeDiscovered
-            | guessed == charInWord = Just guessed
-            | otherwise = charMaybeDiscovered
-          filled = zipWith (zipper guessed) wordToGuess discoveredSoFar
-  #+END_SRC
+A function that will handle the guessed character
+#+BEGIN_SRC haskell :eval never
+handleGuess :: Puzzle -> Char -> IO Puzzle
+handleGuess puzzle guess = do
+  putStrLn $ "Your guess was: " ++ [guess]
+  case (charInWord puzzle guess, alreadyGuessed puzzle guess) of
+    (_, True) -> do
+      putStrLn "You already guessed that character, pick something else..."
+      return puzzle
+    (True, _) -> do
+      putStrLn "You guessed right!"
+      return (fillInCharacter puzzle guess)
+    (False, _) -> do
+      putStrLn "You guessed wrong! Try again ;-)"
+      return (fillInCharacter puzzle guess)
+#+END_SRC
 
-  A function that will handle the guessed character
-  #+BEGIN_SRC haskell :eval never
-  handleGuess :: Puzzle -> Char -> IO Puzzle
-  handleGuess puzzle guess = do
-    putStrLn $ "Your guess was: " ++ [guess]
-    case (charInWord puzzle guess, alreadyGuessed puzzle guess) of
-      (_, True) -> do
-        putStrLn "You already guessed that character, pick something else..."
-        return puzzle
-      (True, _) -> do
-        putStrLn "You guessed right!"
-        return (fillInCharacter puzzle guess)
-      (False, _) -> do
-        putStrLn "You guessed wrong! Try again ;-)"
-        return (fillInCharacter puzzle guess)
-  #+END_SRC
+A function that will tell us if we lost the game
+#+BEGIN_SRC haskell :eval never
+gameOver :: Puzzle -> IO ()
+gameOver (Puzzle wordToGuess _ guessedSoFar) =
+  if (length guessedSoFar) > 7 then
+    do putStrLn "You Lose!"
+       putStrLn $ "The word was: " ++ wordToGuess
+       exitSuccess
+  else
+    return ()
+#+END_SRC
 
-  A function that will tell us if we lost the game
-  #+BEGIN_SRC haskell :eval never
-  gameOver :: Puzzle -> IO ()
-  gameOver (Puzzle wordToGuess _ guessedSoFar) =
-    if (length guessedSoFar) > 7 then
-      do putStrLn "You Lose!"
-         putStrLn $ "The word was: " ++ wordToGuess
-         exitSuccess
-    else
-      return ()
-  #+END_SRC
+A function that will tell us if we won the game
+#+BEGIN_SRC haskell :eval never
+gameWin :: Puzzle -> IO ()
+gameWin (Puzzle _ discoveredSoFar _) =
+  if all isJust discoveredSoFar then
+    do putStrLn "You win!"
+       exitSuccess
+  else
+    return ()
+#+END_SRC
 
-  A function that will tell us if we won the game
-  #+BEGIN_SRC haskell :eval never
-  gameWin :: Puzzle -> IO ()
-  gameWin (Puzzle _ discoveredSoFar _) =
-    if all isJust discoveredSoFar then
-      do putStrLn "You win!"
-         exitSuccess
-    else
-      return ()
-  #+END_SRC
-
-  Finally a function to run the game
-  #+BEGIN_SRC haskell :eval never
-  runGame :: Puzzle -> IO ()
-  runGame puzzle = forever $ do
-    gameOver puzzle
-    gameWin puzzle
-    putStrLn $ "Puzzle: " ++ (show puzzle)
-    putStr "Guess a letter: "
-    guess <- getLine
-    case guess of
-      [c] ->
-        handleGuess puzzle c >>= runGame
-      _ ->
-        putStrLn "Your guess must be a single character"
-  #+END_SRC
+Finally a function to run the game
+#+BEGIN_SRC haskell :eval never
+runGame :: Puzzle -> IO ()
+runGame puzzle = forever $ do
+  gameOver puzzle
+  gameWin puzzle
+  putStrLn $ "Puzzle: " ++ (show puzzle)
+  putStr "Guess a letter: "
+  guess <- getLine
+  case guess of
+    [c] ->
+      handleGuess puzzle c >>= runGame
+    _ ->
+      putStrLn "Your guess must be a single character"
+#+END_SRC
 
 * Exercises
-
-  #+NAME: ghci-clean
-  #+BEGIN_SRC emacs-lisp :var content="" :results raw
-  (defun report-compiling-module-p (line)
-    (string-match-p "\\[[0-9]+ of [0-9]+\\] Compiling" line))
-
-  (defun report-loaded-module-p (line)
-    (string-match-p "Ok, .+ modules? loaded\\." line))
-
-  (defun report-eoe-p (line)
-    (string-match-p "org-babel-haskell-eoe" line))
-
-  (defun clean-line (line)
-    (->> line remove-prompt unquote))
-
-  (defun remove-prompt (line)
-    (let ((current-prompt (current-prompt line)))
-      (if (string-empty-p current-prompt)
-          line
-        (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
-
-  (defun current-prompt (line)
-    (if (string-match "\\(^[^|>]+\\)[|>]" line)
-        (match-string 1 line)
-      ""))
-
-  (defun unquote (line)
-    (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" line))
-
-  (string-join
-   (seq-map #'clean-line
-            (seq-filter
-             (lambda (line)
-               (and
-                (not (string-empty-p line))
-                (not (report-eoe-p line))
-                (not (report-compiling-module-p line))
-                (not (report-loaded-module-p line))))
-             (split-string content "\n")))
-   "\n")
-  #+END_SRC
-
-  #+NAME: add-current-chapter-directory-in-path
-  #+BEGIN_SRC emacs-lisp :output raw
-  (concat
-   ":set -i"
-   (file-name-as-directory (file-name-directory (buffer-file-name)))
-   (file-name-base (buffer-file-name)))
-  #+END_SRC
-
 ** Hangman Logic
-   Changing the game so that, as with normal hangman, only incorrect
-   guesses count towards the guess limit.
+Changing the game so that, as with normal hangman, only incorrect
+guesses count towards the guess limit.
 
-   #+BEGIN_SRC haskell :eval never
-   gameOver :: Puzzle -> IO ()
-   gameOver (Puzzle wordToGuess _ guessedSoFar) =
-     if (wrongGuesses guessedSoFar wordToGuess) > 7 then
-       do putStrLn "You lose!"
-          putStrLn $ "The word was: " ++ wordToGuess
-          exitSuccess
-     else
-       return ()
-     where notIn s = not . ((flip elem) s)
-           wrongGuesses guessedSoFar wordToGuess =
-             length $ filter (notIn wordToGuess) guessedSoFar
-   #+END_SRC
+#+BEGIN_SRC haskell :eval never
+gameOver :: Puzzle -> IO ()
+gameOver (Puzzle wordToGuess _ guessedSoFar) =
+  if (wrongGuesses guessedSoFar wordToGuess) > 7 then
+    do putStrLn "You lose!"
+       putStrLn $ "The word was: " ++ wordToGuess
+       exitSuccess
+  else
+    return ()
+  where notIn s = not . ((flip elem) s)
+        wrongGuesses guessedSoFar wordToGuess =
+          length $ filter (notIn wordToGuess) guessedSoFar
+#+END_SRC
 
 ** Modifying Code
 
-   1. Open your Ciphers module and modify it so that the Caesar and
-      Vigenère ciphers work with user input.
+1. Open your Ciphers module and modify it so that the Caesar and
+   Vigenère ciphers work with user input.
 
-      #+BEGIN_SRC haskell :eval never
-      main :: IO ()
-      main = do
-        hSetBuffering stdout NoBuffering
-        let alphabet = "abcdefghjkilmnopqrstuvwxyz"
-        putStr "Choose a cipher (Vigenere|Caesar): "
-        cipher <- getLine
-        case cipher of
-          "Vigenere" -> do
-            putStr "Choose a keyword: "
-            keyword <- getLine
-            putStr "Write a message to encode: "
-            message <- getLine
-            putStrLn $ vigenereEncode alphabet keyword message
-          "Caesar" -> do
-            putStr "Choose a number: "
-            maybeShift <- getLine
-            return ()
-            case readMaybe maybeShift :: Maybe Int of
-              (Just shift) -> do
-                putStr "Write a message to encode: "
-                message <- getLine
-                putStrLn $ caesarEncode alphabet shift message
-              Nothing -> do
-                putStrLn $ "`" ++ maybeShift ++ "` is not a number"
-          _ -> do
-            putStrLn $ "`" ++ cipher ++ "` is not a valid cipher"
-      #+END_SRC
+   #+BEGIN_SRC haskell :eval never
+   main :: IO ()
+   main = do
+     hSetBuffering stdout NoBuffering
+     let alphabet = "abcdefghjkilmnopqrstuvwxyz"
+     putStr "Choose a cipher (Vigenere|Caesar): "
+     cipher <- getLine
+     case cipher of
+       "Vigenere" -> do
+         putStr "Choose a keyword: "
+         keyword <- getLine
+         putStr "Write a message to encode: "
+         message <- getLine
+         putStrLn $ vigenereEncode alphabet keyword message
+       "Caesar" -> do
+         putStr "Choose a number: "
+         maybeShift <- getLine
+         return ()
+         case readMaybe maybeShift :: Maybe Int of
+           (Just shift) -> do
+             putStr "Write a message to encode: "
+             message <- getLine
+             putStrLn $ caesarEncode alphabet shift message
+           Nothing -> do
+             putStrLn $ "`" ++ maybeShift ++ "` is not a number"
+       _ -> do
+         putStrLn $ "`" ++ cipher ++ "` is not a valid cipher"
+   #+END_SRC
 
-   2. Here is a very simple, short block of code. Notice it has a
-      forever that will make it keep running, over and over
-      again. Load it into your REPL and test it out. Then refer back
-      to the chapter and modify it to exit successfully after a False
-      result.
+2. Here is a very simple, short block of code. Notice it has a forever
+   that will make it keep running, over and over again. Load it into
+   your REPL and test it out. Then refer back to the chapter and
+   modify it to exit successfully after a False result.
 
-      #+BEGIN_SRC haskell :eval never
-      import Control.Monad
+   #+BEGIN_SRC haskell :eval never
+   import Control.Monad
 
-      palindrome :: IO ()
-      palindrome = forever $ do
-        line1 <- getLine
-        case (line1 == reverse line1) of
-        True ->
-          putStrLn "It's a palindrome!"
-        False ->
-          putStrLn "Nope!"
-      #+END_SRC
+   palindrome :: IO ()
+   palindrome = forever $ do
+     line1 <- getLine
+     case (line1 == reverse line1) of
+     True ->
+       putStrLn "It's a palindrome!"
+     False ->
+       putStrLn "Nope!"
+   #+END_SRC
 
-      #+BEGIN_SRC haskell
-      import Control.Monad
-      import System.Exit (exitSuccess)
+   #+BEGIN_SRC haskell
+   import Control.Monad
+   import System.Exit (exitSuccess)
 
-      palindrome :: IO ()
-      palindrome = forever $ do
-        line1 <- getLine
-        case (line1 == reverse line1) of
-        True ->
-          putStrLn "It's a palindrome!"
-        False -> do
-          putStrLn "Nope!"
-          exitSuccess
-      #+END_SRC
+   palindrome :: IO ()
+   palindrome = forever $ do
+     line1 <- getLine
+     case (line1 == reverse line1) of
+     True ->
+       putStrLn "It's a palindrome!"
+     False -> do
+       putStrLn "Nope!"
+       exitSuccess
+   #+END_SRC
 
-   3. Make ~palindrome~ to work on sentences like "Madam I’m Adam,"
+3. Make ~palindrome~ to work on sentences like "Madam I’m Adam,"
 
-      The solution is [[./chapter-013/Palindrome.hs][here]]
-      #+BEGIN_SRC haskell :results output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      <<add-current-chapter-directory-in-path()>>
-      :load Palindrome
+   The solution is [[./chapter-013/Palindrome.hs][here]]
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load Palindrome
 
-      isPalindrome "Madam I'm Adam,"
-      isPalindrome "Not a palindrome for sure"
-      #+END_SRC
+   isPalindrome "Madam I'm Adam,"
+   isPalindrome "Not a palindrome for sure"
+   #+END_SRC
 
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      True
-      False
-      #+END_EXAMPLE
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   False
+   #+END_EXAMPLE
 
-   4. Given the following code
+4. Given the following code
+   #+NAME: person
+   #+BEGIN_SRC haskell :eval never
+   type Name = String
+   type Age = Integer
 
-      #+BEGIN_SRC haskell :eval never
-      type Name = String
-      type Age = Integer
+   data Person = Person Name Age deriving Show
 
-      data Person = Person Name Age deriving Show
-      data PersonInvalid = NameEmpty
-                         | AgeTooLow
-                         | PersonInvalidUnknown String
-                         deriving (Eq, Show)
+   :{
+   data PersonInvalid = NameEmpty
+                      | AgeTooLow
+                      | PersonInvalidUnknown String
+                      deriving (Eq, Show)
+   :}
 
-      mkPerson :: Name -> Age -> Either PersonInvalid Person
-      mkPerson name age
-        | name /= "" && age > 0 = Right $ Person name age
-        | name == "" = Left NameEmpty
-        | not (age > 0) = Left AgeTooLow
-        | otherwise =
-            Left $ PersonInvalidUnknown $ "Name was: " ++ show name ++ " Age was: " ++ show age
-      #+END_SRC
+   :{
+   mkPerson :: Name -> Age -> Either PersonInvalid Person
+   mkPerson name age
+     | name /= "" && age > 0 = Right $ Person name age
+     | name == "" = Left NameEmpty
+     | not (age > 0) = Left AgeTooLow
+     | otherwise =
+         Left $ PersonInvalidUnknown $ "Name was: " ++ show name ++ " Age was: " ++ show age
+   :}
+   #+END_SRC
 
-      Your job is to write the following function without modifying
-      the code above.
-      #+BEGIN_SRC haskell :eval never
-      gimmePerson :: IO ()
-      gimmePerson = undefined
-      #+END_SRC
+   Your job is to write the following function without modifying
+   the code above.
+   #+BEGIN_SRC haskell :eval never
+   gimmePerson :: IO ()
+   gimmePerson = undefined
+   #+END_SRC
 
-      - It should prompt the user for a name and age input.
-      - It should attempt to construct a Person value using the name
-        and age the user entered.
-      - If it constructed a successful person, it should print "Yay!
-        Successfully got a person: " followed by the Person value.
-      - If it got an error value, report that an error occurred and
-        print the error.
+   - It should prompt the user for a name and age input.
+   - It should attempt to construct a Person value using the name and
+     age the user entered.
+   - If it constructed a successful person, it should print "Yay!
+     Successfully got a person: " followed by the Person value.
+   - If it got an error value, report that an error occurred and print
+     the error.
 
-      #+BEGIN_SRC haskell :eval never
-      import Text.Read (readMaybe)
-      import System.IO (hSetBuffering, BufferMode (NoBuffering), stdout)
+   (Load the following code with ~C-c C-c~ in the REPL and then in the
+   REPL call ~gimmePerson~)
 
-      gimmePerson :: IO ()
-      gimmePerson = do
-        hSetBuffering stdout NoBuffering
-        putStr "Person name: "
-        name <- getLine
-        putStr "Person age: "
-        maybeAge <- getLine
-        case readMaybe maybeAge :: Maybe Integer of
-          Nothing ->
-            putStrLn $ "error: `" ++ maybeAge ++ "` is not a number"
-          (Just age) ->
-            case mkPerson name age of
-              (Left NameEmpty) ->
-                putStrLn "error: the person name cannot be empty"
-              (Left AgeTooLow) ->
-                putStrLn "error: the person age cannot be too low"
-              (Left (PersonInvalidUnknown reason)) ->
-                putStrLn $ "error: " ++ reason
-              (Right person) ->
-                putStrLn $ "Yay! Successfully fot a person: " ++ show person
-      #+END_SRC
+   #+BEGIN_SRC haskell :results none
+   import Text.Read (readMaybe)
+   import System.IO (hSetBuffering, BufferMode (NoBuffering), stdout)
+
+   <<person>>
+
+   :{
+   gimmePerson :: IO ()
+   gimmePerson = do
+     hSetBuffering stdout NoBuffering
+     putStr "Person name: "
+     name <- getLine
+     putStr "Person age: "
+     maybeAge <- getLine
+     case readMaybe maybeAge :: Maybe Integer of
+       Nothing ->
+         putStrLn $ "error: `" ++ maybeAge ++ "` is not a number"
+       (Just age) ->
+         case mkPerson name age of
+           (Left NameEmpty) ->
+             putStrLn "error: the person name cannot be empty"
+           (Left AgeTooLow) ->
+             putStrLn "error: the person age cannot be too low"
+           (Left (PersonInvalidUnknown reason)) ->
+             putStrLn $ "error: " ++ reason
+           (Right person) ->
+             putStrLn $ "Yay! Successfully got a person: " ++ (show person)
+   :}
+   #+END_SRC

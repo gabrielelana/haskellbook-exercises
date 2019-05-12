@@ -1257,6 +1257,86 @@ The name is /bind/.
 :END:
 It will sequentially compose two actions so that a value generated
 from the first will become an argument of the second
+** What's a /Module/?                                                                       :drill:
+*** Answer
+It's a language construct that defines a namespace with a name that
+must be the same as the file that contains it. Modules contain the
+datatypes, type synonyms, type classes, type class instances and
+values.
+** What's a /Package/?                                                                      :drill:
+*** Answer
+A /Package/ it's a collection of modules and its dependencies.
+** What's Cabal and what it stands for?                                                     :drill:
+*** Answer
+It's a package manager and it stands for "Common Architecture for
+Building Applications and Libraries"
+** What's Stack?                                                                            :drill:
+*** Answer
+Is a tool for developing Haskell projects based on Cabal and relies on
+LTS (Long Term Support) snapshot of packages that are guaranteed to
+work together from Stackage.
+** What's the command to build a project with ~stack~?                                      :drill:
+*** Answer
+~stack build~
+** What's the command to start a REPL in a project with ~stack~?                            :drill:
+*** Answer
+~stack ghci~
+** What's a /stanza/ in a Cabal file?                                                       :drill:
+*** Answer
+A section of the configuration, like the following
+
+#+BEGIN_EXAMPLE
+executable hello
+  hs-source-dirs:   src
+  main-is:          Main.hs
+  default-language: Haskell2010
+  build-depends:    base >= 4.7 && < 5
+#+END_EXAMPLE
+** In a Module what gets exported by default?                                               :drill:
+*** Answer
+Every top level bindings.
+** How can you export only ~bar~ and ~baz~ from a module ~Foo~?                             :drill:
+*** Answer
+#+BEGIN_SRC haskell :eval never
+module Foo (bar, baz) where
+
+bar = undefined
+
+baz = undefined
+#+END_SRC
+** What's called the optional list of symbols after a module definition?                    :drill:
+*** Answer
+It's the /export list/.
+
+#+BEGIN_SRC haskell
+module Foo (bar, baz) where
+
+bar = undefined
+
+baz = undefined
+#+END_SRC
+** In GHCI how do you get a list of the exposed symbols for a module ~Foo~?                 :drill:
+*** Answer
+~:browse Foo~
+** How can you import only ~bar~ and ~baz~ from a module ~Foo~?                             :drill:
+*** Answer
+~import Foo (bar, baz)~
+** What's called the optional list of symbols after a module import?                        :drill:
+*** Answer
+It's called /import list/
+** What's a /qualified import/ of symbols from a module? What's the effect?                 :drill:
+*** Answer
+~import qualified Foo~
+
+Will import all the symbols in ~Foo~ module preserving the prefix
+~Foo~. So if ~Foo~ exports a symbol ~bar~ then to refer to it you need
+to use ~Foo.bar~
+** How can you customize the prefix for module qualified import?                            :drill:
+*** Answer
+~import qualified Foo as F~
+** How can you import only ~bar~ from ~Foo~ so that ~F.bar~ will work?                      :drill:
+*** Answer
+~import qualified Foo as F (bar)~
 * Chapter 15
 ** What's an /algebra/?                                                                     :drill:
 :PROPERTIES:
