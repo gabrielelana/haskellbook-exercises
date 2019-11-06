@@ -2,6 +2,90 @@
 
 #+TITLE: HaskellBook Flash Cards
 
+* Chapter 01
+** What is a calculus?                                                                      :drill:
+*** Answer
+Is a method of calculation and reasoning
+** What is functional programming?                                                          :drill:
+*** Answer
+Functional programming is a computer programming paradigm that relies
+on functions modeled on mathematical functions.
+** Sentence                                                                                 :drill:
+Programs are <[combination]> of <[expressions]>
+** Sentence                                                                                 :drill:
+Functions are expressions that are <[applied]> to an argument and once
+<[applied]> they can be <[reduced]>
+** What brings purity in a programming language?                                            :drill:
+*** Answer
+Higher degree of abstraction and composability.
+** Sentence                                                                                 :drill:
+A /lambda term/ can be an <[/expression/]> a <[/variable/]> or an
+<[/abstraction/]>. An <[/expression/]> can be both or a combination of
+them.
+** What is an abstraction in lambda calculus?                                               :drill:
+*** Answer
+Is a function, it has an /head/ and a /body/. The /head/ is a lambda
+sign followed by a variable. The /body/ is a lambda /expression/.
+** Why functions are called abstractions?                                                   :drill:
+*** Answer
+It's called abstraction because it's a generalization from a concrete
+instance of a problem by introducing names. When we apply the
+abstraction to an argument we replace names with values making it
+concrete again
+** What is an /Alpha Equivalence/?                                                          :drill:
+*** Answer
+Names have no meaning so ~λx.x~ and ~λy.y~ are the same function.
+** What is a /Beta Reduction/?                                                              :drill:
+*** Answer
+When we apply a function we perform a /Beta Reduction/: we substitute
+the input expression for all instances of the variable in the body of
+the abstraction and eliminate the head of the abstraction.
+** What is a /Free Variable/?                                                               :drill:
+*** Answer
+Is a variable that is not bound in the head of the abstraction
+(function). In ~λx.xy~ then ~x~ is a /bound variable/ and ~y~ is a
+/free variable/. The /alpha equivalence/ doesn't apply to /free
+variables/.
+** Sentence                                                                                 :drill:
+Each lambda can only bind one <[parameter]> and can only bind one
+<[argument]>. Functions with multiple arguments have <[nested heads]>.
+** What is called /currying/?                                                               :drill:
+*** Answer
+The fact that each lambda can bind only one parameter and apply only
+one argument is called /currying/ named after the mathematician
+Haskell Curry.
+** The following lambda term reduces to?                                                    :drill:
+~(λxyz.xz(yz))(λmn.m)(λp.p)~
+*** Answer
+~λz.z~
+** When a term is in /Beta Normal Form/?                                                    :drill:
+*** Answer
+When we cannot beta reduce it any further, aka we cannot apply lambdas
+to arguments, aka the expression is fully evaluated, aka the program
+is fully executed.
+** What's a combinator?                                                                     :drill:
+*** Answer
+It's a lambda term with no free variables.
+** What's the purpose of a combinator                                                       :drill:
+*** Answer
+To combine the arguments that are given. They can only combine the
+arguments they cannot introduce new values (no /free variables/)
+** When we say that a term diverge?                                                         :drill:
+*** Answer
+When the beta reduction process never ends, like for ~(λx.xx)(λx.xx)~
+** What's the meaning of Haskell programs?                                                  :drill:
+*** Answer
+Is to evaluate expressions rather than executing instructions.
+** The following lambda term will reduce to...                                              :drill:
+~(λxyz.xz(yz))(λx.z)(λx.a)~
+*** Answer
+~(λz.ka)~ where ~k~ is the ~z~ free variable in ~(λx.z)~ renamed to
+~k~ because ~z~ is bound in ~(λxyz.xz(yz))~ so they are not the same
+variable therefore ~z~ must be renamed in something else
+** What's the /Normal Order/ of evaluation in lamdba calculus?                              :drill:
+*** Answer
+Means evaluating the leftmost and outermost lambda first, evaluating
+terms nested within after you've run out of arguments to apply.
 * Chapter 04
 ** What are types?                                                                          :drill:
 :PROPERTIES:

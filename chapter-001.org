@@ -1,0 +1,302 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
+#+TITLE: All You Need is Lambda
+
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+#+PROPERTY: header-args:haskell+ :epilogue ":load"
+#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
+
+* 1.01 All You Need is Lambda.
+Lambda calculus devised by Alonzo Church in 1930. A calculus is a
+method of calculation or reasoning. Haskell is a lambda calculus (bold
+statement).
+
+* 1.02 What is Functional Programming
+Functional programming is a computer programming paradigm that relies
+on functions modeled on mathematical functions.
+
+Programs are combination of /expressions/ (values, variables and
+functions)
+
+Functions are expressions that are /applied/ to an argument and once
+applied they can be /reduced/ (or /evaluated/).
+
+Functions in Haskell are /first-class/ aka they can be used as values
+or passed as arguments.
+
+Haskell is a /pure/ functional language, the word purity is related to
+the notion of /referential transparency/ which means that the same
+function, /applied/ to the same values, will /reduce/ to the same
+value which means that the function application can be replaced with
+that value.
+
+Purity -> high degree of abstraction and composability.
+
+* 1.03 What is a Function?
+A function is a relation between a set of possible inputs and a set of
+possible outputs. When a function is applied to a value then the
+function maps that input value to the output value.
+
+* 1.04 The Structure of Lambda Expressions
+The lambda calculus has three basic components or /lambda terms/:
+/expressions/, /variables/ and /abstractions/
+
+An /expression/ can be a /variable/ and /abstraction/ or a combination
+of those things.
+
+The /variables/ have no meaning or value, they are only names for
+potential inputs to functions.
+
+An /abstraction/ is a function, it has a /head/ (lambda), a /body/ and
+is applied to an /argument/. The /head/ is followed by a /variable
+name/. The /body/ is an /expression/.
+
+#+BEGIN_SRC text
+λx.x
+#+END_SRC
+
+The variable name in the head is the /parameter/ and /binds/ all
+instances of that same variable in the body of the function.
+
+An abstraction has no name, it's an anonymous function.
+
+It's called abstraction because it's a generalization from a concrete
+instance of a problem by introducing names. When we apply the
+abstraction to an argument we replace names with values making it
+concrete again.
+
+Names have no meaning therefore we have /Alpha Equivalence/ which is a
+way of saying the following are the same thing.
+
+#+BEGIN_SRC text
+λx.x
+λy.y
+λz.z
+#+END_SRC
+
+* 1.05 Beta Reduction
+When we apply a function we perform a /Beta Reduction/: we substitute
+the input expression for all instances of the variable in the body of
+the abstraction and eliminate the head of the abstraction.
+
+#+BEGIN_SRC text
+(λx.x)1
+(λ[x:=1].x)
+1
+#+END_SRC
+
+#+BEGIN_SRC text
+((λx.x)(λy.y))z
+(λ[x:=(λy.y)].x)z
+(λy.y)z
+(λ[y:=z].y)
+z
+#+END_SRC
+
+Beta reductions stops when there are no longer unevaluated functions
+applied to arguments.
+
+The purpose of the head is to bind the variables in the body: a bound
+variables must have the same value throughout the expression.
+
+We call /free variables/ all variables that are not bound in the head
+of the function.
+
+The /alpha equivalence/ doesn't apply to /free variables/.
+
+* 1.06 Multiple Arguments
+Each lambda can only bind one parameter and can only accept one
+argument. Function that requires multiple arguments have nested heads.
+
+You will start to apply with external (leftmost) head.
+
+This formulation is called /currying/ named after the mathematician
+Haskell Curry.
+
+The abstraction ~λxy.xy~ is a shorthand for ~λx.(λy.xy)~
+
+#+BEGIN_SRC text
+(λxy.xy) (λz.a) 1
+(λx.(λy.xy)) (λz.a) 1
+(λ[x=(λz.a)].(λy.xy)) 1
+(λy.(λz.a)y) 1
+(λ[y:=1].(λz.a)y)
+(λz.a)1
+(λ[z:=1].a)
+a
+#+END_SRC
+
+#+BEGIN_SRC text
+(λxyz.xz(yz))(λmn.m)(λp.p)
+(λx.λy.λz.xz(yz))(λm.λn.m)(λp.p)
+-- reduce the leftmost outrmost abstraction
+(λ[x:=(λm.λn.m)].λy.λz.xz(yz))(λp.p)
+(λy.λz.(λm.λn.m)z(yz))(λp.p)
+-- reduce the leftmost outrmost abstraction
+(λy[y:=(λp.p)].λz.(λm.λn.m)z(yz))
+λz.(λm.λn.m)z((λp.p)z)
+-- reduce the leftmost outrmost abstraction
+λz.(λ[m:=z].λn.m)((λp.p)z)
+λz.(λn.z)((λp.p)z)
+-- reduce the leftmost outrmost abstraction
+λz.(λ[n:=(λp.p)].z)
+λz.z
+#+END_SRC
+
+** Equivalence Exercises
+Choose an answer that is equivalent to the listed lambda term.
+
+1. ~λxy.xz~ is equivalent to b) ~λmn.mz~
+2. ~λxy.xxy~ is equivalent to c) ~λa.(λb.aab)~
+3. ~λxyz.zx~ is equivalent to b) ~λtos.st~
+
+* 1.07 Evaluation is Simplification
+There are multiple normal forms but when we say normal form we mean
+/Beta Normal Form/
+
+/Beta Normal Form/ is when we cannot beta reduce (aka apply lambdas to
+arguments) the terms any further.
+
+* 1.08 Combinators
+A /combinator/ is a lambda term with no free variables, a combinator
+serve only to /combine/ the arguments they are given. They can only
+combine values, they cannot introduce new values or random data.
+
+* 1.09 Divergence
+A term diverge when the reduction process never ends.
+
+#+BEGIN_SRC text
+(λx.xx)(λx.xx)
+(λ[x:=(λx.xx)].xx)
+(λx.xx)(λx.xx)
+(λ[x:=(λx.xx)].xx)
+(λx.xx)(λx.xx)
+...
+#+END_SRC
+
+* 1.10 Summary
+- Functional programming is based on expressions.
+- Functions have head an body and they can be applied / reduced.
+- Variables may be bound in the function declaration.
+- All functions take one argument and return one result.
+- Functions are mapping of a set of inputs to a set of outputs.
+
+The meaning of Haskell programs is centered around evaluating
+expressions rather than executing instructions.
+
+* 1.11 Exercises
+** Combinators
+Determine if each of the following functions are combinators or not.
+
+1. ~λx.xxx~ yes
+2. ~λxy.zx~ no, ~z~ is a free variable
+3. ~λxyz.xy(zx)~ yes
+4. ~λxyz.xy(zxy)~ yes
+5. ~λxy.xy(zxy)~ no, ~z~ is a free variable
+
+** Normal form or diverge?
+Determine if each of the following expressions can be reduced to a
+normal form or if they diverge.
+
+1. ~λx.xxx~ is in beta normal form
+2. ~(λz.zz)(λy.yy)~ diverge
+3. ~(λx.xxx)z~ can be reduced to ~zzz~
+
+** Beta reduce
+Evaluate each of the following expressions to a normal form
+
+1. ~(λabc.cba)zz(λwv.w)~
+   #+BEGIN_SRC text
+   (λabc.cba)zz(λwv.w)
+   (λa.λb.λc.cba)zz(λw.λv.w)
+   (λ[a=z].λb.λc.cba)z(λw.λv.w)
+   (λb.λc.cbz)z(λw.λv.w)
+   (λ[b:=z].λc.cbz)(λw.λv.w)
+   (λc.czz)(λw.λv.w)
+   (λ[c:=(λw.λv.w)].czz)
+   (λw.λv.w)zz
+   (λ[w:=z].λv.w)z
+   (λv.z)z
+   (λ[v:=z].z)
+   z
+   #+END_SRC
+2. ~(λx.λy.xyy)(λa.a)b~
+   #+BEGIN_SRC text
+   (λx.λy.xyy)(λa.a)b
+   (λ[x:=(λa.a)].λy.xyy)b
+   (λy.(λa.a)yy)b
+   (λ[y:=b].(λa.a)yy)
+   (λa.a)bb
+   (λ[a:=b].a)b
+   bb
+   #+END_SRC
+3. ~(λy.y)(λx.xx)(λz.zq)~
+   #+BEGIN_SRC text
+   (λy.y)(λx.xx)(λz.zq)
+   (λ[y:=(λx.xx)].y)(λz.zq)
+   (λx.xx)(λz.zq)
+   (λ[x:=(λz.zq)].xx)
+   (λz.zq)(λz.zq)
+   (λ[z:=(λz.zq)].zq)
+   (λz.zq)q
+   (λ[z:=q].zq)
+   qq
+   #+END_SRC
+4. ~(λz.z)(λz.zz)(λz.zy)~
+   #+BEGIN_SRC text
+   (λz.z)(λz.zz)(λz.zy)
+   (λ[z:=(λz.zz)].z)(λz.zy)
+   (λz.zz)(λz.zy)
+   (λ[z:=(λz.zy)].zz)
+   (λz.zy)(λz.zy)
+   (λ[z:=(λz.zy)].zy)
+   (λz.zy)y
+   (λ[z:=y].zy)
+   yy
+   #+END_SRC
+5. ~(λx.λy.xyy)(λy.y)y~
+   #+BEGIN_SRC text
+   (λx.λy.xyy)(λy.y)y
+   (λ[x:=(λy.y)].λy.xyy)y
+   (λy.(λy.y)yy)y
+   (λ[y:=y].(λy.y)yy)
+   (λy.y)yy
+   (λ[y:=y].y)y
+   yy
+   #+END_SRC
+6. ~(λa.aa)(λb.ba)c~
+   #+BEGIN_SRC text
+   (λa.aa)(λb.ba)c
+   (λ[a:=(λb.ba)].aa)c
+   (λb.ba)(λb.ba)c
+   (λ[b:=(λb.ba)].ba)c
+   (λb.ba)ac
+   (λ[b:=a].ba)c
+   aac
+   #+END_SRC
+7. ~(λxyz.xz(yz))(λx.z)(λx.a)~
+   #+BEGIN_SRC text
+   (λxyz.xz(yz))(λx.z)(λx.a)
+   (λx.λy.λz.xz(yz))(λx.z)(λx.a)
+   -- (λx.z) becomes (λx.k) because
+   -- z is free in (λx.z) whereas
+   -- z is bound in (λx.λy.λz.xz(yz))
+   -- therefore they are not the same z
+   (λ[x:=(λx.k)].λy.λz.xz(yz))(λx.a)
+   (λy.λz.(λx.k)z(yz))(λx.a)
+   (λ[y:=(λx.a)].λz.(λx.k)z(yz))
+   (λz.(λx.k)z((λx.a)z))
+   (λz.(λ[x:=z].k)((λx.a)z))
+   (λz.k(λx.a)z)
+   (λz.k(λ[x:=z].a))
+   (λz.ka)
+   #+END_SRC
+
+* 1.13 Definitions
+1. The /lambda/ symbol
+2. The lambda /abstraction/
+3. The /application/ process
+4. The /lambda calculus/
+5. The /normal order/ of evaluation
