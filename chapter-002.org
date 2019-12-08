@@ -1,0 +1,731 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
+#+TITLE: Hello, Haskell!
+
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+#+PROPERTY: header-args:haskell+ :epilogue ":load"
+#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
+
+* 2.01 Hello, Haskell!
+You will need a working Haskell environment to continue... imagine
+that :-D
+
+* 2.02 Interacting with Haskell Code
+Two primary way to work with Haskell
+- Write the code in an editor, compile with GHC and then run it
+- Write the code in the GHCi REPL and see it evaluated immediately
+
+In this set of notes we will use org-babel to interact with Haskell
+
+#+BEGIN_SRC haskell
+2 + 2
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+4
+#+END_EXAMPLE
+
+Useful commands in GHCi
+
+#+BEGIN_SRC haskell
+-- :type will ask for a term type
+:type "Foo"
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+"Foo" :: [Char]
+#+END_EXAMPLE
+
+#+BEGIN_SRC haskell
+-- :info will ask for a type informations
+:info String
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+type String = [Char] 	-- Defined in ‘GHC.Base’
+#+END_EXAMPLE
+
+#+BEGIN_SRC haskell :eval never
+-- :quit will quit the session
+#+END_SRC
+
+#+BEGIN_SRC haskell :eval never :tangle chapter-002/Hello.hs :epilogue ""
+module Hello where
+
+sayHello :: String -> IO ()
+sayHello name = putStrLn ("Hello, " ++ name ++ "!")
+#+END_SRC
+
+#+BEGIN_SRC haskell
+-- :load FILE will compile and load FILE into the current session
+<<add-current-chapter-directory-in-path()>>
+:load Hello
+sayHello "Gabriele"
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Hello, Gabriele!
+#+END_EXAMPLE
+
+* 2.03 Understanding Expressions
+Everything in Haskell is an expression or a declaration. /Expressions/
+evaluate to a result. /Declarations/ are top level bindings which
+allows us to name expressions.
+
+We say that an expression is in /Normal Form/ when there are no more
+evaluation steps that can be take AKA when it is in an irreducible
+form.
+
+* 2.04 Functions
+Functions are a specific type of expression, they map a set of inputs
+to a set of outputs. As in lambda calculus, all functions in Haskell
+take one argument and return one result (/Currying/).
+
+Function declarations
+
+#+BEGIN_SRC haskell :eval never
+triple x    =  x * 3
+-- [1] [2] [3] [4]
+#+END_SRC
+
+1. The /name/ of the function
+2. The /formal parameter/ of the function (like the head of the
+   lambda)
+3. The ~=~ will separate the /definition/ from the /implementation/
+4. The /body/ or the /implementation/ of the function
+
+* 2.05 Evaluation
+When we talk about evaluating an expression we're talking about
+reducing the terms until the expression reaches its simplest form, we
+say that it's /irreducible/ and we call this a value.
+
+Haskell uses /lazy evaluation/ strategy which defers evaluation of
+terms until they're forced by other terms referring to them.
+
+In a pure functional language like Haskell we can replace applications
+of functions with their definition or their evaluation get the same
+result.
+
+** Exercises: Comprehension Check
+
+1. Given the following lines of code, write the same declarations in
+   your REPL and use them.
+
+   #+BEGIN_SRC haskell :eval never
+   half x = x / 2
+
+   square x = x * x
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   half x = x / 2
+
+   half 10
+   half 5
+
+   square x = x * x
+
+   square 10
+   square 5
+
+   half (square 10)
+   square (half 10)
+   square (half (half 10))
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   5.0
+   2.5
+   100
+   25
+   50.0
+   25.0
+   6.25
+   #+END_EXAMPLE
+
+2. Write one function that has one parameter and works for all the
+   following expressions
+
+   #+BEGIN_SRC haskell :eval never
+   3.14 * (5 * 5)
+   3.14 * (10 * 10)
+   3.14 * (2 * 2)
+   3.14 * (4 * 4)
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   area r = 3.14 * (r * r)
+
+   area 5
+   area 10
+   area 2
+   area 4
+
+   area 5 == (3.14 * (5 * 5))
+   area 10 == (3.14 * (10 * 10))
+   area 2 == (3.14 * (2 * 2))
+   area 4 == (3.14 * (4 * 4))
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   78.5
+   314.0
+   12.56
+   50.24
+   True
+   True
+   True
+   True
+   #+END_EXAMPLE
+
+3. There is a value in Prelude called ~pi~ Rewrite your function to
+   use ~pi~ instead of ~3.14~
+
+   #+BEGIN_SRC haskell
+   area r = pi * (r * r)
+
+   area 5
+   area 10
+   area 2
+   area 4
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   78.53981633974483
+   314.1592653589793
+   12.566370614359172
+   50.26548245743669
+   #+END_EXAMPLE
+
+* 2.06 Infix Operators
+Functions in Haskell by default use prefix syntax but not all
+functions are prefix. Operators are functions which can be used in
+infix style. All operators are functions, not all functions are
+operators.
+
+#+BEGIN_SRC haskell
+:t (+)
+:i (+)
+:t (+) 10
+(+) 10 2 == 10 + 2
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+(+) :: Num a => a -> a -> a
+class Num a where
+  (+) :: a -> a -> a
+  ...
+  	-- Defined in ‘GHC.Num’
+infixl 6 +
+(+) 10 :: Num a => a -> a
+True
+#+END_EXAMPLE
+
+You can use functions with a infix style by using back quotes ~`~
+
+#+BEGIN_SRC haskell
+area x y = x * y
+
+area 10 2
+area 10 2 == 10 `area` 2
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+20
+True
+#+END_EXAMPLE
+
+Operators have associativity and precedence
+
+#+BEGIN_SRC haskell
+:i (*)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+class Num a where
+  ...
+  (*) :: a -> a -> a
+  ...
+  	-- Defined in ‘GHC.Num’
+infixl 7 *
+#+END_EXAMPLE
+
+Where
+- ~infixl~, the ~infix~ part, means that ~*~ is an infix operator
+- ~infixl~, the ~l~ part, means that ~*~ is left associative
+- ~7~ is the precedence, where higher is applied first
+
+** Exercises: Parentheses and Association
+Check if the parentheses changes the result of the expression
+
+1. ~8 + 7 * 9~ Vs ~(8 + 7) * 9~
+
+   Yes, ~(*)~ has higher precedence than ~(+)~ so the order of
+   evaluation would have been ~8 + (7 * 9)~
+
+   #+BEGIN_SRC haskell
+   8 + 7 * 9
+   :i (+)
+   :i (*)
+   8 + 7 * 9 == (8 + 7) * 9
+   8 + 7 * 9 == 8 + (7 * 9)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   71
+   class Num a where
+     (+) :: a -> a -> a
+     ...
+           -- Defined in ‘GHC.Num’
+   infixl 6 +
+   class Num a where
+     ...
+     (*) :: a -> a -> a
+     ...
+           -- Defined in ‘GHC.Num’
+   infixl 7 *
+   False
+   True
+   #+END_EXAMPLE
+
+2. ~perimeter x y = (x * 2) + (y * 2)~ Vs ~perimeter x y = x * 2 + y * 2~
+
+   No
+
+   #+BEGIN_SRC haskell
+   perimeter x y = (x * 2) + (y * 2)
+   perimeter' x y = x * 2 + y * 2
+
+   perimeter 1 1 == perimeter' 1 1
+   perimeter 12 6 == perimeter' 12 6
+   perimeter 6 12 == perimeter' 6 12
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   True
+   True
+   #+END_EXAMPLE
+
+3. ~f x = x / 2 + 9~ Vs ~f x = x / (2 + 9)~
+
+   Yes, ~(/)~ has higher precedence than ~(+)~
+
+   #+BEGIN_SRC haskell
+   :i (/)
+   :i (+)
+   f x = x / 2 + 9
+   f' x = x / (2 + 9)
+   f'' x = (x / 2) + 9
+
+   f 1 == f' 1
+   f 10 == f' 10
+   f 42 == f' 42
+   f 1 == f'' 1
+   f 10 == f'' 10
+   f 42 == f'' 42
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Fractional a where
+     (/) :: a -> a -> a
+     ...
+           -- Defined in ‘GHC.Real’
+   infixl 7 /
+   class Num a where
+     (+) :: a -> a -> a
+     ...
+           -- Defined in ‘GHC.Num’
+   infixl 6 +
+   False
+   False
+   False
+   True
+   True
+   True
+   #+END_EXAMPLE
+
+* 2.07 Declaring Values
+Order of declarations in a source file doesn't matter. Indentation matters.
+
+** Exercises: Heal the Sick
+Find mistakes and fix them
+
+1. ~area x = 3 .14 * (x * x)~
+
+   Kill the space between ~3~ and ~.14~
+
+   #+BEGIN_SRC haskell :eval never
+   area x = 3.14 * (x * x)
+   #+END_SRC
+
+2. ~double x = b * 2~
+
+   Unknown variable ~b~, rename ~b~ in ~x~
+
+   #+BEGIN_SRC haskell :eval never
+   double x = x * 2
+   #+END_SRC
+
+3. The following is an indentation problem
+
+   #+BEGIN_SRC haskell :eval never
+   x = 7
+     y = 10
+   f = x + y
+   #+END_SRC
+
+   #+BEGIN_SRC haskell :eval never
+   x = 7
+   y = 10
+   f = x + y
+   #+END_SRC
+
+* 2.08 Arithmetic functions in Haskell
+
+#+BEGIN_SRC haskell
+:t (+)
+:t (-)
+:t (*)
+:t (/)
+:t div
+:t mod
+:t quot
+:t rem
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+(+) :: Num a => a -> a -> a
+(-) :: Num a => a -> a -> a
+(*) :: Num a => a -> a -> a
+(/) :: Fractional a => a -> a -> a
+div :: Integral a => a -> a -> a
+mod :: Integral a => a -> a -> a
+quot :: Integral a => a -> a -> a
+rem :: Integral a => a -> a -> a
+#+END_EXAMPLE
+
+Laws of quotient and reminders for ~div~
+
+#+BEGIN_SRC haskell :eval never
+(div x y) * y + (mod x y) == x
+#+END_SRC
+
+Laws of quotient and reminders for ~quot~
+
+#+BEGIN_SRC haskell :eval never
+(quot x y) * y + (rem x y) == x
+#+END_SRC
+
+** Operator ~rem~
+~rem~ will keep the sign of the dividend (~x~)
+#+BEGIN_SRC haskell
+(-5) `rem` 2
+5 `rem` (-2)
+(-5) `rem` (-2)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+-1
+1
+-1
+#+END_EXAMPLE
+
+** Operator ~mod~
+~mod~ will keep the sign of the divisor (~y~)
+#+BEGIN_SRC haskell
+(-5) `mod` 2
+5 `mod` (-2)
+(-5) `mod` (-2)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+1
+-1
+-1
+#+END_EXAMPLE
+
+* 2.09 Parenthesization
+Operators can be partially applied on the left and on the right, this
+is called ~sectioning~
+
+#+BEGIN_SRC haskell
+(^3) 6
+(3^) 6
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+216
+729
+#+END_EXAMPLE
+
+The ~($)~ allow everything to the right of it to be evaluated first
+and can be used to delay function application
+
+#+BEGIN_SRC haskell
+:t ($)
+(3*) $ (5*) $ 6 + 7
+((3*) $ (5*) $ 6 + 7) == (3 * (5 * (6 + 7)))
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+($) :: (a -> b) -> a -> b
+195
+True
+#+END_EXAMPLE
+
+* 2.10 Let and Where
+They are used to introduce components of an expression.
+
+~let~ introduces an /expression/, so it can be used wherever you can
+have an expression.
+
+~where~ is a /declaration/, so it is bound to a surrounding syntactic
+construct.
+
+** Exercise: A Head Code
+Determine what the following expressions will return
+
+1. ~let x = 5 in x~ will return ~5~
+2. ~let x = 5 in x * x~ will return ~25~
+3. ~let x = 5; y = 6 in x * y~ will return ~30~
+4. ~let x = 3; y = 1000 in x + 3~ will return ~6~
+
+#+BEGIN_SRC haskell
+let x = 5 in x
+let x = 5 in x * x
+let x = 5; y = 6 in x * y
+let x = 3; y = 1000 in x + 3
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+5
+25
+30
+6
+#+END_EXAMPLE
+
+Rewrite the following in ~where~ clauses
+
+1. ~let x = 3; y = 1000 in x * 3 + y~
+
+   #+BEGIN_SRC haskell
+   :{
+   f         = x * 3 + y
+     where x = 3
+           y = 1000
+   :}
+   f
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   1009
+   #+END_EXAMPLE
+
+2. ~let y = 10; x = 10 * 5 + y in x * 5~
+
+   #+BEGIN_SRC haskell
+   :{
+   f         = x * 5
+     where x = 10 * 5 + y
+           y = 10
+   :}
+   f
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   300
+   #+END_EXAMPLE
+
+3. ~let x = 7; y = negate x; z = y * 10 in z / x + y~
+
+   #+BEGIN_SRC haskell
+   :{
+   f         = z / x + y
+     where x = 7
+           y = negate x
+           z = y * 10
+   :}
+   f
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   -17.0
+   #+END_EXAMPLE
+
+* 2.11 Chapter Exercises
+The goal of the following exercises is to get you playing with code
+and forming hypotheses about what it should do.
+
+** Parenthesization
+How can we parenthesize the following expressions?
+
+1. ~2 + 2 * 3 - 1~ should be ~((2 + (2 * 3)) - 1)~
+
+   #+BEGIN_SRC haskell
+   (2 + 2 * 3 - 1) == ((2 + (2 * 3)) - 1)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   #+END_EXAMPLE
+
+2. ~(^) 10 $ 1 + 1~ should be ~(^) 10 (1 + 1)~
+
+   #+BEGIN_SRC haskell
+   ((^) 10 $ 1 + 1) == ((^) 10 (1 + 1))
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   #+END_EXAMPLE
+
+3. ~2 ^ 2 * 4 ^ 5 + 1~ should be ~((2 ^ 2) * (4 ^ 5)) + 1~
+
+   #+BEGIN_SRC haskell
+   (2 ^ 2 * 4 ^ 5 + 1) == (((2 ^ 2) * (4 ^ 5)) + 1)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   #+END_EXAMPLE
+
+** Equivalent Expressions
+Which of the following pairs of expressions will return the same
+result when evaluated?
+
+1. ~1 + 1~ and ~2~ -- Yes
+2. ~10 ^ 2~ and ~10 + 9 * 10~ -- Yes
+3. ~400 - 37~ and ~(-) 37 400~ -- No, because the second is ~37 - 400~
+4. ~100 `div` 3~ and ~100 / 3~ -- No, because the first is an integral division
+5. ~2 * 5 + 18~ and ~2 * (5 + 18)~ -- No, because the first is ~(2 * 5) + 18~
+
+** More Fun with Functions
+Arrange the code so that it can be used in a REPL (order so that you
+introduce things before they are used)
+
+#+NAME: wax-on
+#+BEGIN_SRC haskell
+z = 7
+y = z + 8
+x = y ^ 2
+waxOn = x * 5
+#+END_SRC
+
+#+BEGIN_SRC haskell
+<<wax-on>>
+waxOn
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+1125
+#+END_EXAMPLE
+
+1. What will happen if you enter
+
+   1. ~10 + waxOn~ -- ~1135~
+
+   2. ~(+10) waxOn~ -- ~1135~
+
+   3. ~(-) 15 waxOn~ -- ~-1110~
+
+2. Enter again the triple function
+
+   #+NAME: triple
+   #+BEGIN_SRC haskell :eval never
+   triple x = x * 3
+   #+END_SRC
+
+3. What's the result of ~triple waxOn~
+
+   #+BEGIN_SRC haskell
+   <<wax-on>>
+   <<triple>>
+   triple waxOn
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   3375
+   #+END_EXAMPLE
+
+4. Rewrite the ~waxOn~ with a ~where~ clause in a source file
+
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load Wax
+
+   waxOn
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   1125
+   #+END_EXAMPLE
+
+5. To the same source file add the ~triple~ function
+
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load Wax
+
+   triple waxOn
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   3375
+   #+END_EXAMPLE
+
+6. Add the function ~waxOff x = triple x~ to the same file
+
+7. Load everything and evaluate ~waxOff waxOn~
+
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load Wax
+
+   waxOff waxOn
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   3375
+   #+END_EXAMPLE
+
+* 2.12 Definitions
+- A /parameter/ or /formal parameter/ represents a value that will be
+  passed to the function when the function is called.
+- An /argument/ is a value the function is applied to.
+- An /expression/ is a combination of symbols that conforms to
+  syntactic rules and can be evaluated to some result.
+- A /value/ is an expression that cannot be reduced or evaluated any
+  further.

@@ -24,7 +24,7 @@ A /lambda term/ can be an <[/expression/]> a <[/variable/]> or an
 them.
 ** What is an abstraction in lambda calculus?                                               :drill:
 *** Answer
-Is a function, it has an /head/ and a /body/. The /head/ is a lambda
+It's a function, it has an /head/ and a /body/. The /head/ is a lambda
 sign followed by a variable. The /body/ is a lambda /expression/.
 ** Why functions are called abstractions?                                                   :drill:
 *** Answer
@@ -49,7 +49,7 @@ variables/.
 ** Sentence                                                                                 :drill:
 Each lambda can only bind one <[parameter]> and can only bind one
 <[argument]>. Functions with multiple arguments have <[nested heads]>.
-** What is called /currying/?                                                               :drill:
+** What is called /Currying/?                                                               :drill:
 *** Answer
 The fact that each lambda can bind only one parameter and apply only
 one argument is called /currying/ named after the mathematician
@@ -86,6 +86,102 @@ variable therefore ~z~ must be renamed in something else
 *** Answer
 Means evaluating the leftmost and outermost lambda first, evaluating
 terms nested within after you've run out of arguments to apply.
+* Chapter 02
+** What is Prelude?                                                                         :drill:
+*** Answer
+Prelude is a library of standard functions that is automatically
+loaded both from GHC and GHCi
+** When an expression is in /Normal Form/?                                                  :drill:
+*** Answer
+We say that an expression is in /Normal Form/ when there are no more
+evaluation steps that can be take AKA when it is in an irreducible
+form.
+** Identify the parts of a function definition                                              :drill:
+#+BEGIN_SRC haskell :eval never
+triple x    =  x * 3
+-- [1] [2] [3] [4]
+#+END_SRC
+*** Answer
+1. The /name/ of the function
+2. The /formal parameter/ of the function (like the head of the
+   lambda)
+3. The ~=~ will separate the /definition/ from the /implementation/
+4. The /body/ or the /implementation/ of the function
+** What it means to evaluate an expression?                                                 :drill:
+*** Answer
+When we talk about evaluating an expression we're talking about
+reducing the terms until the expression reaches its simplest form, we
+say that it's /irreducible/ and we call this a value.
+** What it means to be left associative for an operator?                                    :drill:
+*** Answer
+A left associative operator is applied starting from the left
+
+#+BEGIN_SRC haskell
+7 * 5 * 10
+#+END_SRC
+
+Is equivalent to
+
+#+BEGIN_SRC haskell
+((7 * 5) * 10)
+#+END_SRC
+** What it means to be right associative for an operator?                                   :drill:
+*** Answer
+A right associative operator is applied starting from the right
+
+#+BEGIN_SRC haskell
+(*) 5 $ (+) 10 $ 5 * 5
+#+END_SRC
+
+Is equivalent to
+
+#+BEGIN_SRC haskell
+(*) 5 $ ((+) 10 $ (5 * 5))
+#+END_SRC
+** Order of declaration matters in a file?                                                  :drill:
+*** Answer
+No
+** Indentation matters?                                                                     :drill:
+*** Answer
+Yes
+** Law of quotient and reminders for ~div~                                                  :drill:
+*** Answer
+#+BEGIN_SRC haskell
+(div x y) * y + (mod x y) == x
+#+END_SRC
+** Law of quotient and reminders for ~quot~                                                 :drill:
+*** Answer
+#+BEGIN_SRC haskell
+(quot x y) * y + (rem x y) == x
+#+END_SRC
+** What is /sectioning/?                                                                    :drill:
+*** Answer
+Operators can be partially applied on the left and on the right, this
+is called ~sectioning~
+
+#+BEGIN_SRC haskell :eval never
+(^3) 6
+(3^) 6
+#+END_SRC
+** For what are used ~let~ and ~where~?                                                     :drill:
+*** Answer
+They are used to introduce components of an expression
+** Where can be used ~let~?                                                                 :drill:
+*** Answer
+~let~ introduces an /expression/ so it can be used wherever you can
+have an expression
+** Where can be used ~where~?                                                               :drill:
+*** Answer
+~where~ is a /declaration/ so it is bound to the surrounding syntactic
+construct
+** What's a /parameter/?                                                                    :drill:
+*** Answer
+A /parameter/ or /formal parameter/ represents a value that will be
+passed to the function when the function is called.
+** What's an /argument/?                                                                    :drill:
+*** Answer
+An /argument/ is a value the function is applied to.
+
 * Chapter 04
 ** What are types?                                                                          :drill:
 :PROPERTIES:
