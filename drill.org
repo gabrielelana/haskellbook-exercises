@@ -182,6 +182,30 @@ passed to the function when the function is called.
 *** Answer
 An /argument/ is a value the function is applied to.
 
+* Chapter 03
+** What type is String?                                                                     :drill:
+*** Answer
+Is a type alias of list of ~Char~ aka ~[Char]~
+
+#+BEGIN_SRC haskell :eval never
+type String = [Char]
+#+END_SRC
+** What is a String?                                                                        :drill:
+*** Answer
+A /String/ is a sequence of characters.
+** What is a /Type/?                                                                        :drill:
+*** Answer
+A /Type/ is a classification of values or data.
+** What is the /Scope/?                                                                     :drill:
+*** Answer
+/Scope/ is where a variable referred to by name is valid.
+** What are the /Local Bindings/?                                                           :drill:
+*** Answer
+/Local Bindings/ are bindings local to particular expressions.
+** What are /Top Level Bindings/?                                                           :drill:
+*** Answer
+/Top Level Bindings/ are bindings that stand outside of any other
+declaration.
 * Chapter 04
 ** What are types?                                                                          :drill:
 :PROPERTIES:

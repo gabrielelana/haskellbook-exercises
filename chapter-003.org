@@ -1,0 +1,545 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
+#+TITLE: Strings
+
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+#+PROPERTY: header-args:haskell+ :epilogue ":load"
+#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
+
+* 3.01 Printing Strings
+We will look at strings
+
+* 3.02 A First Look at Types
+Types are a way to categorize values.
+
+The symbol ~::~ reads as "has the type".
+
+~String~ is a type alias of a list of ~Char~.
+
+#+BEGIN_SRC haskell
+:t 'a'
+:t "a"
+:i String
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+'a' :: Char
+"a" :: [Char]
+type String = [Char] 	-- Defined in ‘GHC.Base’
+#+END_EXAMPLE
+
+* 3.03 Printing Simple Strings
+The function ~print~ is not specific to string and can be used to
+print different kind of data.
+
+#+BEGIN_SRC haskell
+print "Hello World!"
+:t print
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Hello World!
+print :: Show a => a -> IO ()
+#+END_EXAMPLE
+
+Functions ~putStr~ and ~putStrLn~ are specific to ~String~
+
+#+BEGIN_SRC haskell
+:t putStr
+:t putStrLn
+putStrLn "Hello World!"
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+putStr :: String -> IO ()
+putStrLn :: String -> IO ()
+Hello World!
+#+END_EXAMPLE
+
+String concatenation
+
+#+BEGIN_SRC haskell
+:t (++)
+:t concat
+
+"Hello" ++ " " ++ "World"
+concat ["Hello", " ", "World"]
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+(++) :: [a] -> [a] -> [a]
+concat :: Foldable t => t [a] -> [a]
+Hello World
+Hello World
+#+END_EXAMPLE
+
+Example
+
+#+BEGIN_SRC haskell :tangle chapter-003/Print.hs :epilogue ""
+module Print where
+
+greetings :: String
+greetings = "Hello World!"
+
+hello :: String
+hello = "Hello"
+
+world :: String
+world = "World!"
+
+main :: IO ()
+main = do
+  putStrLn greetings
+  putStrLn alternativeGreetings
+  where alternativeGreetings = concat [hello, " ", world]
+#+END_SRC
+
+#+BEGIN_SRC haskell
+<<add-current-chapter-directory-in-path()>>
+:load Print
+
+main
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Hello World!
+Hello World!
+#+END_EXAMPLE
+
+* 3.04 Top-Level Versus Local Definitions
+Top-Level declarations
+- Are not nested in any other expression
+- They are seen all by the compiler at the same time
+- They are available in the whole module
+- They can be exported from the module
+
+Local declarations
+- They are nested in other expressions
+- They can be used only in their scope
+- They cannot be exported from the module
+
+** Exercises: Scope
+
+1. In the REPL session below, is ~y~ in scope for ~z~? Yes
+
+   #+BEGIN_SRC haskell :eval never
+   x = 5
+   y = 7
+   z = x * y
+   #+END_SRC
+
+2. In the REPL session below, is ~h~ in scope for ~g~? No, ~h~ is not
+   defined anywhere
+
+   #+BEGIN_SRC haskell :eval never
+   f = 3
+   g = 6 * f + h
+   #+END_SRC
+
+3. In the following piece of code from a file, is everything we need
+   to execute ~area~ in scope? -- No, ~d~ is not defined
+
+   #+BEGIN_SRC haskell :eval never
+   area d = pi * (r * r)
+   r = d / 2
+   #+END_SRC
+
+4. In the following piece of code from a file, is everything we need
+   to execute ~area~ in scope? -- Yes
+
+   #+BEGIN_SRC haskell :eval never
+   aread d = pi * (r * r)
+     where r = d / 2
+   #+END_SRC
+
+* 3.05 Types of concatenation functions
+Let's see the types of the operator ~(++)~ and the function ~concat~
+
+#+BEGIN_SRC haskell
+:t (++)
+:t concat
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+(++) :: [a] -> [a] -> [a]
+concat :: Foldable t => t [a] -> [a]
+#+END_EXAMPLE
+
+The variable ~a~ is a /type variable/ it means that they operate of
+lists (~[]~) of types we don't know yet (~a~). The type ~a~ in ~[a]~
+is /polymorphic/.
+
+** Exercises: Syntax Errors
+Read the following code and decide whether it will compile or not
+
+1. ~++ [1, 2, 3] [4, 5, 6]~ -- No ~++~ must be put between parenthesis
+   #+BEGIN_SRC haskell
+   (++) [1, 2, 3] [4, 5, 6]
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1,2,3,4,5,6]
+   #+END_EXAMPLE
+
+2. ~'<3' ++ ' Haskell'~ -- No ~'~ delimits only ~Char~
+   #+BEGIN_SRC haskell
+   "<3" ++ " Haskell"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   <3 Haskell
+   #+END_EXAMPLE
+
+3. ~concat ["<3", " Haskell"]~ -- Yes
+   #+BEGIN_SRC haskell
+   concat ["<3", " Haskell"]
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   <3 Haskell
+   #+END_EXAMPLE
+
+* 3.06 Concatenation and scoping
+The following will not work
+
+#+BEGIN_SRC haskell :eval never
+module Print where
+
+printSecond :: IO ()
+printSecond = do
+  putStrLn greeting
+
+main :: IO ()
+main = do
+  putStrLn greeting
+  printSecond
+  where greeting = "Yarrr"
+#+END_SRC
+
+Because ~greeting~ is not defined in ~printSecond~ function, the scope
+here is static, not dynamic
+
+* 3.07 More String Functions
+** Operator ~(:)~ (cons)
+#+BEGIN_SRC haskell
+:t (:)
+'a' : 'b' : 'c' : []
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+(:) :: a -> [a] -> [a]
+abc
+head :: [a] -> a
+tail :: [a] -> [a]
+take :: Int -> [a] -> [a]
+#+END_EXAMPLE
+
+** Function ~head~
+It's not a safe function, it can throw an error message
+
+#+BEGIN_SRC haskell
+:t head
+
+head "Hello"
+head [1..4]
+head ""
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+head :: [a] -> a
+'H'
+1
+,*** Exception: Prelude.head: empty list
+#+END_EXAMPLE
+
+** Function ~tail~
+It's not a safe function, it can throw an error message
+
+#+BEGIN_SRC haskell
+:t tail
+
+tail "Hello"
+tail [1..4]
+tail ""
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+tail :: [a] -> [a]
+ello
+[2,3,4]
+"*** Exception: Prelude.tail: empty list
+#+END_EXAMPLE
+
+** Function ~take~
+#+BEGIN_SRC haskell
+:t take
+
+take 2 "Hello"
+take 2 [1..4]
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+take :: Int -> [a] -> [a]
+He
+[1,2]
+[]
+#+END_EXAMPLE
+
+** Function ~drop~
+#+BEGIN_SRC haskell
+:t drop
+
+drop 2 "Hello"
+drop 2 [1..4]
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+drop :: Int -> [a] -> [a]
+llo
+[3,4]
+#+END_EXAMPLE
+
+** Operator ~(!!)~
+It's not a safe function, it can throw an error message
+
+#+BEGIN_SRC haskell
+:t (!!)
+
+"Hello" !! 2
+[1..4] !! 2
+"" !! 4
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+(!!) :: [a] -> Int -> a
+'l'
+3
+,*** Exception: Prelude.!!: index too large
+#+END_EXAMPLE
+
+* 3.08 Chapter Exercises
+
+** Reading Syntax
+
+1. Decide if the following code is correct or not
+
+   1. ~concat [[1, 2, 3], [4, 5, 6]]~ -- Yes
+
+   2. ~++ [1, 2, 3] [4, 5, 6]~ -- No, operator ~++~ must be put
+      between parenthesis
+
+   3. ~(++) "hello" " world"~ -- Yes
+
+   4. ~["hello" ++ "world]~ -- No, missing closing ~"~
+
+   5. ~4 !! "hello"~ -- No, flipped arguments
+
+   6. ~(!!) "hello" 4~ -- Yes
+
+   7. ~take "4 lovely" -- No, first argument must be of type ~Int~
+
+   8. ~take 3 "awesome"~ -- Yes
+
+2. Connect expressions with their resulting values
+
+   1. ~concat [[1 * 6], [2 * 6], [3 * 6]]~ -- ~[6, 12, 18]~ (a - d)
+
+   2. ~"rain" ++ drop 2 "elbow"~ -- ~"rainbow~ (b - c)
+
+   3. ~10 * head [1, 2, 3]~ -- ~10~ (c - e)
+
+   4. ~(take 3 "Julie") ++ (tail "yes")~ -- "Jules" (d - a)
+
+   5. ~concat [tail [1, 2, 3], tail [4, 5, 6], tail [7, 8, 9]]~ -- ~[2, 3, 5, 6, 8, 9]~ (e - b)
+
+** Building Functions
+1. Given the list manipulating functions write functions that given
+   the example input return the expected output
+
+   1. ~"Curry is awesome"~ -> ~"Curry is awesome!"~
+
+      #+BEGIN_SRC haskell
+      "Curry is awesome" ++ "!"
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      Curry is awesome!
+      #+END_EXAMPLE
+
+   2. ~"Curry is awesome!"~ -> ~"y"~
+
+      #+BEGIN_SRC haskell
+      take 1 $ drop 4 "Curry is awesome!"
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      y
+      #+END_EXAMPLE
+
+   3. ~"Curry is awesome!" -> "awesome!"
+
+      #+BEGIN_SRC haskell
+      drop 9 "Curry is awesome!"
+      #+END_SRC
+
+      #+RESULTS:
+      #+BEGIN_EXAMPLE
+      awesome!
+      #+END_EXAMPLE
+
+2. Write all the expressions above as functions in a source file,
+   generalizing but retaining the behaviour
+
+   #+BEGIN_SRC haskell :tangle chapter-003/BuildingFunctions.hs :epilogue ""
+   module BuildingFunctions where
+
+   bang :: String -> String
+   bang s = s ++ "!"
+
+   at4 :: String -> String
+   at4 s = take 1 $ drop 4 s
+
+   drop9 :: String -> String
+   drop9 s = drop 9 s
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load BuildingFunctions
+
+   bang "Curry is awesome" == "Curry is awesome!"
+   at4 "Curry is awesome!" == "y"
+   drop9 "Curry is awesome!" == "awesome!"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   True
+   True
+   #+END_EXAMPLE
+
+3. Write a function ~String -> Char~ which returns the third character
+   in a string
+
+   #+BEGIN_SRC haskell
+   :{
+   thirdLetter :: String -> Char
+   thirdLetter s = s !! 2
+   :}
+
+   thirdLetter "Curry is awesome"
+   thirdLetter "Curry is awesome" == 'r'
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   'r'
+   True
+   #+END_EXAMPLE
+
+4. Write a function ~Int -> Char~ which returns the character n of a
+   string of your choice
+
+   #+BEGIN_SRC haskell
+   :{
+   letterIndex :: Int -> Char
+   letterIndex n = "Curry is awesome!" !! (n - 1)
+   :}
+
+   letterIndex 1 == 'C'
+   letterIndex 2 == 'u'
+   letterIndex 3 == 'r'
+   letterIndex 4 == 'r'
+   letterIndex 5 == 'y'
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   True
+   True
+   True
+   True
+   #+END_EXAMPLE
+
+5. Using ~take~ and ~drop~ write a function ~rvrs~ which will take the
+   string ~"Curry is awesome~ and will return ~awesome is Curry~
+
+   #+BEGIN_SRC haskell
+   :{
+   rvrs :: String -> String
+   rvrs s = awesome ++ " " ++ is ++ " " ++ curry
+     where awesome = drop 9 s
+           is = take 2 $ drop 6 s
+           curry = take 5 s
+   :}
+
+   rvrs "Curry is awesome"
+   rvrs "Curry is awesome" == "awesome is Curry"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   awesome is Curry
+   True
+   #+END_EXAMPLE
+
+6. Put that function above into a module in a file
+
+   #+BEGIN_SRC haskell :tangle chapter-003/Reverse.hs :epilogue ""
+   module Reverse where
+
+   rvrs :: String -> String
+   rvrs s = awesome ++ " " ++ is ++ " " ++ curry
+     where awesome = drop 9 s
+           is = take 2 $ drop 6 s
+           curry = take 5 s
+
+   main :: IO ()
+   main = print $ rvrs "Curry is awesome"
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load Reverse
+
+   rvrs "Curry is awesome"
+   rvrs "Curry is awesome" == "awesome is Curry"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   awesome is Curry
+   True
+   #+END_EXAMPLE
+
+* 3.09 Definitions
+1. A /String/ is a sequence of characters.
+2. A /Type/ or datatype is a classification of values or data.
+3. /Concatenation/ is the joining together of sequences of values.
+4. /Scope/ is where a variable referred to by name is valid.
+5. /Local Bindings/ are bindings local to particular expressions.
+6. /Top Level Bindings/ are bindings that stand outside of any other
+   declaration.
+7. /Data Structures/ are a way of organizing data so that the data can
+   be accessed conveniently or efficiently.
