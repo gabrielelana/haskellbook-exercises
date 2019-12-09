@@ -207,106 +207,67 @@ A /Type/ is a classification of values or data.
 /Top Level Bindings/ are bindings that stand outside of any other
 declaration.
 * Chapter 04
-** What are types?                                                                          :drill:
-:PROPERTIES:
-:ID:       2c2d67f2-ec90-4a5f-a5f7-b322bec5a247
-:END:
+** What are /Types/?                                                                        :drill:
 *** Answer
 Are how we group a set of values together that share something in
 common
 ** What is ~data Bool = True | False~?                                                      :drill:
-:PROPERTIES:
-:ID:       56f87207-45ef-4590-85b3-6c4f73867521
-:END:
 *** Answer
 Is a /Data Declaration/
 ** What is ~Bool~ in ~data Bool = True | False~?                                            :drill:
-:PROPERTIES:
-:ID:       be1821b2-2773-492a-8b16-0ac5393c59be
-:END:
 *** Answer
 Is a /Type Constructor/
 ** What is ~True~ in ~data Bool = True | False~?                                            :drill:
-:PROPERTIES:
-:ID:       88419a7e-e35e-4ea1-b7ee-ddddec40873a
-:END:
 *** Answer
 Is a /Data Constructor/
-** What's a Data Declaration?                                                               :drill:
-:PROPERTIES:
-:ID:       665a09cb-092f-4d47-ae95-bba993381897
-:END:
+** What's a /Data Declaration/?                                                             :drill:
 *** Answer
 How datatypes are defined
-** What's a Type Constructor                                                                :drill:
-:PROPERTIES:
-:ID:       56eaab13-4f63-4b6d-8949-5a06dd869ffd
-:END:
+** What's a /Type Constructor/                                                              :drill:
 *** Answer
 How we define the name of a type. Type constructors are used at type
 level
-** What's a Data Constructor?                                                               :drill:
-:PROPERTIES:
-:ID:       b9079175-a6f3-46bc-a25b-6746a661fd45
-:END:
+** What's a /Data Constructor/?                                                             :drill:
 *** Answer
 Are the values that inhabit the type they are defined in. Data
 constructors are used at term level.
-** What's the type of ~8~?                                                                  :drill:
-:PROPERTIES:
-:ID:       30603e40-ebf4-44ef-ae11-83450fb7c1e0
-:END:
+** What's the /Type/ of ~8~?                                                                :drill:
 *** Answer
 Numbers are polymorphic, the compiler doesn't assign them a concrete
 type until is not forced to do so. In this case we cannot tell
-** What are the ~Integral~ number types                                                     :drill:
-:PROPERTIES:
-:ID:       b03fd700-6876-4c67-bfa2-28d16d7ff405
-:END:
+** What are the /Integral/ number types                                                     :drill:
 *** Answer
 Int, Integer, Word
-** What are the ~Fractional~ number types                                                   :drill:
-:PROPERTIES:
-:ID:       9408ed3c-593f-45a8-98b6-c82c6a4e8315
-:END:
+** What are the /Fractional/ number types                                                   :drill:
 *** Answer
 Float, Double, Rational, Fixed, Scientific
 ** What's the type signature of ~==~                                                        :drill:
-:PROPERTIES:
-:ID:       0826e63c-0b5c-4c27-bcbd-c6eaeb8a5ba8
-:END:
 *** Answer
 ~(==) :: Eq a => a -> a -> Bool~
 ** What's the type signature of ~<~                                                         :drill:
-:PROPERTIES:
-:ID:       ff12a4b8-05fa-4014-8402-ba62bbb6d624
-:END:
 *** Answer
 ~(<) :: Ord a => a -> a -> Bool~
-** ~if~ it's a statement or an expression?                                                  :drill:
-:PROPERTIES:
-:ID:       62d15637-c5d0-4442-a29f-d8ff2073cf3e
-:END:
+** The ~if~ is it a /Statement/ or an /Expression/?                                         :drill:
 *** Answer
 It's an expression
 ** What's the type signature of ~fst~?                                                      :drill:
-:PROPERTIES:
-:ID:       595d15bf-64a4-4897-b53d-985366992a94
-:END:
 *** Answer
 ~fst :: (a, b) -> a~
 ** What's the type signature of ~snd~                                                       :drill:
-:PROPERTIES:
-:ID:       8de0c7e8-25df-4276-8608-941fce812c34
-:END:
 *** Answer
 ~snd :: (a, b) -> b~
 ** What's the type signature of ~swap~?                                                     :drill:
-:PROPERTIES:
-:ID:       4a59f7d2-7dc2-4805-8a98-db2747991849
-:END:
 *** Answer
 ~swap :: (a, b) -> (b, a)~
+** What have names in Haskell?                                                              :drill:
+*** Answer
+- Functions
+- Term Variables
+- Data Constructors
+- Type Variables
+- Type Constructors
+- Typeclasses
+- Modules
 * Chapter 05
 ** What's the output of ~:t 13~                                                             :drill:
 :PROPERTIES:

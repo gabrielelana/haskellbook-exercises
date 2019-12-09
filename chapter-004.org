@@ -39,14 +39,14 @@ Given the following datatype, answer the following questions
 data Mood = Blah | Woot deriving Show
 #+END_SRC
 
-1. What is the /Type Constructor/? ~Mood~
+1. What is the /Type Constructor/? -- ~Mood~
 
 2. If a function requires a ~Mood~ value, what are the value you can
-   possibly use? ~Blah~ or ~Woot~
+   possibly use? -- ~Blah~ or ~Woot~
 
 3. We've written a type signature ~changeMood :: Mood -> Woot~. What's
-   wrong with that? It uses a /Data Constructor/ instead of a /Type
-   Constructor/, it should be ~changeMood :: Mood -> Mood~
+   wrong with that? -- It uses a /Data Constructor/ instead of a
+   /Type Constructor/, it should be ~changeMood :: Mood -> Mood~
 
 4. Implement the function
    #+NAME: mood
@@ -163,12 +163,15 @@ typeclass ~Fractional~
 - ~Org~ is a Typeclass that includes everything that can be ordered.
 
 * 4.06 Go on and Bool me
-- ~data Bool :: True | False~
-- Note that we capitalize ~True~ and ~False~ because they are /Data
-  Constructors/.
-- Scope is a way to refer to where a named binding to an expression is
-  valid. When we say that something is in scope it means that you can
-  use that expression by its bound name.
+#+BEGIN_SRC haskell :eval never
+data Bool = True | False
+#+END_SRC
+
+We capitalize ~True~ and ~False~ because they are /Data Constructors/.
+
+Scope is a way to refer to where a named binding to an expression is
+valid. When we say that something is in scope it means that you can
+use that expression by its bound name.
 
 ** Exercise: Find the Mistakes
 1. ~not True && true~
@@ -262,14 +265,19 @@ and term levels, and each tuple has a fixed number of constituents.
 The values within a tuple do not have to be of the same type.
 #+BEGIN_SRC haskell
 :t (,)
-"#########"
-:i (,)
 #+END_SRC
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
 (,) :: a -> b -> (a, b)
-#########
+#+END_EXAMPLE
+
+#+BEGIN_SRC haskell
+:i (,)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
 data (,) a b = (,) a b 	-- Defined in ‘GHC.Tuple’
 Applicative ((,) a) -- Defined in ‘GHC.Base’
 Eq (a, b) -- Defined in ‘GHC.Classes’
@@ -403,16 +411,16 @@ allAwesome = [awesome, also]
    ~length :: [a] -> Integer~
 
 2. What are the results of the following expressions?
-   1. ~length [1, 2, 3, 4, 5]~ -> ~5~
-   2. ~length [(1, 2), (2, 3), (3, 4)]~ -> ~3~
-   3. ~length allAwesome~ -> ~2~
-   4. ~length (concat allAwesome)~ -> ~5~
+   1. ~length [1, 2, 3, 4, 5]~ -- ~5~
+   2. ~length [(1, 2), (2, 3), (3, 4)]~ -- ~3~
+   3. ~length allAwesome~ -- ~2~
+   4. ~length (concat allAwesome)~ -- ~5~
 
 3. One works and one returns an error
    1. ~6 / 3~
       Works
    2. ~6 / length [1, 2, 3]~
-      Error, because ~lenght~ returns an ~Int~ which doesn't have an
+      Error, because ~length~ returns an ~Int~ which doesn't have an
       instance of ~Fractional~
 
 4. How can you fix the broken code from the preceding exercise using a
@@ -517,10 +525,10 @@ allAwesome = [awesome, also]
    #+END_SRC
 
    Works
-   #+BEGIN_SRC haskell :eval never
+   #+BEGIN_SRC haskell
    x = (+)
 
-   f xs = x w 1 where w = length xs
+   f xs = w `x` 1 where w = length xs
    #+END_SRC
 
 2. This is supposed to be the identity function.
@@ -544,25 +552,47 @@ allAwesome = [awesome, also]
 
    Works
    #+BEGIN_SRC haskell :eval never
-   f (a b) = a
+   f (a _) = a
    #+END_SRC
 
 ** Match the function names to their types
-1. Which of the following types is the type of show?
+1. Which of the following types is the type of show? -- c
+
+   a) ~show a => a -> String~
+
+   b) ~Show a -> a -> String~
 
    c) ~Show a => a -> String~
 
-2. Which of the following types is the type of ~(==)~?
+2. Which of the following types is the type of ~(==)~? -- b
+
+   a) ~a -> a -> Bool~
 
    b) ~Eq a => a -> a -> Bool~
 
-3. Which of the following types is the type of ~fst~?
+   c) ~Eq a -> a -> a -> Bool~
+
+   d) ~Eq a => A -> Bool~
+
+3. Which of the following types is the type of ~fst~? -- a
 
    a) ~(a, b) -> a~
 
-4. Which of the following types is the type of ~(+)~?
+   b) ~b -> a~
+
+   c) ~(a, b) -> b~
+
+4. Which of the following types is the type of ~(+)~? -- a
+
+   a) ~(+) :: Num a -> a -> a -> a~
+
+   b) ~(+) :: Num a => a -> a -> Bool~
+
+   c) ~(+) :: num a => a -> a -> a~
 
    d) ~(+) :: Num a => a -> a -> a~
+
+   e) ~(+) :: a -> a -> a~
 
 * 4.10 Definitions
 - Tuple :: is an ordered grouping of values.
@@ -576,10 +606,10 @@ allAwesome = [awesome, also]
 
 * 4.11 Names
 There are 7 categories of entities that have names
-- *Functions*
-- *Term Variables* (term level)
-- *Data Constructors* (term level)
-- *Type Variables* (type level)
-- *Type Constructors* (type level)
-- *Type Classes* (type level)
-- *Modules*
+- *Functions* (camel case)
+- *Term Variables* (term level) (camel case)
+- *Data Constructors* (term level) (camel case, starts with uppercase letter)
+- *Type Variables* (type level) (lower case, mostly single letter)
+- *Type Constructors* (type level) (camel case, starts with uppercase letter)
+- *Type Classes* (type level) (camel case, starts with uppercase letter)
+- *Modules* (camel case, starts with uppercase letter)
