@@ -13,10 +13,19 @@ Type systems in logic and mathematics have been designed to impose
 constraints that enforce correctness.
 
 * 5.02 What are types for?
-- Reduces errors.
-- Enables optimizations.
-- Reduces number of trivial tests.
-- Serves as documentation.
+Why do we want types? Type systems in logic and mathematics have been
+designed to impose constraints that enforce correctness.
+
+- Haskell is...
+  - Typed lambda calculus ("System F" 1970)
+  - Allows general recursion
+  - Has Hindley-Milner type inference
+
+- What are types for?
+  - Reduces errors.
+  - Enables optimizations.
+  - Reduces number of trivial tests.
+  - Serves as documentation.
 
 * 5.03 How to read type signatures
 With numbers we see type class information (type class constraints)
@@ -845,7 +854,7 @@ and indentation.
    g = undefined
 
    h :: Int -> Char
-   h x = g . f $ x
+   h = g . f
    :}
    #+END_SRC
 
@@ -863,7 +872,7 @@ and indentation.
    w = undefined
 
    e :: A -> C
-   e x = w . q $ x
+   e = w . q
    :}
    #+END_SRC
 
@@ -892,7 +901,7 @@ and indentation.
          -> (y -> (w, z))
          -> x
          -> w
-   munge x2y y2wz x = fst $ y2wz $ x2y $ x
+   munge x2y y2wz = fst . y2wz . x2y
    :}
    #+END_SRC
 

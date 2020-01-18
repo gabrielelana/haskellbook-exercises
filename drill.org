@@ -269,6 +269,10 @@ It's an expression
 - Typeclasses
 - Modules
 * Chapter 05
+** Why do we want types?                                                                    :drill:
+*** Answer
+Type systems in mathematics and logic have been designed to impose
+constraints that enforce correctness.
 ** What's the output of ~:t 13~                                                             :drill:
 :PROPERTIES:
 :ID:       1f1e2410-fe95-4d3c-9403-ad7e1185846b
