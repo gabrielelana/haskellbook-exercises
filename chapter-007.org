@@ -157,7 +157,8 @@ the ~-Wall~ compilation flag.
    1. What is the type of k? ~k :: (t1, t2) -> t1~
    2. What is the type of k2? ~k2 :: [Char]~
    3. k2 has the same type as k1 or k3? No
-   4. Of k1, k2, k3, which will return the number 3 as the result? k3
+   4. Of k1, k2, k3, which will return the number 3 as the result? k1
+      and k3
 
 2. Fill in the definition of the following function
    #+BEGIN_SRC haskell :results none
@@ -174,7 +175,7 @@ the ~-Wall~ compilation flag.
    f :: (a, b, c)
      -> (d, e, f)
      -> ((a, d), (c, f))
-   f (a, b, c) (d, e, f) = ((a, d), (c, f))
+   f (a, _, c) (d, _, f) = ((a, d), (c, f))
    :}
    #+END_SRC
 
@@ -447,7 +448,7 @@ print'= putStrLn . show
 :}
 #+END_SRC
 
-* Exercises
+* 7.11 Exercises
 ** Multiple Choice
 
 1. A polymorphic function (d) may resolve to values of different
@@ -504,7 +505,7 @@ print'= putStrLn . show
       #+BEGIN_SRC haskell :results none
       :{
       tensDigit :: Integral a => a -> a
-      tensDigit x = snd . tensSplit $ fst . tensSplit $ x
+      tensDigit = (snd . tensSplit) . (fst . tensSplit)
         where tensSplit = flip divMod 10
       :}
       tensDigit 18982912
@@ -528,13 +529,15 @@ print'= putStrLn . show
       #+END_SRC
 
 2. Implement the function of the type ~a -> a -> Bool -> a~
+
    Using a /case expression/
    #+BEGIN_SRC haskell :results none
    :{
    foldBool :: a -> a -> Bool -> a
-   foldBool x y cond = case cond of
-     True -> x
-     False -> y
+   foldBool x y cond =
+     case cond of
+       True -> x
+       False -> y
    :}
    foldBool 1 2 True
    foldBool 1 2 False
@@ -567,7 +570,7 @@ print'= putStrLn . show
    :}
    #+END_SRC
 
-4. Writing pointfree versions of existing code
+4. Writing point free versions of existing code
    #+NAME: RoundTrip
    #+BEGIN_SRC haskell :results none :tangle chapter-007/RoundTrip.hs :epilogue ""
    module RoundTrip where
