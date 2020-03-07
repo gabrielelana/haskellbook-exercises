@@ -181,7 +181,7 @@ dividedBy 3 2
 (1,1)
 #+END_EXAMPLE
 
-* Exercises
+* 8.06 Exercises
 ** Exercise: Review of types
 
 1. What is the type of ~[[True, False], [True, True], [False, True]]~?
@@ -317,6 +317,12 @@ frappe = flippy "haha"
    sumsUpTo 0 = 0
    sumsUpTo 1 = 1
    sumsUpTo n = n + sumsUpTo (n - 1)
+
+   sumsUpTo' :: (Eq a, Num a) => a -> a
+   sumsUpTo' n = up 1 n
+     where up m n
+             | m == n    = n
+             | otherwise = m + (up (m + 1) n)
    #+END_SRC
 
    #+BEGIN_SRC haskell
@@ -325,10 +331,14 @@ frappe = flippy "haha"
    :}
    sumsUpTo 6
    sumsUpTo 10
+   sumsUpTo' 6
+   sumsUpTo' 10
    #+END_SRC
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   21
+   55
    21
    55
    #+END_EXAMPLE
