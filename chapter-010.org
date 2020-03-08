@@ -201,7 +201,12 @@ foldl (flip (:)) [] [1, 2, 3]
    foldr (*) 1 [1..5]
    #+END_SRC
 
-   All of them because ~(*)~ is associative and commutative
+   1. ~flip (*) 1 [1..5]~
+   2. ~foldl (filp (*)) 1 [1..5]~
+   3. ~foldl (*) 1 [1..5]~
+
+   (2) and (3) will return the same result because ~(*)~ is
+   commutative and associative
 
 2. Write out the evaluation steps for
    #+BEGIN_SRC haskell :results none
@@ -232,7 +237,7 @@ foldl (flip (:)) [] [1, 2, 3]
       foldr (++) ["woot", "WOOT", "woot"]
       #+END_SRC
 
-      There's no zero value
+      There's no base value
       #+BEGIN_SRC haskell :results none
       foldr (++) "" ["woot", "WOOT", "woot"]
       #+END_SRC
@@ -353,8 +358,8 @@ theDatabase =
   ]
 #+END_SRC
 
-1. Write a function that filters for DbDate values and returns a
-   list of the UTCTime values inside them.
+1. Write a function that filters for ~DbDate~ values and returns a
+   list of the ~UTCTime~ values inside them.
    #+NAME: Database
    #+BEGIN_SRC haskell :eval never :tangle chapter-010/Database.hs :epilogue ""
    filterDbDate :: [DatabaseItem] -> [UTCTime]
@@ -376,7 +381,7 @@ theDatabase =
    [1911-05-01 09:28:43 UTC,1921-05-01 09:28:43 UTC]
    #+END_EXAMPLE
 
-2. Write a function that filters for DbNumber values and returns a
+2. Write a function that filters for ~DbNumber~ values and returns a
    list of the Integer values inside them.
    #+NAME: Database
    #+BEGIN_SRC haskell :eval never :tangle chapter-010/Database.hs :epilogue ""
@@ -621,7 +626,7 @@ fibs !! 9
    120
    #+END_EXAMPLE
 
-* Exercises
+* 10.10 Exercises
 ** Warm-up and Review
 1. Given the following sets of consonants and vowels
    #+NAME: letters
@@ -664,7 +669,7 @@ fibs !! 9
    seekritFunc x = div (sum (map length (words x))) (length (words x))
    #+END_SRC
 
-   It calculates the average lenght of words in a string, the type is
+   It calculates the average length of words in a string, the type is
    ~String -> Int~
 
 3. We’d really like the answer to be more precise. Can you rewrite
