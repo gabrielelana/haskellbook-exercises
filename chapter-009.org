@@ -48,8 +48,8 @@ xs
 #+END_EXAMPLE
 
 A list of type ~[a]~ can be empty, since a list of pattern matches
-should be exaustive we always need to take care of the empty list, for
-this it can be useful to use the type ~Maybe~
+should be exhaustive we always need to take care of the empty list,
+for this it can be useful to use the type ~Maybe~
 
 * 9.04 List’s syntactic sugar
 We don't have tu use the ~:~ /Data Constructor/
@@ -81,7 +81,7 @@ CallStack (from HasCallStack):
 #+END_EXAMPLE
 
 The first list from the value point of view is not completely defined
-(there're bottoms in the list) but ~length~ cares only about the
+(there are bottoms in the list) but ~length~ cares only about the
 /Spine/ of the list (aka. the structure of the /Cons Cells/ are
 there). The second list is complete from the value point of view but
 the /Spine/ is broken because it doesn't end with an empty list.
@@ -184,6 +184,7 @@ eftInt 9 10
 eftInt 10 9
 eftChar 'a' 'z'
 eftBool False True
+eftBool True False
 eftOrd LT GT
 #+END_SRC
 
@@ -194,6 +195,7 @@ eftOrd LT GT
 []
 abcdefghijklmnopqrstuvwxyz
 [False,True]
+[]
 [LT,EQ,GT]
 #+END_EXAMPLE
 
@@ -493,7 +495,7 @@ blah = 'a' : 'b' : _
 Values in Haskell get reduced to /Weak Head Normal Form/ by
 default. /Weak Head Normal Form/ (WHNF) means the expression is only
 evaluated as far as is necessary to reach a data constructor or a
-lambda waiting for an argument. WHNF contains the possiblity that:
+lambda waiting for an argument. WHNF contains the possibility that:
 
 - The expression is already fully evaluated (/Normal Form/ NF)
 - The expression has been evaluated to the point of arriving at a data
@@ -841,7 +843,7 @@ True
    True
    #+END_EXAMPLE
 
-* Exercises
+* 9.13 Exercises
 ** Exercise: Data.Char
 
 1. Query the types of ~isUpper~ and ~toUpper~.
