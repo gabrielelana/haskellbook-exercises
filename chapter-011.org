@@ -1260,20 +1260,32 @@ Node (Node Leaf 4 (Node Leaf 5 Leaf)) 6 Leaf
 #+BEGIN_SRC haskell
 <<binary-tree-insert>>
 :{
-foldTree :: (a -> b -> b) -> b -> BinaryTree a -> b
-foldTree _ b Leaf = b
-foldTree f b (Node left a right) = foldTree f (f a (foldTree f b left)) right
+foldrTree :: (a -> b -> b) -> b -> BinaryTree a -> b
+foldrTree _ b Leaf = b
+foldrTree f b (Node left a right) = f a $ foldrTree f (foldrTree f b left) right
+:}
+
+:{
+foldlTree :: (b -> a -> b) -> b -> BinaryTree a -> b
+foldlTree _ b Leaf = b
+foldlTree f b (Node left a right) = foldlTree f (f (foldlTree f b left) a) right
 :}
 
 t = insert 3 $ insert 4 $ insert 1 $ Leaf
 t
-foldTree (:) [] t
-foldTree (+) 0 t
+
+foldrTree (:) [] t
+foldrTree (+) 0 t
+
+foldlTree (flip (:)) [] t
+foldlTree (+) 0 t
 #+END_SRC
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
 Node Leaf 1 (Node (Node Leaf 3 Leaf) 4 Leaf)
+[1,4,3]
+8
 [4,3,1]
 8
 #+END_EXAMPLE
@@ -1461,7 +1473,7 @@ press a button multiple times to get different letters to come up?
 You’re going to write code to translate sequences of button presses
 into strings and vice versa. Solution [[file:./chapter-011/Phone.hs][here]]
 
-1. Create a data structure for the phone. [[file:./chapter-011/Phone.hs:18][Solution]]
+1. Create a data structure for the phone. [[file:./chapter-011/Phone.hs][Solution]]
 
 2. Convert the following conversations into the keypresses required
    to express them.

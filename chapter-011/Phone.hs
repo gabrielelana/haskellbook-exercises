@@ -2,7 +2,6 @@ module Phone where
 
 import Data.Char (isUpper, toLower)
 import Data.List (maximumBy, group, sort)
-import Data.Foldable (concat)
 
 data Action = Display Char
             | ToUpper
@@ -13,8 +12,9 @@ type Taps = Int
 
 data Button = Button Label [Action] deriving (Eq, Show)
 
-data Phone = Phone [Button] deriving (Eq, Show)
+newtype Phone = Phone [Button] deriving (Eq, Show)
 
+phone :: Phone
 phone = Phone [
   Button '1' [Display '1'],
   Button '2' [Display 'a', Display 'b', Display 'c', Display '2'],
@@ -48,20 +48,20 @@ possibleTaps (Phone buttons) = concatMap buttonTaps buttons
 
 tapsFor :: [(Label, Taps, Action)] -> Action -> (Label, Taps)
 tapsFor [] _ = error "character not representable with phone"
-tapsFor ((label, taps, ToUpper):rest) ToUpper = (label, taps)
-tapsFor ((label, taps, ToUpper):rest) a = tapsFor rest a
-tapsFor ((label, taps, Display c):rest) ToUpper = tapsFor rest ToUpper
+tapsFor ((label, taps, ToUpper):_rest) ToUpper = (label, taps)
+tapsFor ((_label, _taps, ToUpper):rest) a = tapsFor rest a
+tapsFor ((_label, _taps, Display _):rest) ToUpper = tapsFor rest ToUpper
 tapsFor ((label, taps, Display c1):rest) (Display c2)
   | c1 == c2 = (label, taps)
   | otherwise = tapsFor rest (Display c2)
 
 reverseTaps :: Phone -> Char -> [(Label, Taps)]
-reverseTaps phone c
-  | isUpper c = (tapsFor (possibleTaps phone) ToUpper) : reverseTaps phone (toLower c)
-  | otherwise = [tapsFor (possibleTaps phone) (Display c)]
+reverseTaps p c
+  | isUpper c = tapsFor (possibleTaps p) ToUpper : reverseTaps p (toLower c)
+  | otherwise = [tapsFor (possibleTaps p) (Display c)]
 
 toTaps :: Phone -> String -> [(Label, Taps)]
-toTaps phone s = concatMap (reverseTaps phone) s
+toTaps = concatMap . reverseTaps
 
 -- conversationsToTaps = map (toTaps phone) conversations
 
@@ -69,10 +69,10 @@ fingerTaps :: [(Label, Taps)] -> Taps
 fingerTaps = foldr ((+) . snd) 0
 
 costToTapForChar :: Phone -> Char -> Int
-costToTapForChar phone c = sum $ map snd (reverseTaps phone c)
+costToTapForChar p c = sum $ map snd (reverseTaps p c)
 
 costOfMostPopularLetter :: Phone -> String -> Int
-costOfMostPopularLetter phone s = (costToTapForChar phone (fst m)) * (snd m)
+costOfMostPopularLetter p s = costToTapForChar p (fst m) * snd m
   where m = mostPopularLetterWithWeight s
 
 mostPopularLetter :: String -> Char
@@ -81,7 +81,7 @@ mostPopularLetter s = fst $ mostPopularLetterWithWeight s
 mostPopularLetterWithWeight :: String -> (Char, Int)
 mostPopularLetterWithWeight s =
   maximumBy (\x y -> compare (snd x) (snd y)) $
-  map (\s -> (head s, length s)) $
+  map (\s' -> (head s', length s')) $
   group $
   sort s
 
@@ -89,7 +89,7 @@ mostPopularWord :: String -> String
 mostPopularWord s =
   fst $
   maximumBy (\x y -> compare (snd x) (snd y)) $
-  map (\s -> (head s, length s)) $
+  map (\s' -> (head s', length s')) $
   group $
   sort $
   words s
