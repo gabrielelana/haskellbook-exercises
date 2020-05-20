@@ -31,6 +31,7 @@ executable morse-code
                      , QuickCheck
                      , containers
                      , morse-code
+  other-modules:       Morse
 
 test-suite tests
   ghc-options:         -Wall -fwarn-tabs
