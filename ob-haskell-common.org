@@ -14,7 +14,6 @@
 
 (defun remove-prompt (line)
   (let ((current-prompt (current-prompt line)))
-    (message "current prompt: %S" current-prompt)
     (if (string-empty-p current-prompt)
         line
       (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
@@ -38,6 +37,14 @@
               (not (report-loaded-module-p line))))
            (split-string content "\n")))
  "\n")
+#+END_SRC
+
+#+NAME: quickcheck-with-output
+#+BEGIN_SRC haskell :eval never
+:{
+quickCheckWithOutput :: Testable prop => prop -> IO ()
+quickCheckWithOutput p = quickCheckWithResult (stdArgs {chatty=False}) p >>= print . output
+:}
 #+END_SRC
 
 #+NAME: add-current-chapter-directory-in-path
