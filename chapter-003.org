@@ -5,8 +5,6 @@
 #+PROPERTY: header-args:haskell :results replace output
 #+PROPERTY: header-args:haskell+ :noweb yes
 #+PROPERTY: header-args:haskell+ :wrap EXAMPLE
-#+PROPERTY: header-args:haskell+ :epilogue ":load"
-#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
 
 * 3.01 Printing Strings
 We will look at strings
@@ -81,7 +79,7 @@ Hello World
 
 Example
 
-#+BEGIN_SRC haskell :tangle chapter-003/Print.hs :epilogue ""
+#+BEGIN_SRC haskell :tangle chapter-003/Print.hs
 module Print where
 
 greetings :: String
@@ -109,6 +107,8 @@ main
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
+[1 of 1] Compiling Print            ( /home/coder/code/haskellbook-exercises/chapter-003/Print.hs, interpreted )
+Ok, one module loaded.
 Hello World!
 Hello World!
 #+END_EXAMPLE
@@ -241,9 +241,6 @@ here is static, not dynamic
 #+BEGIN_EXAMPLE
 (:) :: a -> [a] -> [a]
 abc
-head :: [a] -> a
-tail :: [a] -> [a]
-take :: Int -> [a] -> [a]
 #+END_EXAMPLE
 
 ** Function ~head~
@@ -297,7 +294,6 @@ take 2 [1..4]
 take :: Int -> [a] -> [a]
 He
 [1,2]
-[]
 #+END_EXAMPLE
 
 ** Function ~drop~
@@ -409,7 +405,7 @@ It's not a safe function, it can throw an error message
 2. Write all the expressions above as functions in a source file,
    generalizing but retaining the behaviour
 
-   #+BEGIN_SRC haskell :tangle chapter-003/BuildingFunctions.hs :epilogue ""
+   #+BEGIN_SRC haskell :tangle chapter-003/BuildingFunctions.hs
    module BuildingFunctions where
 
    bang :: String -> String
@@ -433,6 +429,8 @@ It's not a safe function, it can throw an error message
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   [1 of 1] Compiling BuildingFunctions ( /home/coder/code/haskellbook-exercises/chapter-003/BuildingFunctions.hs, interpreted )
+   Ok, one module loaded.
    True
    True
    True
@@ -506,7 +504,7 @@ It's not a safe function, it can throw an error message
 
 6. Put that function above into a module in a file
 
-   #+BEGIN_SRC haskell :tangle chapter-003/Reverse.hs :epilogue ""
+   #+BEGIN_SRC haskell :tangle chapter-003/Reverse.hs
    module Reverse where
 
    rvrs :: String -> String
@@ -529,6 +527,8 @@ It's not a safe function, it can throw an error message
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   [1 of 1] Compiling Reverse          ( /home/coder/code/haskellbook-exercises/chapter-003/Reverse.hs, interpreted )
+   Ok, one module loaded.
    awesome is Curry
    True
    #+END_EXAMPLE

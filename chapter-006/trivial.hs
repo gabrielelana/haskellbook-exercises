@@ -5,4 +5,3 @@ data Trivial =
 
 instance Eq Trivial where
   (==) Trivial Trivial = True
-:load

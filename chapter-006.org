@@ -5,8 +5,6 @@
 #+PROPERTY: header-args:haskell :results replace output
 #+PROPERTY: header-args:haskell+ :noweb yes
 #+PROPERTY: header-args:haskell+ :wrap EXAMPLE
-#+PROPERTY: header-args:haskell+ :epilogue ":load"
-#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
 
 * 6.01 Typeclasses
 In this chapter
@@ -69,7 +67,7 @@ datatype do not have a sensible notion of equality so Haskell does not
 encode equality in every type. In Haskell equality is implemented with
 the /Typeclass/ ~Eq~.
 
-#+BEGIN_SRC haskell :post head(n="3", content=*this*)
+#+BEGIN_SRC haskell
 :i Eq
 #+END_SRC
 
@@ -78,6 +76,95 @@ the /Typeclass/ ~Eq~.
 class Eq a where
   (==) :: a -> a -> Bool
   (/=) :: a -> a -> Bool
+  {-# MINIMAL (==) | (/=) #-}
+  	-- Defined in ‘GHC.Classes’
+instance Eq UnicodeString -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq a => Eq (SortedList a)
+  -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq a => Eq (Small a)
+  -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq a => Eq (Shrink2 a)
+  -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq PrintableString
+  -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq a => Eq (Positive a)
+  -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq a => Eq (OrderedList a)
+  -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq a => Eq (NonZero a)
+  -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq a => Eq (NonPositive a)
+  -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq a => Eq (NonNegative a)
+  -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq a => Eq (NonEmptyList a)
+  -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq a => Eq (Negative a)
+  -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq a => Eq (Large a)
+  -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq a => Eq (Fixed a)
+  -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq a => Eq (Blind a)
+  -- Defined in ‘Test.QuickCheck.Modifiers’
+instance Eq ASCIIString -- Defined in ‘Test.QuickCheck.Modifiers’
+instance (Eq a, Eq b) => Eq (Either a b)
+  -- Defined in ‘Data.Either’
+instance Eq a => Eq (Maybe a) -- Defined in ‘GHC.Maybe’
+instance Eq a => Eq [a] -- Defined in ‘GHC.Classes’
+instance Eq Word -- Defined in ‘GHC.Classes’
+instance Eq Ordering -- Defined in ‘GHC.Classes’
+instance Eq Int -- Defined in ‘GHC.Classes’
+instance Eq Float -- Defined in ‘GHC.Classes’
+instance Eq Double -- Defined in ‘GHC.Classes’
+instance Eq Char -- Defined in ‘GHC.Classes’
+instance Eq Bool -- Defined in ‘GHC.Classes’
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h, Eq i,
+          Eq j, Eq k, Eq l, Eq m, Eq n, Eq o) =>
+         Eq (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)
+  -- Defined in ‘GHC.Classes’
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h, Eq i,
+          Eq j, Eq k, Eq l, Eq m, Eq n) =>
+         Eq (a, b, c, d, e, f, g, h, i, j, k, l, m, n)
+  -- Defined in ‘GHC.Classes’
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h, Eq i,
+          Eq j, Eq k, Eq l, Eq m) =>
+         Eq (a, b, c, d, e, f, g, h, i, j, k, l, m)
+  -- Defined in ‘GHC.Classes’
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h, Eq i,
+          Eq j, Eq k, Eq l) =>
+         Eq (a, b, c, d, e, f, g, h, i, j, k, l)
+  -- Defined in ‘GHC.Classes’
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h, Eq i,
+          Eq j, Eq k) =>
+         Eq (a, b, c, d, e, f, g, h, i, j, k)
+  -- Defined in ‘GHC.Classes’
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h, Eq i,
+          Eq j) =>
+         Eq (a, b, c, d, e, f, g, h, i, j)
+  -- Defined in ‘GHC.Classes’
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h, Eq i) =>
+         Eq (a, b, c, d, e, f, g, h, i)
+  -- Defined in ‘GHC.Classes’
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h) =>
+         Eq (a, b, c, d, e, f, g, h)
+  -- Defined in ‘GHC.Classes’
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g) =>
+         Eq (a, b, c, d, e, f, g)
+  -- Defined in ‘GHC.Classes’
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f) =>
+         Eq (a, b, c, d, e, f)
+  -- Defined in ‘GHC.Classes’
+instance (Eq a, Eq b, Eq c, Eq d, Eq e) => Eq (a, b, c, d, e)
+  -- Defined in ‘GHC.Classes’
+instance (Eq a, Eq b, Eq c, Eq d) => Eq (a, b, c, d)
+  -- Defined in ‘GHC.Classes’
+instance (Eq a, Eq b, Eq c) => Eq (a, b, c)
+  -- Defined in ‘GHC.Classes’
+instance (Eq a, Eq b) => Eq (a, b) -- Defined in ‘GHC.Classes’
+instance Eq () -- Defined in ‘GHC.Classes’
+instance Eq Integer
+  -- Defined in ‘integer-gmp-1.0.2.0:GHC.Integer.Type’
 #+END_EXAMPLE
 
 Any type that has an instance of ~Eq~ typeclass implements the
@@ -112,7 +199,7 @@ second ~a~ it's the same type
 #+BEGIN_EXAMPLE
 (==) (1, 2) :: (Eq a, Eq b, Num a, Num b) => (a, b) -> Bool
 --------------------------------------
-<interactive>:44:11: error:
+<interactive>:1156:11: error:
     • Couldn't match expected type ‘(Integer, Integer)’
                   with actual type ‘[Char]’
     • In the second argument of ‘(==)’, namely ‘"puppies"’

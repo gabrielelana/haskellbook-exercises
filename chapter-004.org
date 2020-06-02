@@ -5,8 +5,6 @@
 #+PROPERTY: header-args:haskell :results replace output
 #+PROPERTY: header-args:haskell+ :noweb yes
 #+PROPERTY: header-args:haskell+ :wrap EXAMPLE
-#+PROPERTY: header-args:haskell+ :epilogue ":load"
-#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
 
 * 4.01 Basic Datatypes
 ...
@@ -50,7 +48,7 @@ data Mood = Blah | Woot deriving Show
 
 4. Implement the function
    #+NAME: mood
-   #+BEGIN_SRC haskell :tangle chapter-004/Mood.hs :eval never :epilogue ""
+   #+BEGIN_SRC haskell :tangle chapter-004/Mood.hs :eval never
    module Mood where
 
    <<mood-declaration>>
@@ -71,6 +69,8 @@ data Mood = Blah | Woot deriving Show
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   [1 of 1] Compiling Mood             ( /home/coder/code/haskellbook-exercises/chapter-004/Mood.hs, interpreted )
+   Ok, one module loaded.
    Blah
    Woot
    #+END_EXAMPLE
@@ -195,7 +195,7 @@ use that expression by its bound name.
 Haskell doesn't have an ~if~ statement but does have an ~if~
 expression
 
-#+BEGIN_SRC haskell :tangle chapter-004/GreetIfCool1.hs :eval never :epilogue ""
+#+BEGIN_SRC haskell :tangle chapter-004/GreetIfCool1.hs :eval never
 module GreetIfCool1 where
 
 greetIfCool :: String -> IO ()
@@ -221,11 +221,13 @@ main
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
+[1 of 1] Compiling GreetIfCool1     ( /home/coder/code/haskellbook-exercises/chapter-004/GreetIfCool1.hs, interpreted )
+Ok, one module loaded.
 pshhhh.
 eyyyy. What's shakin'?
 #+END_EXAMPLE
 
-#+BEGIN_SRC haskell :tangle chapter-004/GreetIfCool2.hs :eval never :epilogue ""
+#+BEGIN_SRC haskell :tangle chapter-004/GreetIfCool2.hs :eval never
 module GreetIfCool2 where
 
 greetIfCool :: String -> IO ()
@@ -251,6 +253,8 @@ main
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
+[1 of 1] Compiling GreetIfCool2     ( /home/coder/code/haskellbook-exercises/chapter-004/GreetIfCool2.hs, interpreted )
+Ok, one module loaded.
 eyyyy. What's shakin'?
 pshhhh.
 #+END_EXAMPLE
@@ -454,7 +458,7 @@ allAwesome = [awesome, also]
 
 8. Write a function that tells whether or not a given String is a
    palindrome.
-   #+BEGIN_SRC haskell :tangle chapter-004/Palindrome.hs :eval never :epilogue ""
+   #+BEGIN_SRC haskell :tangle chapter-004/Palindrome.hs :eval never
    module Palindrome where
 
    isPalindrome :: (Eq a) => [a] -> Bool
@@ -472,6 +476,8 @@ allAwesome = [awesome, also]
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   [1 of 1] Compiling Palindrome       ( /home/coder/code/haskellbook-exercises/chapter-004/Palindrome.hs, interpreted )
+   Ok, one module loaded.
    True
    True
    True
@@ -479,7 +485,7 @@ allAwesome = [awesome, also]
    #+END_EXAMPLE
 
 9. Write a function to return the absolute value of a number using if-then-else
-   #+BEGIN_SRC haskell :tangle chapter-004/Abs.hs :eval never :epilogue ""
+   #+BEGIN_SRC haskell :tangle chapter-004/Abs.hs :eval never
    module Abs where
 
    abs' :: Integer -> Integer
@@ -495,6 +501,8 @@ allAwesome = [awesome, also]
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   [1 of 1] Compiling Abs              ( /home/coder/code/haskellbook-exercises/chapter-004/Abs.hs, interpreted )
+   Ok, one module loaded.
    5
    5
    #+END_EXAMPLE
@@ -525,7 +533,7 @@ allAwesome = [awesome, also]
    #+END_SRC
 
    Works
-   #+BEGIN_SRC haskell
+   #+BEGIN_SRC haskell :eval never
    x = (+)
 
    f xs = w `x` 1 where w = length xs

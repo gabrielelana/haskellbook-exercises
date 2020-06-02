@@ -19,4 +19,3 @@ instance Eq Date where
   (==) (Date dayOfWeek dayOfMonth)
        (Date dayOfWeek' dayOfMonth') =
     dayOfWeek == dayOfWeek' && dayOfMonth == dayOfMonth'
-:load

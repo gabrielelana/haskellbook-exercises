@@ -5,8 +5,6 @@
 #+PROPERTY: header-args:haskell :results replace output
 #+PROPERTY: header-args:haskell+ :noweb yes
 #+PROPERTY: header-args:haskell+ :wrap EXAMPLE
-#+PROPERTY: header-args:haskell+ :epilogue ":load"
-#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
 
 * 2.01 Hello, Haskell!
 You will need a working Haskell environment to continue... imagine
@@ -54,7 +52,7 @@ type String = [Char] 	-- Defined in ‘GHC.Base’
 -- :quit will quit the session
 #+END_SRC
 
-#+BEGIN_SRC haskell :eval never :tangle chapter-002/Hello.hs :epilogue ""
+#+BEGIN_SRC haskell :eval never :tangle chapter-002/Hello.hs
 module Hello where
 
 sayHello :: String -> IO ()
@@ -70,6 +68,8 @@ sayHello "Gabriele"
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
+[1 of 1] Compiling Hello            ( /home/coder/code/haskellbook-exercises/chapter-002/Hello.hs, interpreted )
+Ok, one module loaded.
 Hello, Gabriele!
 #+END_EXAMPLE
 
@@ -342,7 +342,7 @@ Check if the parentheses changes the result of the expression
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
-   Fractional a where
+   class Num a => Fractional a where
      (/) :: a -> a -> a
      ...
            -- Defined in ‘GHC.Real’
@@ -639,6 +639,10 @@ x = y ^ 2
 waxOn = x * 5
 #+END_SRC
 
+#+RESULTS: wax-on
+#+BEGIN_EXAMPLE
+#+END_EXAMPLE
+
 #+BEGIN_SRC haskell
 <<wax-on>>
 waxOn
@@ -688,6 +692,8 @@ waxOn
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   [1 of 1] Compiling Wax              ( /home/coder/code/haskellbook-exercises/chapter-002/Wax.hs, interpreted )
+   Ok, one module loaded.
    1125
    #+END_EXAMPLE
 
@@ -702,6 +708,8 @@ waxOn
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   [1 of 1] Compiling Wax              ( /home/coder/code/haskellbook-exercises/chapter-002/Wax.hs, interpreted )
+   Ok, one module loaded.
    3375
    #+END_EXAMPLE
 
@@ -718,6 +726,8 @@ waxOn
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   [1 of 1] Compiling Wax              ( /home/coder/code/haskellbook-exercises/chapter-002/Wax.hs, interpreted )
+   Ok, one module loaded.
    3375
    #+END_EXAMPLE
 

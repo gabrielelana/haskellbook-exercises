@@ -5,8 +5,6 @@
 #+PROPERTY: header-args:haskell :results replace output
 #+PROPERTY: header-args:haskell+ :noweb yes
 #+PROPERTY: header-args:haskell+ :wrap EXAMPLE
-#+PROPERTY: header-args:haskell+ :epilogue ":load"
-#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
 
 * 7.01 Make it more functional
 ...
@@ -572,7 +570,7 @@ print'= putStrLn . show
 
 4. Writing point free versions of existing code
    #+NAME: RoundTrip
-   #+BEGIN_SRC haskell :results none :tangle chapter-007/RoundTrip.hs :epilogue ""
+   #+BEGIN_SRC haskell :results none :tangle chapter-007/RoundTrip.hs
    module RoundTrip where
 
    roundTrip :: (Show a, Read a) => a -> a
@@ -598,7 +596,7 @@ print'= putStrLn . show
 
 5. Write a pointfree version of roundTrip
    #+NAME: RoundTripPointFree
-   #+BEGIN_SRC haskell :results none :tangle chapter-007/RoundTripPointFree.hs :epilogue ""
+   #+BEGIN_SRC haskell :results none :tangle chapter-007/RoundTripPointFree.hs
    module RoundTripPointFree where
 
    roundTrip :: (Show a, Read a) => a -> a
@@ -626,7 +624,7 @@ print'= putStrLn . show
    ~(Show a, Read b) => a -> b~. How might we tell GHC which
    instance of Read to dispatch against the String now?
    #+NAME: RoundTripDispatch
-   #+BEGIN_SRC haskell :results none :tangle chapter-007/RoundTripDispatch.hs :epilogue ""
+   #+BEGIN_SRC haskell :results none :tangle chapter-007/RoundTripDispatch.hs
    module RoundTripDispatch where
 
    roundTrip :: (Show a, Read b) => a -> b

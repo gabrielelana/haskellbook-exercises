@@ -5,15 +5,13 @@
 #+PROPERTY: header-args:haskell :results replace output
 #+PROPERTY: header-args:haskell+ :noweb yes
 #+PROPERTY: header-args:haskell+ :wrap EXAMPLE
-#+PROPERTY: header-args:haskell+ :epilogue ":load"
-#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
 
 * 8.01 Recursion
 Nothing much
 
 * 8.02 Factorial!
 #+NAME: factorial
-#+BEGIN_SRC haskell :results none :tangle chapter-008/Factorial.hs :epilogue ""
+#+BEGIN_SRC haskell :results none :tangle chapter-008/Factorial.hs
 module Factorial where
 
 factorial :: Integer -> Integer
@@ -98,7 +96,7 @@ f _ = Nothing
 
 * 8.04 Fibonacci
 #+NAME: fibonacci
-#+BEGIN_SRC haskell :results none :tangle chapter-008/Fibonacci.hs :epilogue ""
+#+BEGIN_SRC haskell :results none :tangle chapter-008/Fibonacci.hs
 module Fibonacci where
 
 fibonacci :: Integral a => a -> a
@@ -127,7 +125,7 @@ fibonacci 16
 
 * 8.05 Integral division from scratch
 #+NAME: DivFromScratch
-#+BEGIN_SRC haskell :results none :tangle chapter-008/DivFromScratch.hs :epilogue ""
+#+BEGIN_SRC haskell :results none :tangle chapter-008/DivFromScratch.hs
 module DivFromScratch where
 
 type Numerator = Integer
@@ -310,7 +308,7 @@ frappe = flippy "haha"
 
 2. Write a function that recursively sums all numbers from 1 to n.
    #+NAME: SumsUpTo
-   #+BEGIN_SRC haskell :results none :tangle chapter-008/SumsUpTo.hs :epilogue ""
+   #+BEGIN_SRC haskell :results none :tangle chapter-008/SumsUpTo.hs
    module SumsUpTo where
 
    sumsUpTo :: (Eq a, Num a) => a -> a
@@ -346,7 +344,7 @@ frappe = flippy "haha"
 3. Write a function that multiplies two integral numbers using
    recursive summation.
    #+NAME: RecursiveMul
-   #+BEGIN_SRC haskell :results none :tangle chapter-008/RecursiveMul.hs :epilogue ""
+   #+BEGIN_SRC haskell :results none :tangle chapter-008/RecursiveMul.hs
    module RecursiveMul where
 
    recursiveSum :: Integral a => a -> a -> a
@@ -383,7 +381,7 @@ partial function and doesn't return a result (bottom) when given a
 divisor that is 0 or less.
 
 #+NAME: MaybeDividedBy
-#+BEGIN_SRC haskell :results none :tangle chapter-008/MaybeDividedBy.hs :epilogue ""
+#+BEGIN_SRC haskell :results none :tangle chapter-008/MaybeDividedBy.hs
 module MaybeDividedBy where
 
 type Numerator = Integer
@@ -426,7 +424,7 @@ otherwise (NDE. the description is wrong). The function is
 recursive.
 
 #+NAME: McCarthy91
-#+BEGIN_SRC haskell :results none :tangle chapter-008/McCarthy91.hs :epilogue ""
+#+BEGIN_SRC haskell :results none :tangle chapter-008/McCarthy91.hs
 module McCarthy91 where
 
 mc91 :: Integer -> Integer
@@ -465,7 +463,7 @@ wordNumber :: Int -> String
 wordNumber n = undefined
 #+END_SRC
 
-#+BEGIN_SRC haskell :results none :tangle chapter-008/WordNumber.hs :epilogue ""
+#+BEGIN_SRC haskell :results none :tangle chapter-008/WordNumber.hs
 module WordNumber where
 
 import Data.List (intersperse)
@@ -507,6 +505,8 @@ wordNumber 1498
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
+[1 of 1] Compiling WordNumber       ( /home/coder/code/haskellbook-exercises/chapter-008/WordNumber.hs, interpreted )
+Ok, one module loaded.
 three
 seven
 zero
