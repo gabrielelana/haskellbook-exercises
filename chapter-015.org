@@ -4,7 +4,6 @@
 
 #+PROPERTY: header-args:haskell :results replace output
 #+PROPERTY: header-args:haskell+ :noweb yes
-#+PROPERTY: header-args:haskell+ :session none
 #+PROPERTY: header-args:haskell+ :wrap EXAMPLE
 
 * 15.01 Monoids and Semigropus
@@ -1349,8 +1348,7 @@ what the identity value is.
 
    :{
    instance (Monoid a) => Monoid (Mem s a) where
-     mempty = Mem $ \s -> (mempty, s)
-     -- mempty = Mem $ (,) mempty
+     mempty = Mem $ (,) mempty
    :}
 
    :{
