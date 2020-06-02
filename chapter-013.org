@@ -5,8 +5,6 @@
 #+PROPERTY: header-args:haskell :results replace output
 #+PROPERTY: header-args:haskell+ :noweb yes
 #+PROPERTY: header-args:haskell+ :wrap EXAMPLE
-#+PROPERTY: header-args:haskell+ :epilogue ":load"
-#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
 
 * 13.01 Modules
 - Haskell programs are organized into modules.
@@ -16,11 +14,11 @@
 - A package is a collection of modules and its dependencies.
 - *Cabal* (Common Architecture to Build Applications and Libraries) is
   the Haskell package manager.
-- Cabal exists to describe a single package with a Cabal file that
-  has the ~.cabal~ file extension.
-- *Stack* is a tool for developing Haskell projects, it's built on
-  top of Cabal and it will help with with large projects with
-  multiple dependencies.
+- Cabal exists to describe a single package with a Cabal file that has
+  the ~.cabal~ file extension.
+- *Stack* is a tool for developing Haskell projects, it's built on top
+  of Cabal and it will help with with large projects with multiple
+  dependencies.
 - Stack relies on a configuration file called ~stack.yaml~
 - Stack relies on LTS (Long Time Support) snapshot of packages that
   are guaranteed to work together, those packages are from [[https://www.stackage.org][Stackage]]
