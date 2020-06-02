@@ -5,8 +5,6 @@
 #+PROPERTY: header-args:haskell :results replace output
 #+PROPERTY: header-args:haskell+ :noweb yes
 #+PROPERTY: header-args:haskell+ :wrap EXAMPLE
-#+PROPERTY: header-args:haskell+ :epilogue ":load"
-#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
 
 * 11.01 Algebraic datatypes
 A type can be tought of as an enumeration of constructors that have
@@ -702,14 +700,13 @@ Second Twitter :: SocialNetwork
 #+BEGIN_EXAMPLE
 First Twitter
 Second Reddit
-
-<interactive>:729:1: error:
+<interactive>:940:1: error:
     • Couldn't match type ‘Reddit’ with ‘Twitter’
       Expected type: SocialNetwork
         Actual type: Sum Reddit Reddit
     • In the expression: First Reddit :: SocialNetwork
       In an equation for ‘it’: it = First Reddit :: SocialNetwork
-<interactive>:730:1: error:
+<interactive>:941:1: error:
     • Couldn't match type ‘Twitter’ with ‘Reddit’
       Expected type: SocialNetwork
         Actual type: Sum Twitter Twitter
@@ -766,7 +763,7 @@ model NotCar
 #+BEGIN_EXAMPLE
 model :: Car -> String
 Porche Boxter
-<interactive>:769:7: error:
+<interactive>:957:7: error:
     • Couldn't match expected type ‘Car’ with actual type ‘Automobile’
     • In the first argument of ‘model’, namely ‘NotCar’
       In the expression: model NotCar
