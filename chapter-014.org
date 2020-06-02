@@ -5,8 +5,6 @@
 #+PROPERTY: header-args:haskell :results replace output
 #+PROPERTY: header-args:haskell+ :noweb yes
 #+PROPERTY: header-args:haskell+ :wrap EXAMPLE
-#+PROPERTY: header-args:haskell+ :epilogue ":load"
-#+PROPERTY: header-args:haskell+ :post ghci-clean(content=*this*)
 
 * 14.01 Testing
 Nothing much
@@ -76,16 +74,16 @@ sample (arbitrary :: Gen Int)
 #+RESULTS:
 #+BEGIN_EXAMPLE
 0
--1
-0
-6
+2
 3
-6
-7
-3
-1
 -4
--2
+5
+0
+-8
+-7
+-16
+5
+-10
 #+END_EXAMPLE
 
 We can create a simple generator with the use of ~return~. The
@@ -122,9 +120,8 @@ sample' oneTwoOrThree
 #+RESULTS:
 #+BEGIN_EXAMPLE
 elements :: [a] -> Gen a
-[2,1,2,3,3,3,3,3,2,3,1]
+[2,2,1,2,1,3,1,3,3,2,2]
 #+END_EXAMPLE
-
 
 There's also ~choose~ which will choose an element in a tuple of two
 elements.
@@ -195,11 +192,12 @@ echo "main" | stack ghci -- morse-code:tests
 #+RESULTS:
 #+BEGIN_EXAMPLE
 GHCi, version 8.4.3: http://www.haskell.org/ghc/  :? for help
+Loaded GHCi configuration from /home/coder/.ghc/ghci.conf
 [1 of 1] Compiling Main             ( /home/coder/code/haskellbook-exercises/chapter-014/morse-code/tests/tests.hs, interpreted )
 Ok, one module loaded.
 Loaded GHCi configuration from /tmp/haskell-stack-ghci/786931a3/ghci-script
-,*Main> +++ OK, passed 100 tests.
-,*Main> Leaving GHCi.
+λ +++ OK, passed 100 tests.
+λ Leaving GHCi.
 #+END_EXAMPLE
 
 * 14.06 Arbitrary instances
@@ -260,28 +258,28 @@ sample (arbitrary :: Gen (Identity Char))
 #+BEGIN_EXAMPLE
 === Identity Int
 Identity 0
-Identity (-1)
-Identity (-3)
 Identity 1
-Identity 0
-Identity 9
-Identity (-8)
+Identity 2
 Identity (-4)
-Identity (-6)
-Identity (-1)
-Identity (-4)
+Identity 4
+Identity 8
+Identity (-10)
+Identity (-11)
+Identity 14
+Identity 14
+Identity 17
 === Identity Char
-Identity '?'
-Identity '\293226'
-Identity '\SOH'
-Identity '\ETX'
-Identity '\US'
-Identity '\238657'
-Identity '\1061693'
-Identity 'B'
-Identity '\208850'
-Identity 'M'
-Identity '\597085'
+Identity 'Z'
+Identity '\86583'
+Identity '\717825'
+Identity '\326353'
+Identity 'v'
+Identity 'D'
+Identity '\758965'
+Identity '\687240'
+Identity 'C'
+Identity ';'
+Identity '\FS'
 #+END_EXAMPLE
 
 More interesting is an instance for a sum type. While generating a
@@ -306,16 +304,16 @@ sample (arbitrary :: Gen (Sum Char Int))
 #+RESULTS:
 #+BEGIN_EXAMPLE
 Second 0
-First '\DLE'
 Second (-1)
-First '|'
-Second (-7)
-First '\859958'
-Second (-6)
-First '('
-Second 2
-Second 13
-Second 1
+First '\CAN'
+Second 3
+First 'a'
+First '6'
+First '\DC1'
+Second 5
+First 'G'
+First '\3077'
+Second (-5)
 #+END_EXAMPLE
 
 We can use ~frequency~ to choose not equally between data constructors
@@ -389,6 +387,8 @@ hspec $ do
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
+[1 of 1] Compiling WordNumber       ( /home/coder/code/haskellbook-exercises/chapter-008/WordNumber.hs, interpreted )
+Ok, one module loaded.
 digitToWord
   returns zero for 0
   returns one for 1
@@ -400,7 +400,8 @@ digits
 wordNumber
   returns one-zero-zero for 100
   returns nien-zero-zero-one for 9001
-Finished in 0.0015 seconds
+
+Finished in 0.0025 seconds
 8 examples, 0 failures
 #+END_EXAMPLE
 
@@ -428,7 +429,9 @@ Test some simple mathematical properties with /QuichCheck/
      forAll (arbitrary :: Gen (Float)) (\x -> x == (*2) (half x))
    :}
 
-   quickCheckWithResult stdArgs {chatty=False} property_HalfIdentity >>= print . output
+   <<quickcheck-with-output>>
+
+   quickCheckWithOutput property_HalfIdentity
    #+END_SRC
 
    #+RESULTS:
@@ -470,22 +473,24 @@ Test some simple mathematical properties with /QuichCheck/
      forAll orderedListGenerator listOrdered
    :}
 
-   quickCheckWithResult stdArgs {chatty=False} property_OrderedListProperty >>= print . output
+   <<quickcheck-with-output>>
+
+   quickCheckWithOutput property_OrderedListProperty
    #+END_SRC
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
    []
+   [-1]
    []
-   [-1,1]
-   [-2]
+   [-6,-6,2,6,6]
+   [-5,-4,3,8,8]
+   [-7,-3,6,7,10]
    []
-   [-9,-9,-6,-5,-3,-2,0,7]
+   [-7,-1]
    []
-   [-11,-6]
-   [-2]
-   []
-   [-18,-17,-12,-10,-5,-3,9,9,17,17]
+   [10]
+   [-18,-15,-12,-3,-1,7,11,14]
    +++ OK, passed 100 tests.\n
    #+END_EXAMPLE
 
@@ -503,8 +508,10 @@ Test some simple mathematical properties with /QuichCheck/
     commutativeProperty x y = x + y == y + x
     :}
 
-    quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary associativeProperty) >>= print . output
-    quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary commutativeProperty) >>= print . output
+   <<quickcheck-with-output>>
+
+    quickCheckWithOutput (forAll arbitrary associativeProperty)
+    quickCheckWithOutput (forAll arbitrary commutativeProperty)
     #+END_SRC
 
     #+RESULTS:
@@ -528,8 +535,10 @@ Test some simple mathematical properties with /QuichCheck/
    commutativeProperty x y = x * y == y * x
    :}
 
-   quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary associativeProperty) >>= print . output
-   quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary commutativeProperty) >>= print . output
+   <<quickcheck-with-output>>
+
+   quickCheckWithOutput (forAll arbitrary associativeProperty)
+   quickCheckWithOutput (forAll arbitrary commutativeProperty)
    #+END_SRC
 
    #+RESULTS:
@@ -552,8 +561,10 @@ Test some simple mathematical properties with /QuichCheck/
    divAndModLaw x y = (div x y) * y + (mod x y) == x
    :}
 
-   quickCheckWithResult (stdArgs {chatty=False}) (forAll (arbitrary :: Gen (Int, NonZero Int)) (\(x, NonZero y) -> quotAndRemLaw x y)) >>= print . output
-   quickCheckWithResult (stdArgs {chatty=False}) (forAll (arbitrary :: Gen (Int, NonZero Int)) (\(x, NonZero y) -> divAndModLaw x y)) >>= print . output
+   <<quickcheck-with-output>>
+
+   quickCheckWithOutput (forAll (arbitrary :: Gen (Int, NonZero Int)) (\(x, NonZero y) -> quotAndRemLaw x y)
+   quickCheckWithOutput (forAll (arbitrary :: Gen (Int, NonZero Int)) (\(x, NonZero y) -> divAndModLaw x y)
    #+END_SRC
 
    #+RESULTS:
@@ -576,8 +587,10 @@ Test some simple mathematical properties with /QuichCheck/
    commutativeProperty x y = x ^ y == y ^ x
    :}
 
-   quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary associativeProperty) >>= print . output
-   quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary commutativeProperty) >>= print . output
+   <<quickcheck-with-output>>
+
+   quickCheckWithOutput (forAll arbitrary associativeProperty)
+   quickCheckWithOutput (forAll arbitrary commutativeProperty)
    #+END_SRC
 
    #+RESULTS:
@@ -595,7 +608,9 @@ Test some simple mathematical properties with /QuichCheck/
    reverseOfReverseProperty xs = (reverse . reverse) xs == xs
    :}
 
-   quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary reverseOfReverseProperty) >>= print . output
+   <<quickcheck-with-output>>
+
+   quickCheckWithOutput (forAll arbitrary reverseOfReverseProperty)
    #+END_SRC
 
    #+RESULTS:
@@ -612,7 +627,9 @@ Test some simple mathematical properties with /QuichCheck/
    applicationOperatorDefinition (Blind f) x = (f x) == (f $ x)
    :}
 
-   quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary applicationOperatorDefinition) >>= print . output
+   <<quickcheck-with-output>>
+
+   quickCheckWithOutput (forAll arbitrary applicationOperatorDefinition)
    #+END_SRC
 
    #+RESULTS:
@@ -629,7 +646,9 @@ Test some simple mathematical properties with /QuichCheck/
    composeOperatorDefinition (Blind g) (Blind f) x = ((f . g) x) == (f (g x))
    :}
 
-   quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary composeOperatorDefinition) >>= print . output
+   <<quickcheck-with-output>>
+
+   quickCheckWithOutput (forAll arbitrary composeOperatorDefinition)
    #+END_SRC
 
    #+RESULTS:
@@ -653,7 +672,9 @@ Test some simple mathematical properties with /QuichCheck/
      return $ Blind (\_ -> b)
    :}
 
-   quickCheckWithResult (stdArgs {chatty=False}) (forAll functionGenerator applicationOperatorDefinition) >>= print . output
+   <<quickcheck-with-output>>
+
+   quickCheckWithOutput (forAll functionGenerator applicationOperatorDefinition)
    #+END_SRC
 
    #+RESULTS:
@@ -677,7 +698,9 @@ Test some simple mathematical properties with /QuichCheck/
    equalityProperty xs ys = (xs ++ ys) == (foldr (:) ys xs)
    :}
 
-   quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary equalityProperty) >>= print . output
+   <<quickcheck-with-output>>
+
+   quickCheckWithOutput (forAll arbitrary equalityProperty)
    #+END_SRC
 
    #+RESULTS:
@@ -695,7 +718,9 @@ Test some simple mathematical properties with /QuichCheck/
    equalityProperty xs = (concat xs) == (foldr (++) [] xs)
    :}
 
-   quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary equalityProperty) >>= print . output
+   <<quickcheck-with-output>>
+
+   quickCheckWithOutput (forAll arbitrary equalityProperty)
    #+END_SRC
 
    #+RESULTS:
@@ -712,12 +737,14 @@ Test some simple mathematical properties with /QuichCheck/
     property (NonNegative n) xs = length (take n xs) == n
     :}
 
-    quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary property) >>= print . output
+    <<quickcheck-with-output>>
+
+    quickCheckWithOutput (forAll arbitrary property)
     #+END_SRC
 
     #+RESULTS:
     #+BEGIN_EXAMPLE
-    ,*** Failed! Falsified (after 4 tests):\nNonNegative {getNonNegative = 2}\n[]\n
+    ,*** Failed! Falsified (after 6 tests and 1 shrink):\nNonNegative {getNonNegative = 3}\n[]\n
     #+END_EXAMPLE
 
     It is not true when the length of the original list is less than ~n~
@@ -731,7 +758,9 @@ Test some simple mathematical properties with /QuichCheck/
     property x = (read . show) x == x
     :}
 
-    quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary property) >>= print . output
+    <<quickcheck-with-output>>
+
+    quickCheckWithOutput (forAll arbitrary property)
     #+END_SRC
 
     #+RESULTS:
@@ -768,8 +797,10 @@ squareIdentity' :: (Ord a, Floating a) => NonNegative a -> Bool
 squareIdentity' (NonNegative x) = abs (((square . sqrt) x) - x) <= 0.00001
 :}
 
-quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary squareIdentity) >>= print . output
-quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary squareIdentity') >>= print . output
+<<quickcheck-with-output>>
+
+quickCheckWithOutput (forAll arbitrary squareIdentity)
+quickCheckWithOutput (forAll arbitrary squareIdentity')
 #+END_SRC
 
 #+RESULTS:
@@ -818,7 +849,9 @@ fourTimes = twice . twice
      (capitalizeWord s == fourTimes capitalizeWord s)
    :}
 
-   quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary property) >>= print . output
+   <<quickcheck-with-output>>
+
+   quickCheckWithOutput (forAll arbitrary property)
    #+END_SRC
 
    #+RESULTS:
@@ -841,11 +874,14 @@ fourTimes = twice . twice
      (sort xs == fourTimes sort xs)
    :}
 
-   quickCheckWithResult (stdArgs {chatty=False}) (forAll arbitrary property) >>= print . output
+   <<quickcheck-with-output>>
+
+   quickCheckWithOutput (forAll arbitrary property)
    #+END_SRC
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
    +++ OK, passed 100 tests.\n
    #+END_EXAMPLE
 
@@ -930,10 +966,13 @@ fourTimes = twice . twice
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   [1 of 1] Compiling Main             ( /home/coder/code/haskellbook-exercises/chapter-013/hangman/src/Main.hs, interpreted )
+   Ok, one module loaded.
    fillInCharacter
      should fill character when in word to guess
      should not fill character when not in word to guess
-   Finished in 0.0007 seconds
+
+   Finished in 0.0004 seconds
    2 examples, 0 failures
    #+END_EXAMPLE
 
@@ -981,14 +1020,16 @@ fourTimes = twice . twice
        (\c -> monotoneCheck p (fillInCharacter p c)))
    :}
 
-   quickCheckOutput p = quickCheckWithResult (stdArgs {chatty=False}) p >>= print . (reverse . dropWhile Data.Char.isSpace . reverse) . output
+   <<quickcheck-with-output>>
 
-   quickCheckOutput fillInCharacterIsMonotone
+   quickCheckWithOutput fillInCharacterIsMonotone
    #+END_SRC
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
-   +++ OK, passed 100 tests.
+   [1 of 1] Compiling Main             ( /home/coder/code/haskellbook-exercises/chapter-013/hangman/src/Main.hs, interpreted )
+   Ok, one module loaded.
+   +++ OK, passed 100 tests.\n
    #+END_EXAMPLE
 
 
@@ -1024,6 +1065,8 @@ fourTimes = twice . twice
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   [1 of 1] Compiling Main             ( /home/coder/code/haskellbook-exercises/chapter-013/hangman/src/Main.hs, interpreted )
+   Ok, one module loaded.
    handleGuess
    Your guess was: o
    You guessed right!
@@ -1034,7 +1077,8 @@ fourTimes = twice . twice
    Your guess was: h
    You already guessed that character, pick something else...
      should not record a guess if already guessed
-   Finished in 0.0012 seconds
+
+   Finished in 0.0031 seconds
    3 examples, 0 failures
    #+END_EXAMPLE
 
@@ -1069,18 +1113,20 @@ vigenereRoundTrip :: String -> String -> Bool
 vigenereRoundTrip k s = (vigenereDecode alphabet k . vigenereEncode alphabet k) s == s
 :}
 
+<<quickcheck-with-output>>
+
 :{
-quickCheckWithResult (stdArgs {chatty=False})
-  (forAll shiftGenerator
-    (\n -> forAll wordGenerator
-      (\w -> caesarRoundTrip n w))) >>= print . output
+quickCheckWithOutput (
+  forAll shiftGenerator (\n ->
+    forAll wordGenerator (\w ->
+      caesarRoundTrip n w)))
 :}
 
 :{
-quickCheckWithResult (stdArgs {chatty=False})
-  (forAll wordGenerator
-    (\keyword -> forAll wordGenerator
-      (\word -> vigenereRoundTrip keyword word))) >>= print . output
+quickCheckWithOutput (
+  forAll wordGenerator (\keyword ->
+    forAll wordGenerator (\word ->
+      vigenereRoundTrip keyword word)))
 :}
 #+END_SRC
 
