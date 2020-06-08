@@ -1,115 +1,124 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
 #+TITLE: Functor
 
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+
 * 16.01 Functor
-  - We abstract out a common pattern, make certain it follows some
-    laws, give it an awesome name, and wonder how we ever lived
-    without it.
-  - /Functor/ is all about a pattern mapping over a structure.
-  - ~map~ is defined only for lists.
-  - ~fmap~ works on more things other than lists.
+- We abstract out a common pattern, make certain it follows some
+  laws, give it an awesome name, and wonder how we ever lived
+  without it.
+- /Functor/ is all about a pattern mapping over a structure.
+- ~map~ is defined only for lists.
+- ~fmap~ works on more things other than lists.
 
 * 16.02 What's a Functor
-  It's a way to apply a function over a structure without altering the
-  structure but reaching to the value inside the structure.
+It's a way to apply a function over a structure without altering the
+structure but reaching to the value inside the structure.
 
-  #+BEGIN_SRC haskell :eval never
-  class Functor f where
-  --           [1]
-    fmap :: (a -> b) -> f a -> f b
-  --                    [2]   [3]
-  #+END_SRC
+#+BEGIN_SRC haskell :eval never
+class Functor f where
+--           [1]
+  fmap :: (a -> b) -> f a -> f b
+--                    [2]   [3]
+#+END_SRC
 
-  1. Refers to a generic type ~f~ (conventional letter) that have
-     functorial structure.
-  2. The argument ~f a~ is a functor ~f~ that takes a type argument
-     ~a~. The ~f~ is a type that has an instance of the ~Functor~
-     typeclass.
-  3. The result ~f b~ is the same ~f~ from ~f a~ while the argument
-     ~b~ /may/ refer to a different type.
-  4. The type ~f~ must therefore have king ~* -> *~
+1. Refers to a generic type ~f~ (conventional letter) that have
+   functorial structure.
+2. The argument ~f a~ is a functor ~f~ that takes a type argument
+   ~a~. The ~f~ is a type that has an instance of the ~Functor~
+   typeclass.
+3. The result ~f b~ is the same ~f~ from ~f a~ while the argument
+   ~b~ /may/ refer to a different type.
+4. The type ~f~ must therefore have king ~* -> *~
 
 * 16.03 There's a Lot of ~fmap~ Going Around
-  List (~[]~) implements the ~Functor~ typeclass, it does the same
-  thing as ~map~ which is a specific function over lists
+List (~[]~) implements the ~Functor~ typeclass, it does the same
+thing as ~map~ which is a specific function over lists
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  fmap (+1) [1..10]
-  map (+1) [1..10]
-  :t fmap
-  :t map
-  #+END_SRC
+#+BEGIN_SRC haskell
+fmap (+1) [1..10]
+map (+1) [1..10]
+:t fmap
+:t map
+#+END_SRC
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  [2,3,4,5,6,7,8,9,10,11]
-  [2,3,4,5,6,7,8,9,10,11]
-  fmap :: Functor f => (a -> b) -> f a -> f b
-  map :: (a -> b) -> [a] -> [b]
-  #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[2,3,4,5,6,7,8,9,10,11]
+[2,3,4,5,6,7,8,9,10,11]
+fmap :: Functor f => (a -> b) -> f a -> f b
+map :: (a -> b) -> [a] -> [b]
+#+END_EXAMPLE
 
-  You cannot ~map~ over a ~Maybe a~ but you can ~fmap~ over it,
-  because ~Maybe~ has an instance of ~Functor~
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  fmap (+1) (Just 1)
-  map (+1) (Just 1)
-  #+END_SRC
+You cannot ~map~ over a ~Maybe a~ but you can ~fmap~ over it,
+because ~Maybe~ has an instance of ~Functor~
+#+BEGIN_SRC haskell
+fmap (+1) (Just 1)
+map (+1) (Just 1)
+#+END_SRC
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  Just 2
-  <interactive>:107:11: error:
-      • Couldn't match expected type ‘[b]’
-                    with actual type ‘Maybe Integer’
-      • In the second argument of ‘map’, namely ‘(Just 1)’
-        In the expression: map (+ 1) (Just 1)
-        In an equation for ‘it’: it = map (+ 1) (Just 1)
-      • Relevant bindings include
-          it :: [b] (bound at <interactive>:107:1)
-  #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Just 2
+<interactive>:1532:11: error:
+    • Couldn't match expected type ‘[b]’
+                  with actual type ‘Maybe Integer’
+    • In the second argument of ‘map’, namely ‘(Just 1)’
+      In the expression: map (+ 1) (Just 1)
+      In an equation for ‘it’: it = map (+ 1) (Just 1)
+    • Relevant bindings include
+        it :: [b] (bound at <interactive>:1532:1)
+#+END_EXAMPLE
 
-  We can apply ~fmap~ to a bunch of types
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  import Data.Functor
-  fmap (+1) (Right 1)
-  fmap (+1) (Left 1)
-  fmap (+1) (Identity 1)
-  fmap (+1) (1, 2)
-  #+END_SRC
+We can apply ~fmap~ to a bunch of types
+#+BEGIN_SRC haskell
+import Data.Functor
+import Data.Functor.Identity
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  Right 2
-  Left 1
-  Identity 2
-  (1,3)
-  #+END_EXAMPLE
+fmap (+1) (Right 1)
+fmap (+1) (Left 1)
+fmap (+1) (Identity 1)
+fmap (+1) (1, 2)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Right 2
+Left 1
+Identity 2
+(1,3)
+#+END_EXAMPLE
 
 * 16.04 Let's Talk About ~f~
-  In the definition of ~Functor~
-  #+BEGIN_SRC haskell :eval never
-  class Functor f where
-    fmap :: (a -> b) -> f a -> f b
-  #+END_SRC
+In the definition of ~Functor~
+#+BEGIN_SRC haskell :eval never
+class Functor f where
+  fmap :: (a -> b) -> f a -> f b
+#+END_SRC
 
-  - Reminder: a type constant or fully applied have kind ~*~
-  - The type ~f~ must have kind ~* -> *~
-  - Each argument (and result) of a function must be fully applied
-    and inhabitable type and so must have kind ~*~
-    #+BEGIN_SRC haskell :eval never
-    Prelude> :k (->)
-    (->) :: * -> * -> *
-    #+END_SRC
-  - The type ~f~ was always applied to a single argument like ~f a~,
-    since ~f a~ in ~(a -> b) -> f a -> f b~ must have kind ~*~ then
-    ~f~ must have kind ~* -> *~
+- Reminder: a type constant or fully applied type constructor have
+  kind ~*~
+- The type ~f~ must have kind ~* -> *~
+- Each argument (and result) of a function must be fully applied and
+  inhabitable type and so must have kind ~*~
+  #+BEGIN_SRC haskell :eval never
+  Prelude> :k (->)
+  (->) :: * -> * -> *
+  #+END_SRC
+- The type ~f~ was always applied to a single argument like ~f a~,
+  since ~f a~ in ~(a -> b) -> f a -> f b~ must have kind ~*~ then ~f~
+  must have kind ~* -> *~
 
   #+BEGIN_SRC haskell :eval never
   class Something a where
     s :: a -> a
          [1]
   #+END_SRC
-  1. Is used as argument of ~->~ type constructor and therefore
-     must have kind ~*~
+  1. Is used as argument of ~->~ type constructor and therefore must
+     have kind ~*~
 
   #+BEGIN_SRC haskell :eval never
   class Else where
@@ -141,1617 +150,1542 @@
   #+END_SRC
 
 ** Exercise: Be Kind
+1. What’s the kind of ~a~?
+   #+BEGIN_SRC haskell :eval never
+   a -> a
+   #+END_SRC
 
-   1. What’s the kind of ~a~? ~*~
-      #+BEGIN_SRC haskell :eval never
-      a -> a
-      #+END_SRC
+   ~*~
 
-   2. What's the kind of ~b~ and ~T~? ~* -> *~
-      #+BEGIN_SRC haskell :eval never
-      a -> b a -> T (b a)
-      #+END_SRC
+2. What's the kind of ~b~ and ~T~?
+   #+BEGIN_SRC haskell :eval never
+   a -> b a -> T (b a)
+   #+END_SRC
 
-   3. What's the kind of ~c~? ~* -> * -> *~
-      #+BEGIN_SRC haskell :eval never
-      c a b -> c b a
-      #+END_SRC
+   ~* -> *~
+
+3. What's the kind of ~c~?
+   #+BEGIN_SRC haskell :eval never
+   c a b -> c b a
+   #+END_SRC
+
+   ~* -> * -> *~
 
 ** A shining star
-   ~Functor~ wants a type parameter of kind ~* -> *~
+~Functor~ wants a type parameter of kind ~* -> *~
 
-   #+BEGIN_SRC haskell :eval never
-   class Functor f where
-     fmap :: (a -> b) -> f a -> f b
-   #+END_SRC
+#+BEGIN_SRC haskell :eval never
+class Functor f where
+  fmap :: (a -> b) -> f a -> f b
+#+END_SRC
 
-   So if we try to define an instance of ~Functor~ for the following
-   type it doesn't work
-   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   data FixMePls = FixMe | Pls deriving (Eq, Show)
+So if we try to define an instance of ~Functor~ for the following type
+it doesn't work
+#+BEGIN_SRC haskell
+data FixMePls = FixMe | Pls deriving (Eq, Show)
 
-   :{
-   instance Functor FixMePls where
-     fmap = error "Don't worry it won't compile"
-   :}
-   #+END_SRC
+:{
+instance Functor FixMePls where
+  fmap = error "Don't worry it won't compile"
+:}
+#+END_SRC
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   <interactive>:366:18: error:
-       • Expected kind ‘* -> *’, but ‘FixMePls’ has kind ‘*’
-       • In the first argument of ‘Functor’, namely ‘FixMePls’
-         In the instance declaration for ‘Functor FixMePls’
-   #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+<interactive>:366:18: error:
+    • Expected kind ‘* -> *’, but ‘FixMePls’ has kind ‘*’
+    • In the first argument of ‘Functor’, namely ‘FixMePls’
+      In the instance declaration for ‘Functor FixMePls’
+#+END_EXAMPLE
 
 ** Functor is function application
-   ~<$>~ is the infix alias for ~fmap~
+~<$>~ is the infix alias for ~fmap~
 
-   Functor is a typeclass for function application “over”, or
-   “through”, some structure f that we want to ignore and leave
-   untouched
-   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   :t ($)
-   :t (<$>)
-   #+END_SRC
+Functor is a typeclass for function application "over", or "through",
+some structure ~f~ that we want to ignore and leave untouched
+#+BEGIN_SRC haskell
+:t ($)
+:t (<$>)
+#+END_SRC
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   ($) :: (a -> b) -> a -> b
-   (<$>) :: Functor f => (a -> b) -> f a -> f b
-   #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+($) :: (a -> b) -> a -> b
+(<$>) :: Functor f => (a -> b) -> f a -> f b
+#+END_EXAMPLE
 
 ** A shining star for you to see what your ~f~ can truly be
-   Let's fix ~FixMePls~
-   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   data FixMePls a = FixMe | Pls a deriving (Eq, Show)
+Let's fix ~FixMePls~
 
-   :{
-   instance Functor FixMePls where
-     fmap _ FixMe = FixMe
-     fmap f (Pls x) = Pls (f x)
-   :}
+#+BEGIN_SRC haskell
+data FixMePls a = FixMe | Pls a deriving (Eq, Show)
 
-   (+1) <$> (Pls 1)
-   #+END_SRC
+:{
+instance Functor FixMePls where
+  fmap _ FixMe = FixMe
+  fmap f (Pls x) = Pls (f x)
+:}
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   Pls 2
-   #+END_EXAMPLE
+(+1) <$> (Pls 1)
+#+END_SRC
 
-   This on the other end doesn't work! We didn't change the type,
-   ~FixMePls~ takes a type parameter but using ~(FixMePls a)~ in the
-   instance definition we put the type parameter in the ~f~ structure,
-   leaving it with kind ~*~
-   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   data FixMePls a = FixMe | Pls a deriving (Eq, Show)
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Pls 2
+#+END_EXAMPLE
 
-   :{
-   instance Functor (FixMePls a) where
-     fmap _ FixMe = FixMe
-     fmap f (Pls x) = Pls (f x)
-   :}
-   #+END_SRC
+This on the other end doesn't work! We didn't change the type,
+~FixMePls~ takes a type parameter but using ~(FixMePls a)~ in the
+instance definition we put the type parameter in the ~f~ structure,
+leaving it with kind ~*~
+#+BEGIN_SRC haskell
+data FixMePls a = FixMe | Pls a deriving (Eq, Show)
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   <interactive>:405:19: error:
-       • Expecting one fewer arguments to ‘FixMePls a’
-         Expected kind ‘* -> *’, but ‘FixMePls a’ has kind ‘*’
-       • In the first argument of ‘Functor’, namely ‘(FixMePls a)’
-         In the instance declaration for ‘Functor (FixMePls a)’
-   #+END_EXAMPLE
+:{
+instance Functor (FixMePls a) where
+  fmap _ FixMe = FixMe
+  fmap f (Pls x) = Pls (f x)
+:}
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+<interactive>:405:19: error:
+    • Expecting one fewer arguments to ‘FixMePls a’
+      Expected kind ‘* -> *’, but ‘FixMePls a’ has kind ‘*’
+    • In the first argument of ‘Functor’, namely ‘(FixMePls a)’
+      In the instance declaration for ‘Functor (FixMePls a)’
+#+END_EXAMPLE
 
 * 16.05 Functor Laws
 
-  Identity
-  #+BEGIN_SRC haskell :eval never
-  fmap id == id
-  #+END_SRC
+Identity
+#+BEGIN_SRC haskell :eval never
+fmap id == id
+#+END_SRC
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  fmap id "Hello" == id "Hello"
-  #+END_SRC
+#+BEGIN_SRC haskell
+fmap id "Hello" == id "Hello"
+fmap id "Hello" == "Hello"
+#+END_SRC
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  True
-  #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+True
+True
+#+END_EXAMPLE
 
-  Composition
-  #+BEGIN_SRC haskell :eval never
-  fmap (f . g) == (fmap f) . (fmap g)
-  #+END_SRC
+Composition
+#+BEGIN_SRC haskell :eval never
+fmap (f . g) == (fmap f) . (fmap g)
+#+END_SRC
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  fmap ((+1) . (+3)) [1..4] == (fmap (+1) . fmap (+3)) [1..4]
-  #+END_SRC
+#+BEGIN_SRC haskell
+fmap ((+1) . (+3)) [1..4] == (fmap (+1) . fmap (+3)) [1..4]
+#+END_SRC
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  True
-  #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+True
+#+END_EXAMPLE
 
-  Identity + Composition = Structure Preservation
+Identity + Composition = Structure Preservation
 
 * 16.06 The Good, the Bad and the Ugly
-  Functor is a way to lifting over structure (mapping) in a such a
-  manner that you don't have to care about the structure because you
-  are not allowed to touch the structure anyway.
+Functor is a way to lifting over structure (mapping) in a such a
+manner that you don't have to care about the structure because you are
+not allowed to touch the structure anyway.
 
-  What if we want to change both the value and the structure? No
-  problem, that thing is called function :smile:.
+What if we want to change both the value and the structure? No
+problem, that thing is called function :smile:.
 
-  The point of functor is to reify and be able to talk about cases
-  where we want to reuse functions in the presence of more structure
-  and be transparently oblivious to that additional structure.
+The point of functor is to reify and be able to talk about cases where
+we want to reuse functions in the presence of more structure and be
+transparently oblivious to that additional structure.
 
-  To avoid the following problems, consider anything that is not the
-  final type argument of ~f~ in ~Functor~ as being part of the
-  structure and so to not change it :smile:.
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  data CountingBad a = Heisenberg Int a deriving (Eq, Show)
+To avoid the following problems, consider anything that is not the
+final type argument of ~f~ in ~Functor~ as being part of the structure
+and so to not change it :smile:.
 
-  :{
-  instance Functor CountingBad where
-    fmap f (Heisenberg n a) = Heisenberg (n+1) (f a)
-  :}
+#+BEGIN_SRC haskell
+data CountingBad a = Heisenberg Int a deriving (Eq, Show)
 
-  fmap (+1) (Heisenberg 1 41)
+:{
+instance Functor CountingBad where
+  fmap f (Heisenberg n a) = Heisenberg (n+1) (f a)
+:}
 
-  -- The composition law is not valid
-  left = fmap ((+1) . (+3)) (Heisenberg 1 41)
-  right = ((fmap (+1)) . (fmap (+3))) (Heisenberg 1 41)
-  left
-  right
-  left == right
+fmap (+1) (Heisenberg 1 41)
 
-  -- The identity law is not valid
-  fmap id (Heisenberg 1 41) == (Heisenberg 1 41)
-  #+END_SRC
+-- The composition law is not valid
+left = fmap ((+1) . (+3)) (Heisenberg 1 41)
+right = ((fmap (+1)) . (fmap (+3))) (Heisenberg 1 41)
+left
+right
+left == right
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  Heisenberg 2 42
-  Heisenberg 2 45
-  Heisenberg 3 45
-  False
-  False
-  #+END_EXAMPLE
+-- The identity law is not valid
+fmap id (Heisenberg 1 41) == (Heisenberg 1 41)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Heisenberg 2 42
+Heisenberg 2 45
+Heisenberg 3 45
+False
+False
+#+END_EXAMPLE
 
 * 16.07 Commonly Used Functors
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  :t const
+#+BEGIN_SRC haskell
+:t const
 
-  replaceWithP = const 'p'
-  replaceWithP 10000
-  replaceWithP "Hello"
-  replaceWithP (Just 10)
-  -- If we want to apply on the value inside the structrue, since Maybe has an instance of Functor
-  fmap replaceWithP (Just 10)
-  fmap replaceWithP Nothing
-  -- It works with every type that has an instance of Functor
-  fmap replaceWithP [1..5]
-  fmap replaceWithP "Hello"
-  fmap replaceWithP (1, 2)
+replaceWithP = const 'p'
+replaceWithP 10000
+replaceWithP "Hello"
+replaceWithP (Just 10)
 
-  -- Nested datatype
-  lms = [Just "Ave", Nothing, Just "Woo"]
-  :t lms
-  replaceWithP lms
-  fmap replaceWithP lms
-  (fmap . fmap) replaceWithP lms
-  (fmap . fmap . fmap) replaceWithP lms
-  #+END_SRC
+-- If we want to apply on the value inside the structrue, since Maybe has an instance of Functor
+fmap replaceWithP (Just 10)
+fmap replaceWithP Nothing
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  const :: a -> b -> a
-  'p'
-  'p'
-  'p'
-  Just 'p'
-  Nothing
-  ppppp
-  ppppp
-  (1,'p')
-  lms :: [Maybe [Char]]
-  'p'
-  ppp
-  [Just 'p',Nothing,Just 'p']
-  [Just "ppp",Nothing,Just "ppp"]
-  #+END_EXAMPLE
+-- It works with every type that has an instance of Functor
+fmap replaceWithP [1..5]
+fmap replaceWithP "Hello"
+fmap replaceWithP (1, 2)
 
-  How can ~fmap~ compose?
-  #+BEGIN_EXAMPLE
-  -- given
-  (.) :: (b -> c) -> (a -> b) -> a -> c
-  (fmap) :: Functor f => (d -> e) -> f d -> f e
+-- Nested datatype
+lms = [Just "Ave", Nothing, Just "Woo"]
+:t lms
+replaceWithP lms
+fmap replaceWithP lms
+(fmap . fmap) replaceWithP lms
+(fmap . fmap . fmap) replaceWithP lms
+#+END_SRC
 
-  -- (.)(fmap) :: ???
-  -- replace b with (d -> e)
-  -- replace c with (f d -> f e)
-  -- NOTE: in (a -> b) replacing b with (d -> e) doesn't end up
-  --       as (a -> (d -> e)) because (->) is right associative so
-  --       (a -> d -> e) is same as (a -> (d -> e)). It would have
-  --       been different if we had replaced a with (d -> e) then
-  --       we would have had ((d -> e) -> b)
-  (.)(fmap) :: Functor f => (a -> d -> e) -> a -> f d -> f e
+#+RESULTS:
+#+BEGIN_EXAMPLE
+const :: a -> b -> a
+'p'
+'p'
+'p'
+Just 'p'
+Nothing
+ppppp
+ppppp
+(1,'p')
+lms :: [Maybe [Char]]
+'p'
+ppp
+[Just 'p',Nothing,Just 'p']
+[Just "ppp",Nothing,Just "ppp"]
+#+END_EXAMPLE
 
-  -- given
-  (.)(fmap) :: Functor f => (a -> d -> e) -> a -> f d -> f e
-  (fmap) :: Functor g => (u -> v) -> g u -> g v
+How can ~fmap~ compose?
 
-  -- (.)(fmap)(fmap)
-  -- replace a with u -> v
-  -- replace d with g u
-  -- replace e with g v
-  (.)(fmap)(fmap) :: (Functor f, Functor g) => (u -> v) -> f (g u) -> f (g v)
-  #+END_EXAMPLE
+#+BEGIN_EXAMPLE
+-- given
+(.) :: (b -> c) -> (a -> b) -> a -> c
+(fmap) :: Functor f => (a -> b) -> f a -> f b
 
-  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  <<add-current-chapter-directory-in-path()>>
+-- (.)(fmap)
+-- replace b with (a' -> b')
+-- replace c with (f' a' -> f' b')
+(.)(fmap) :: Functor f' => (a -> a' -> b') -> a -> f' a' -> f' b'
 
-  :load ReplaceExperiment
+-- (.)(fmap)(fmap)
+-- replace a with (a'' -> b'')
+-- replace a' with f'' a''
+-- replace b' with f'' b''
+(.)(fmap)(fmap) :: (Functor f', Functor f'') => (a'' -> b'') -> f' (f'' a'') -> f' (f'' b'')
+#+END_EXAMPLE
 
-  main
-  #+END_SRC
+#+BEGIN_SRC haskell
+<<add-current-chapter-directory-in-path()>>
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  replaceWithP lms: 'p'
-  replaceWithP' lms: 'p'
-  liftedReplaceWithP lms: "ppp"
-  liftedReplaceWithP' lms: "ppp"
-  twiceLiftedReplaceWithP lms: [Just 'p',Nothing,Just 'p']
-  twiceLiftedReplaceWithP' lms: [Just 'p',Nothing,Just 'p']
-  thriceLiftedReplaceWithP lms: [Just "ppp",Nothing,Just "pppppp"]
-  thriceLiftedReplaceWithP' lms: [Just "ppp",Nothing,Just "pppppp"]
-  #+END_EXAMPLE
+:load ReplaceExperiment
+
+main
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[1 of 1] Compiling ReplaceExperiment ( /home/coder/code/haskellbook-exercises/chapter-016/ReplaceExperiment.hs, interpreted )
+Ok, one module loaded.
+replaceWithP lms: 'p'
+replaceWithP' lms: 'p'
+liftedReplaceWithP lms: "ppp"
+liftedReplaceWithP' lms: "ppp"
+twiceLiftedReplaceWithP lms: [Just 'p',Nothing,Just 'p']
+twiceLiftedReplaceWithP' lms: [Just 'p',Nothing,Just 'p']
+thriceLiftedReplaceWithP lms: [Just "ppp",Nothing,Just "pppppp"]
+thriceLiftedReplaceWithP' lms: [Just "ppp",Nothing,Just "pppppp"]
+#+END_EXAMPLE
 
 ** Exercises: Heavy Lifting
-   Add ~fmap~ and whaterver is necessary to type check and return the
-   expected result for the following code
-
-   1. Given the following code
-      #+BEGIN_SRC haskell :eval never
-      a = (+1) $ read "[1]" :: [Int]
-      a == [2]
-      #+END_SRC
-
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      a = fmap (+1) $ read "[1]" :: [Int]
-      a == [2]
-      a
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      True
-      [2]
-      #+END_EXAMPLE
-
-   2. Given the following code
-      #+BEGIN_SRC haskell :eval never
-      b = (++ "lol") (Just ["Hi,", "Hello"])
-      b == Just ["Hi,lol", "Hellolol"]
-      #+END_SRC
-
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      b = (fmap . fmap) (++ "lol") (Just ["Hi,", "Hello"])
-      b == Just ["Hi,lol", "Hellolol"]
-      b
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      True
-      Just ["Hi,lol","Hellolol"]
-      #+END_EXAMPLE
-
-   3. Given the following code
-      #+BEGIN_SRC haskell :eval never
-      c = (*2) (\x -> x - 2)
-      c == (-2)
-      #+END_SRC
-
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      c = fmap (*2) (\x -> x - 2) $ 1
-      c == (-2)
-      c
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      True
-      -2
-      #+END_EXAMPLE
-
-   4. Given the following code
-      #+BEGIN_SRC haskell :evel never
-      d = ((return '1' ++) . show) (\x -> [x, 1..3])
-      d 0 == "1[0,1,2,3]"
-      #+END_SRC
-
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      d = fmap ((return '1' ++) . show) (\x -> [x, 1..3])
-      d 0 == "1[0,1,2,3]"
-      d 0
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      True
-      1[0,1,2,3]
-      #+END_EXAMPLE
-
-   5. Given the following code
-      #+BEGIN_SRC haskell :eval never
-      e :: IO Integer
-      e = let ioi = readIO "1" :: IO Integer
-                    changed = read ("123" ++) show ioi
-          in (*3) changed
-      e == 3693
-      #+END_SRC
-
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      :{
-      e :: IO Integer
-      e = let ioi = readIO "1" :: IO Integer
-              -- like this
-              -- changed = fmap read (fmap ("123" ++) (fmap show ioi))
-              -- or better
-              changed = read <$> ("123" ++) <$> show <$> ioi
-          in fmap (*3) changed
-      :}
-      fmap (== 3693) e
-      e
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      True
-      3693
-      #+END_EXAMPLE
-
-* 16.08 Transforming the Unapplied Type Argument
-  In ~Functor~ definition ~f~ is a type with kind ~* -> *~. How can we
-  define a ~Functor~ instance for a type with higher kind? (We already
-  saw that you cannot write an instance of ~Functor~ for a type with
-  kind ~*~).
-
-  A type constructor with kind ~* -> * -> *~ can be turned into a type
-  constructor of kind ~* -> *~ by partially applying the type
-  constructor with a concrete type or with a type variable.
-
-  #+NAME: two-definition
-  #+BEGIN_SRC haskell :eval never
-  data Two a b = Two a b deriving (Eq, Show)
-  #+END_SRC
-
-  With a concrete type ~Integer~ we can turn ~Two~ from kind
-  ~* -> * -> *~ to kind ~* -> *~ required by ~Functor~
-  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  <<two-definition>>
-
-  :{
-  instance Functor (Two Integer) where
-    fmap f (Two n a) = Two n (f a)
-  :}
-
-  fmap (+1) (Two 1 2)
-  #+END_SRC
-
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  Two 1 3
-  #+END_EXAMPLE
-
-  With a type variable ~a~ we can turn ~Two~ from kind
-  ~* -> * -> *~ to kind ~* -> *~ required by ~Functor~
-  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  <<two-definition>>
-
-  :{
-  instance Functor (Two a) where
-    fmap f (Two a x) = Two a (f x)
-  :}
-
-  fmap (+1) (Two 1 2)
-  #+END_SRC
-
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  Two 1 3
-  #+END_EXAMPLE
-
-  Everything that is part of the functorial structure must be
-  preserved otherwise we will break the functor laws and so we will
-  not going to have a functor at all.
-
-  Everything that is between the ~Functor~ and ~where~ in the instance
-  definition is part of the functorial structure, in the case above
-  ~(Two Integer)~ and ~(Two a)~ must not be touched in the ~fmap~.
-
-* 16.09 QuickChecking Functor instances
-  Functor laws as properties
-  #+NAME: functor-laws-as-properties
-  #+BEGIN_SRC haskell :results silent
-  :{
-  functorIdentity :: (Functor f, Eq (f a)) => f a -> Bool
-  functorIdentity f = fmap id f == id f
-  :}
-
-  :{
-  functorComposition :: (Functor f, Eq (f c)) => f a -> (b -> c) -> (a -> b) -> Bool
-  functorComposition f u v = fmap (u . v) f == ((fmap u) . (fmap v)) f
-  :}
-  #+END_SRC
-
-  Let's choose some types so that QuickCheck can generate some meaningful data
-  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  <<functor-laws-as-properties>>
-
-  :{
-  f :: [Int] -> Bool
-  f = functorIdentity
-  :}
-
-  :{
-  g :: [Int] -> (Int -> Int) -> (Int -> Int) -> Bool
-  g = functorComposition
-  :}
-
-  import Test.QuickCheck
-
-  quickCheckWithResult (stdArgs {chatty=False}) f
-  quickCheckWithResult (stdArgs {chatty=False}) (flip ((flip g) (+1)) (+2))
-
-  -- More comfortably
-  :{
-  g' :: (Int -> Int) -> (Int -> Int) -> [Int] -> Bool
-  g' u v f = functorComposition f u v
-  :}
-
-  quickCheckWithResult (stdArgs {chatty=False}) (g' (+1) (+2))
-  #+END_SRC
-
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-  #+END_EXAMPLE
-
-  Making QuickCheck generate functions
-  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  <<functor-laws-as-properties>>
-
-  import Test.QuickCheck
-  import Test.QuickCheck.Function
-
-  :{
-  functorComposition' :: (Functor f, Eq (f c)) => f a -> Fun b c -> Fun a b -> Bool
-  functorComposition' f (Fun _ u) (Fun _ v) = fmap (u . v) f == ((fmap u) . (fmap v)) f
-  :}
-
-  :{
-  f :: [Int] -> (Fun Int Int) -> (Fun Int Int) -> Bool
-  f = functorComposition'
-  :}
-
-  quickCheckWithResult (stdArgs {chatty=False}) f
-  #+END_SRC
-
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-  #+END_EXAMPLE
-
-  Making QuickCheck generate functions that can be printed?
-  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  <<functor-laws-as-properties>>
-
-  import Test.QuickCheck
-  import Test.QuickCheck.Function
-
-  :{
-  functorComposition' :: (Functor f, Eq (f c)) => f a -> Blind (Fun b c) -> Blind (Fun a b) -> Bool
-  functorComposition' f (Blind (Fun _ u)) (Blind (Fun _ v)) = fmap (u . v) f == ((fmap u) . (fmap v)) f
-  :}
-
-  :{
-  f :: [Int] -> (Blind (Fun Int Int)) -> (Blind (Fun Int Int)) -> Bool
-  f = functorComposition'
-  :}
-
-  quickCheckWithResult (stdArgs {chatty=False}) f
-  #+END_SRC
-
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-  #+END_EXAMPLE
-
-* 16.10 Exercises: Instances of Functor
-
-  1. Implement ~Functor~ instance for the following datatatype
-     #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-     <<functor-laws-as-properties>>
-
-     newtype Identity a = Identity a deriving (Eq, Show)
-
-     :{
-     instance Functor Identity where
-       fmap f (Identity x) = Identity (f x)
-     :}
-
-     import Test.QuickCheck
-     import Test.QuickCheck.Function
-
-     :{
-     f :: Int -> Bool
-     f x = functorIdentity (Identity x)
-     :}
-
-     :{
-     g :: Int -> Fun Int Int -> Fun Int Int -> Bool
-     g x (Fun _ u) (Fun _ v) = functorComposition (Identity x) u v
-     :}
-
-     quickCheckWithResult (stdArgs {chatty=False}) f
-     quickCheckWithResult (stdArgs {chatty=False}) g
-     #+END_SRC
-
-     #+RESULTS:
-     #+BEGIN_EXAMPLE
-     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-     #+END_EXAMPLE
-
-  2. Implement ~Functor~ instance for the following datataype
-     #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-     <<functor-laws-as-properties>>
-
-     data Pair a = Pair a a deriving (Eq, Show)
-
-     :{
-     instance Functor Pair where
-       fmap f (Pair x y) = Pair (f x) (f y)
-     :}
-
-     import Test.QuickCheck
-     import Test.QuickCheck.Function
-
-     :{
-     f :: Int -> Int -> Bool
-     f x y = functorIdentity (Pair x y)
-     :}
-
-     :{
-     g :: Int -> Int -> Fun Int Int -> Fun Int Int -> Bool
-     g x y (Fun _ u) (Fun _ v) = functorComposition (Pair x y) u v
-     :}
-
-     quickCheckWithResult (stdArgs {chatty=False}) f
-     quickCheckWithResult (stdArgs {chatty=False}) g
-     #+END_SRC
-
-     #+RESULTS:
-     #+BEGIN_EXAMPLE
-     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-     #+END_EXAMPLE
-
-  3. Implement ~Functor~ instance for the following datatype
-     #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-     <<functor-laws-as-properties>>
-
-     data Two a b = Two a b deriving (Eq, Show)
-
-     :{
-     instance Functor (Two a) where
-       fmap f (Two x y) = Two x (f y)
-     :}
-
-     import Test.QuickCheck
-     import Test.QuickCheck.Function
-
-     :{
-     f :: String -> Int -> Bool
-     f s n = functorIdentity (Two s n)
-     :}
-
-     :{
-     g :: String -> Int -> (Fun Int Int) -> (Fun Int Int) -> Bool
-     g s n (Fun _ u) (Fun _ v) = functorComposition (Two s n) u v
-     :}
-
-     quickCheckWithResult (stdArgs {chatty=False}) f
-     quickCheckWithResult (stdArgs {chatty=False}) g
-     #+END_SRC
-
-     #+RESULTS:
-     #+BEGIN_EXAMPLE
-     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-     #+END_EXAMPLE
-
-  4. Implement ~Functor~ instance for the following datatype
-     #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-     <<functor-laws-as-properties>>
-
-     data Three a b c = Three a b c deriving (Eq, Show)
-
-     :{
-     instance Functor (Three a b) where
-       fmap f (Three x y z) = Three x y (f z)
-     :}
-
-     import Test.QuickCheck
-     import Test.QuickCheck.Function
-
-     :{
-     f :: String -> Bool -> Int -> Bool
-     f x y z = functorIdentity (Three x y z)
-     :}
-
-     :{
-     g :: String -> Bool -> Int -> Fun Int Int -> Fun Int Int -> Bool
-     g x y z (Fun _ u) (Fun _ v) = functorComposition (Three x y z) u v
-     :}
-
-     quickCheckWithResult (stdArgs {chatty=False}) f
-     quickCheckWithResult (stdArgs {chatty=False}) g
-     #+END_SRC
-
-     #+RESULTS:
-     #+BEGIN_EXAMPLE
-     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-     #+END_EXAMPLE
-
-  5. Implement ~Functor~ instance for the following datatype
-     #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-     <<functor-laws-as-properties>>
-
-     data Three' a b = Three' a b b deriving (Eq, Show)
-
-     :{
-     instance Functor (Three' a) where
-       fmap f (Three' x y z) = Three' x (f y) (f z)
-     :}
-
-     import Test.QuickCheck
-     import Test.QuickCheck.Function
-
-     :{
-     f :: String -> Int -> Int -> Bool
-     f s x y = functorIdentity (Three' s x y)
-     :}
-
-     :{
-     g :: String -> Int -> Int -> Fun Int Int -> Fun Int Int -> Bool
-     g s x y (Fun _ u) (Fun _ v) = functorComposition (Three' s x y) u v
-     :}
-
-     quickCheckWithResult (stdArgs {chatty=False}) f
-     quickCheckWithResult (stdArgs {chatty=False}) g
-     #+END_SRC
-
-     #+RESULTS:
-     #+BEGIN_EXAMPLE
-     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-     #+END_EXAMPLE
-
-  6. Implement ~Functor~ instance for the following datatype
-     #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-     <<functor-laws-as-properties>>
-
-     data Four a b c d = Four a b c d deriving (Eq, Show)
-
-     :{
-     instance Functor (Four a b c) where
-       fmap f (Four x y z w) = Four x y z (f w)
-     :}
-
-     import Test.QuickCheck
-     import Test.QuickCheck.Function
-
-     :{
-     f :: String -> Int -> String -> Int -> Bool
-     f x y z w = functorIdentity (Four x y z w)
-     :}
-
-     :{
-     g :: String -> Int -> String -> Int -> Fun Int Int -> Fun Int Int -> Bool
-     g x y z w (Fun _ u) (Fun _ v) = functorComposition (Four x y z w) u v
-     :}
-
-     quickCheckWithResult (stdArgs {chatty=False}) f
-     quickCheckWithResult (stdArgs {chatty=False}) g
-     #+END_SRC
-
-     #+RESULTS:
-     #+BEGIN_EXAMPLE
-     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-     #+END_EXAMPLE
-
-  7. Implement ~Functor~ instance for the following datatype
-     #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-     <<functor-laws-as-properties>>
-
-     data Four' a b = Four' a a a b deriving (Eq, Show)
-
-     :{
-     instance Functor (Four' a) where
-       fmap f (Four' x y z w) = Four' x y z (f w)
-     :}
-
-     import Test.QuickCheck
-     import Test.QuickCheck.Function
-
-     :{
-     f :: String -> String -> String -> Int -> Bool
-     f x y z w = functorIdentity (Four' x y z w)
-     :}
-
-     :{
-     g :: String -> String -> String -> Int -> Fun Int Int -> Fun Int Int -> Bool
-     g x y z w (Fun _ u) (Fun _ v) = functorComposition (Four' x y z w) u v
-     :}
-
-     quickCheckWithResult (stdArgs {chatty=False}) f
-     quickCheckWithResult (stdArgs {chatty=False}) g
-     #+END_SRC
-
-     #+RESULTS:
-     #+BEGIN_EXAMPLE
-     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-     Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-     #+END_EXAMPLE
-
-  8. Can you implement one for this type? Why? Why not? No because the
-     type required by ~Functor~ must have kind equal or greater than
-     ~* -> *~ and ~Trivial~ is a constant type with kind ~*~
-     #+BEGIN_SRC haskell :eval never
-     data Trivial = Trivial
-     #+END_SRC
-
-
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  :{
-  functorIdentity :: (Functor f, Eq (f a)) => f a -> Bool
-  functorIdentity f = fmap id f == id f
-  :}
-
-  :{
-  functorComposition :: (Functor f, Eq (f c)) => f a -> Fun b c -> Fun a b -> Bool
-  functorComposition f (Fun _ u) (Fun _ v) = fmap (u . v) f == ((fmap u) . (fmap v)) f
-  :}
-
-  data Two a b = Two a b deriving (Eq, Show)
-
-  :{
-  instance Functor (Two a) where
-    fmap f (Two x y) = Two x (f y)
-  :}
-
-  :{
-  instance (Arbitrary a, Arbitrary b) => Arbitrary (Two a b) where
-    arbitrary = do
-      a <- arbitrary
-      b <- arbitrary
-      return $ Two a b
-  :}
-
-  quickCheckWithResult (stdArgs {chatty=False}) (functorIdentity :: Two Int Int -> Bool)
-  quickCheckWithResult (stdArgs {chatty=False}) (functorIdentity :: Two String Int -> Bool)
-  quickCheckWithResult (stdArgs {chatty=False}) (functorIdentity :: Two Int String -> Bool)
-
-  quickCheckWithResult (stdArgs {chatty=False}) (functorComposition :: Two Int Int -> Fun Int Int -> Fun Int Int -> Bool)
-  quickCheckWithResult (stdArgs {chatty=False}) (functorComposition :: Two String Int -> Fun Int Int -> Fun Int Int -> Bool)
-  quickCheckWithResult (stdArgs {chatty=False}) (functorComposition :: Two String Int -> Fun String Bool -> Fun Int String -> Bool)
-  #+END_SRC
-
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-  Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-  #+END_EXAMPLE
-
-* 16.11 Ignoring Possibility
-  Writing things like this would be tedious
-  #+BEGIN_SRC haskell :results silent
-  :{
-  showIfJust :: (Show a) => Maybe a -> Maybe String
-  showIfJust (Just a) = Just (show a)
-  showIfJust Nothing = Nothing
-  :}
-  #+END_SRC
-
-  ~Maybe~ has an instance of ~Functor~ that we can use
-  #+BEGIN_SRC haskell :results silent
-  :{
-  showIfJust' :: (Show a) => Maybe a -> Maybe String
-  showIfJust' x = fmap show x
-  :}
-  #+END_SRC
-
-  After an eta-reduction we can have a point free version
-  #+BEGIN_SRC haskell :results silent
-  :{
-  showIfJust'' :: (Show a) => Maybe a -> Maybe String
-  showIfJust'' = fmap show
-  :}
-  #+END_SRC
-
-  A partially applied ~fmap~ with a function from ~a~ to ~b~ will
-  /lift/ that function to work with all datatypes that admit an
-  instance of ~Functor~ typeclass
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  :t fmap show
-  #+END_SRC
-
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  fmap show :: (Show a, Functor f) => f a -> f String
-  #+END_EXAMPLE
-
-** Exercise: Possibly
-   Write a ~Functor~ instance for the following datatype (behaving like ~Maybe~)
-   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   data Possibly a = Nope | Yep a deriving (Eq, Show)
-
-   :{
-   instance Functor Possibly where
-     fmap f (Yep a) = Yep (f a)
-     fmap _ Nope = Nope
-   :}
-
-   fmap show (Yep 3)
-   fmap show Nope
+Add ~fmap~ and whaterver is necessary to type check and return the
+expected result for the following code
+
+1. Given the following code
+   #+BEGIN_SRC haskell :eval never
+   a = (+1) $ read "[1]" :: [Int]
+   a == [2]
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   a = fmap (+1) $ read "[1]" :: [Int]
+   a == [2]
+   a
    #+END_SRC
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
-   Yep "3"
-   Nope
+   True
+   [2]
    #+END_EXAMPLE
+
+2. Given the following code
+   #+BEGIN_SRC haskell :eval never
+   b = (++ "lol") (Just ["Hi,", "Hello"])
+   b == Just ["Hi,lol", "Hellolol"]
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   b = (fmap . fmap) (++ "lol") (Just ["Hi,", "Hello"])
+   b == Just ["Hi,lol", "Hellolol"]
+   b
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   Just ["Hi,lol","Hellolol"]
+   #+END_EXAMPLE
+
+3. Given the following code
+   #+BEGIN_SRC haskell :eval never
+   c = (*2) (\x -> x - 2)
+   c == (-2)
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   c = fmap (*2) (\x -> x - 2) $ 1
+   c == (-2)
+   c
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   -2
+   #+END_EXAMPLE
+
+4. Given the following code
+   #+BEGIN_SRC haskell :eval never
+   d = ((return '1' ++) . show) (\x -> [x, 1..3])
+   d 0 == "1[0,1,2,3]"
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   d = fmap ((return '1' ++) . show) (\x -> [x, 1..3])
+   d 0 == "1[0,1,2,3]"
+   d 0
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   1[0,1,2,3]
+   #+END_EXAMPLE
+
+5. Given the following code
+   #+BEGIN_SRC haskell :eval never
+   e :: IO Integer
+   e = let ioi = readIO "1" :: IO Integer
+                 changed = read ("123" ++) show ioi
+       in (*3) changed
+   e == 3693
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   :{
+   e :: IO Integer
+   e = let ioi = readIO "1" :: IO Integer
+           -- like this
+           -- changed = fmap read (fmap ("123" ++) (fmap show ioi))
+           -- or better
+           changed = read <$> ("123" ++) <$> show <$> ioi
+       in fmap (*3) changed
+   :}
+   fmap (== 3693) e
+   e
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   3693
+   #+END_EXAMPLE
+
+* 16.08 Transforming the Unapplied Type Argument
+In ~Functor~ definition ~f~ is a type with kind ~* -> *~. How can we
+define a ~Functor~ instance for a type with higher kind? (We already
+saw that you cannot write an instance of ~Functor~ for a type with
+kind ~*~).
+
+A type constructor with kind ~* -> * -> *~ can be turned into a type
+constructor of kind ~* -> *~ by partially applying the type
+constructor with a concrete type or with a type variable.
+
+#+NAME: two-definition
+#+BEGIN_SRC haskell :eval never
+data Two a b = Two a b deriving (Eq, Show)
+#+END_SRC
+
+With a concrete type ~Integer~ we can turn ~Two~ from kind
+~* -> * -> *~ to kind ~* -> *~ required by ~Functor~
+#+BEGIN_SRC haskell :results
+<<two-definition>>
+
+:{
+instance Functor (Two Integer) where
+  fmap f (Two n a) = Two n (f a)
+:}
+
+fmap (+1) (Two 1 2)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Two 1 3
+#+END_EXAMPLE
+
+With a type variable ~a~ we can turn ~Two~ from kind
+~* -> * -> *~ to kind ~* -> *~ required by ~Functor~
+#+BEGIN_SRC haskell :results
+<<two-definition>>
+
+:{
+instance Functor (Two a) where
+  fmap f (Two a x) = Two a (f x)
+:}
+
+fmap (+1) (Two 1 2)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Two 1 3
+#+END_EXAMPLE
+
+Everything that is part of the functorial structure must be
+preserved otherwise we will break the functor laws and so we will
+not going to have a functor at all.
+
+Everything that is between the ~Functor~ and ~where~ in the instance
+definition is part of the functorial structure, in the case above
+~(Two Integer)~ and ~(Two a)~ must not be touched in the ~fmap~.
+
+* 16.09 QuickChecking Functor instances
+Functor laws as properties
+#+NAME: functor-properties
+#+BEGIN_SRC haskell :results silent
+:{
+functorIdentityProperty :: (Functor f, Eq (f a)) => f a -> Bool
+functorIdentityProperty x = fmap id x == x
+:}
+
+:{
+functorCompositionProperty :: (Functor f, Eq (f c)) => (b -> c) -> (a -> b) -> f a -> Bool
+functorCompositionProperty f g x = fmap (f . g) x == ((fmap f) . (fmap g)) x
+:}
+#+END_SRC
+
+Let's choose some types so that QuickCheck can generate some
+meaningful data
+
+#+BEGIN_SRC haskell
+import Test.QuickCheck
+
+<<functor-properties>>
+<<quickcheck-with-output>>
+
+:seti -XTypeApplications
+
+quickCheckWithOutput (functorIdentityProperty @[] @Int)
+quickCheckWithOutput (functorCompositionProperty @[] @Int (+1) (+2))
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
++++ OK, passed 100 tests.\n
++++ OK, passed 100 tests.\n
+#+END_EXAMPLE
+
+Making QuickCheck generate functions
+#+BEGIN_SRC haskell
+<<quickcheck-with-output>>
+
+import Test.QuickCheck
+import Test.QuickCheck.Function
+
+:{
+functorCompositionProperty :: (Functor f, Eq (f c)) => f a -> Fun b c -> Fun a b -> Bool
+functorCompositionProperty f (Fun _ u) (Fun _ v) = fmap (u . v) f == ((fmap u) . (fmap v)) f
+:}
+
+:seti -XTypeApplications
+
+quickCheckWithOutput (functorCompositionProperty @[] @Int @Int @Int)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
++++ OK, passed 100 tests.\n
+#+END_EXAMPLE
+
+Making QuickCheck generate functions that can be printed?
+#+BEGIN_SRC haskell
+import Test.QuickCheck
+import Test.QuickCheck.Function
+
+<<quickcheck-with-output>>
+
+:{
+functorCompositionProperty :: (Functor f, Eq (f c)) => f a -> Blind (Fun b c) -> Blind (Fun a b) -> Bool
+functorCompositionProperty f (Blind (Fun _ u)) (Blind (Fun _ v)) = fmap (u . v) f == ((fmap u) . (fmap v)) f
+:}
+
+:seti -XTypeApplications
+
+quickCheckWithOutput (functorCompositionProperty @[] @Int @Int @Int)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
++++ OK, passed 100 tests.\n
+#+END_EXAMPLE
+
+
+* 16.10 Exercises: Instances of Functor
+
+#+NAME: functor-properties-check
+#+BEGIN_SRC haskell
+import Test.QuickCheck
+import Test.QuickCheck.Function
+
+:{
+functorIdentityProperty :: (Functor f, Eq (f a)) => f a -> Bool
+functorIdentityProperty x = fmap id x == x
+:}
+
+:{
+functorCompositionProperty :: (Functor f, Eq (f c)) => f a -> Blind (b -> c) -> Blind (a -> b) -> Bool
+functorCompositionProperty x (Blind f) (Blind g) = fmap (f . g) x == ((fmap f) . (fmap g)) x
+:}
+
+:seti -XTypeApplications
+
+<<quickcheck-with-output>>
+#+END_SRC
+
+1. Implement ~Functor~ instance for the following datatatype
+   #+BEGIN_SRC haskell
+   <<functor-properties-check>>
+
+   newtype Identity a = Identity a deriving (Eq, Show)
+
+   :{
+   instance Arbitrary a => Arbitrary (Identity a) where
+     arbitrary = do
+       a <- arbitrary
+       return $ Identity a
+   :}
+
+   :{
+   instance Functor Identity where
+     fmap f (Identity x) = Identity (f x)
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @Identity @String)
+   quickCheckWithOutput (functorCompositionProperty @Identity @String @String @String)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+2. Implement ~Functor~ instance for the following datataype
+   #+BEGIN_SRC haskell
+   <<functor-properties-check>>
+
+   data Pair a = Pair a a deriving (Eq, Show)
+
+   :{
+   instance Functor Pair where
+     fmap f (Pair x y) = Pair (f x) (f y)
+   :}
+
+   :{
+   instance Arbitrary a => Arbitrary (Pair a) where
+     arbitrary = do
+       al <- arbitrary
+       ar <- arbitrary
+       return $ Pair al ar
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @Pair @String)
+   quickCheckWithOutput (functorCompositionProperty @Pair @String @String @String)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+3. Implement ~Functor~ instance for the following datatype
+   #+BEGIN_SRC haskell
+   <<functor-properties-check>>
+
+   data Two a b = Two a b deriving (Eq, Show)
+
+   :{
+   instance Functor (Two a) where
+     fmap f (Two x y) = Two x (f y)
+   :}
+
+   :{
+   instance (Arbitrary a, Arbitrary b) => Arbitrary (Two a b) where
+     arbitrary = do
+       a <- arbitrary
+       b <- arbitrary
+       return $ Two a b
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @(Two Int) @String)
+   quickCheckWithOutput (functorCompositionProperty @(Two Int) @String @String @String)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+4. Implement ~Functor~ instance for the following datatype
+   #+BEGIN_SRC haskell
+   <<functor-properties-check>>
+
+   data Three a b c = Three a b c deriving (Eq, Show)
+
+   :{
+   instance Functor (Three a b) where
+     fmap f (Three x y z) = Three x y (f z)
+   :}
+
+   :{
+   instance (Arbitrary a, Arbitrary b, Arbitrary c) => Arbitrary (Three a b c) where
+     arbitrary = do
+       a <- arbitrary
+       b <- arbitrary
+       c <- arbitrary
+       return $ Three a b c
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @(Three Int Int) @String)
+   quickCheckWithOutput (functorCompositionProperty @(Three Int Int) @String @String @String)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+5. Implement ~Functor~ instance for the following datatype
+   #+BEGIN_SRC haskell
+   <<functor-properties-check>>
+
+   data Three' a b = Three' a b b deriving (Eq, Show)
+
+   :{
+   instance Functor (Three' a) where
+     fmap f (Three' x y z) = Three' x (f y) (f z)
+   :}
+
+   :{
+   instance (Arbitrary a, Arbitrary b) => Arbitrary (Three' a b) where
+     arbitrary = do
+       a <- arbitrary
+       b1 <- arbitrary
+       b2 <- arbitrary
+       return $ Three' a b1 b2
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @(Three' Int) @String)
+   quickCheckWithOutput (functorCompositionProperty @(Three' Int) @String @String @String)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+6. Implement ~Functor~ instance for the following datatype
+   #+BEGIN_SRC haskell
+   <<functor-properties-check>>
+
+   data Four a b c d = Four a b c d deriving (Eq, Show)
+
+   :{
+   instance Functor (Four a b c) where
+     fmap f (Four x y w z) = Four x y w (f z)
+   :}
+
+   :{
+   instance (Arbitrary a, Arbitrary b, Arbitrary c, Arbitrary d) => Arbitrary (Four a b c d) where
+     arbitrary = do
+       a <- arbitrary
+       b <- arbitrary
+       c <- arbitrary
+       d <- arbitrary
+       return $ Four a b c d
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @(Four Int Int Int) @String)
+   quickCheckWithOutput (functorCompositionProperty @(Four Int Int Int) @String @String @String)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+7. Implement ~Functor~ instance for the following datatype
+   #+BEGIN_SRC haskell
+   <<functor-properties-check>>
+
+   data Four' a b = Four' a a a b deriving (Eq, Show)
+
+   :{
+   instance Functor (Four' a) where
+     fmap f (Four' x y w z) = Four' x y w (f z)
+   :}
+
+   :{
+   instance (Arbitrary a, Arbitrary b) => Arbitrary (Four' a b) where
+     arbitrary = do
+       a1 <- arbitrary
+       a2 <- arbitrary
+       a3 <- arbitrary
+       b <- arbitrary
+       return $ Four' a1 a2 a3 b
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @(Four' Int) @String)
+   quickCheckWithOutput (functorCompositionProperty @(Four' Int) @String @String @String)
+ #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+8. Can you implement one for this type? Why? Why not?
+
+   #+BEGIN_SRC haskell :eval never
+   data Trivial = Trivial
+   #+END_SRC
+
+   No because the type required by ~Functor~ must have kind equal or
+   greater than ~* -> *~ and ~Trivial~ is a constant type with kind
+   ~*~
+
+* 16.11 Ignoring Possibility
+
+Writing things like this would be tedious
+#+BEGIN_SRC haskell :results silent
+:{
+showIfJust :: (Show a) => Maybe a -> Maybe String
+showIfJust (Just a) = Just (show a)
+showIfJust Nothing = Nothing
+:}
+#+END_SRC
+
+~Maybe~ has an instance of ~Functor~ that we can use
+#+BEGIN_SRC haskell :results silent
+:{
+showIfJust' :: (Show a) => Maybe a -> Maybe String
+showIfJust' x = fmap show x
+:}
+#+END_SRC
+
+After an eta-reduction we can have a point free version
+#+BEGIN_SRC haskell :results silent
+:{
+showIfJust'' :: (Show a) => Maybe a -> Maybe String
+showIfJust'' = fmap show
+:}
+#+END_SRC
+
+A partially applied ~fmap~ with a function from ~a~ to ~b~ will /lift/
+that function to work with all datatypes that admit an instance of
+~Functor~ typeclass
+
+#+BEGIN_SRC haskell
+:t fmap show
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+fmap show :: (Functor f, Show a) => f a -> f String
+#+END_EXAMPLE
+
+** Exercise: Possibly
+
+Write a ~Functor~ instance for the following datatype (behaving like ~Maybe~)
+#+BEGIN_SRC haskell
+data Possibly a = Nope | Yep a deriving (Eq, Show)
+
+:{
+instance Functor Possibly where
+  fmap _ Nope = Nope
+  fmap f (Yep a) = Yep $ f a
+:}
+
+<<functor-properties-check>>
+
+:{
+instance (Arbitrary a) => Arbitrary (Possibly a) where
+  arbitrary = do
+    a <- arbitrary
+    elements [Nope, Yep a]
+:}
+
+quickCheckWithOutput (functorIdentityProperty @Possibly @String)
+quickCheckWithOutput (functorCompositionProperty @Possibly @String @String @String)
+
+fmap show (Yep 3)
+fmap show Nope
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
++++ OK, passed 100 tests.\n
++++ OK, passed 100 tests.\n
+Yep "3"
+Nope
+#+END_EXAMPLE
 
 ** Exercise: Sum
 
-   1. Write a ~Functor~ instance for the following datatype (behaving like ~Either~)
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      data Sum a b = First a | Second b deriving (Eq, Show)
+1. Write a ~Functor~ instance for the following datatype (behaving like ~Either~)
+   #+BEGIN_SRC haskell
+   data Sum a b = First a | Second b deriving (Eq, Show)
 
-      :{
-      instance Functor (Sum a) where
-        fmap f (Second x) = Second (f x)
-        fmap _ (First x) = First x
-      :}
+   :{
+   instance Functor (Sum a) where
+     fmap _ (First a)  = First a
+     fmap f (Second b) = Second $ f b
+   :}
 
-      fmap show (First "Hello")
-      fmap show (Second 3)
-      #+END_SRC
+   <<functor-properties-check>>
 
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      First "Hello"
-      Second "3"
-      #+END_EXAMPLE
+   :{
+   instance (Arbitrary a, Arbitrary b) => Arbitrary (Sum a b) where
+     arbitrary = do
+       a <- arbitrary
+       b <- arbitrary
+       elements [First a, Second b]
+   :}
 
-   2. Why is a ~Functor~ instance that applies the function only to
-      ~First~, is impossible? Because ~Functor~ needs a type
-      constructor with only one type parameter so we need to partially
-      apply ~Sum~ type constructor and then to be lawful we can't
-      touch the functorial structure in ~fmap~ therefore we cannot
-      change the ~First~ part.
+   quickCheckWithOutput (functorIdentityProperty @(Sum String) @String)
+   quickCheckWithOutput (functorCompositionProperty @(Sum String) @String @String @String)
+
+   fmap show (First "Hello")
+   fmap show (Second 3)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   First "Hello"
+   Second "3"
+   #+END_EXAMPLE
+
+2. Why is a ~Functor~ instance that applies the function only to
+   ~First~, is impossible?
+
+   Because ~Functor~ needs a type constructor with only one type
+   parameter so we need to partially apply ~Sum~ type constructor and
+   then to be lawful we can't touch the functorial structure in ~fmap~
+   therefore we cannot change the ~First~ part.
 
 * 16.10 A Suprising Functor
-  Consider the following datatype and the associated ~Functor~
-  instance, the only type considered is ~a~, the other, ~b~ is a
-  /phantom/ type.
+Consider the following datatype and the associated ~Functor~ instance,
+the only type considered is ~a~, the other, ~b~ is a /phantom/ type.
 
-  #+NAME: constant-datatype
-  #+BEGIN_SRC haskell :results silent
-  newtype Constant a b = Constant {getConstant :: a} deriving (Eq, Show)
+#+NAME: constant-datatype
+#+BEGIN_SRC haskell :results silent
+newtype Constant a b = Constant {getConstant :: a} deriving (Eq, Show)
 
-  :{
-  instance Functor (Constant a) where
-    fmap _ (Constant x) = (Constant x)
-  :}
-  #+END_SRC
+:{
+instance Functor (Constant a) where
+  fmap _ (Constant x) = (Constant x)
+:}
+#+END_SRC
 
-  How it works
-  #+BEGIN_SRC haskell :results silent :noweb yes
-  <<constant-datatype>>
+How it works
+#+BEGIN_SRC haskell
+<<constant-datatype>>
 
-  Constant 3 -- Constant {getConstant=3}
-  getConstant $ Constant 3 -- 3
+Constant 3 -- Constant {getConstant=3}
+getConstant $ Constant 3 -- 3
 
-  -- With function const
-  const 2 3 -- 2
-  const 2 $ Constant 3 -- 2
-  const 2 $ getConstant $ Constant 3 -- 2
+-- With function const
+const 2 3 -- 2
+const 2 $ Constant 3 -- 2
+const 2 $ getConstant $ Constant 3 -- 2
 
-  -- With the implementation of fmap ~(const 2)~ will be ignored
-  fmap (const 2) (Constant 3) -- Constant {getConstant = 3}
+-- With the implementation of fmap ~(const 2)~ will be ignored
+fmap (const 2) (Constant 3) -- Constant {getConstant = 3}
 
-  -- So the following type check and works, why?
-  fmap (+1) (Constant "Hello") -- Constant {getConstant = "Hello"}
+-- So the following type check and works, why?
+fmap (+1) (Constant "Hello") -- Constant {getConstant = "Hello"}
 
-  :t fmap (+1) -- fmap (+1) :: (Num b, Functor f) => f b -> f b
+:t fmap (+1) -- fmap (+1) :: (Num b, Functor f) => f b -> f b
 
-  -- Since in Functor instance of Constant is on a partial application
-  -- of Constant, the first type parameter (the only one that counts) is
-  -- not part of the ~fmap~ and is fixed
+-- Since in Functor instance of Constant is on a partial application
+-- of Constant, the first type parameter (the only one that counts) is
+-- not part of the ~fmap~ and is fixed
 
-  -- Therefore to ~Constant "Hello"~ you can apply every function and
-  -- make the type checker appy because the return type of the function
-  -- (~(Num b) => b~ for ~(+1)~) will influence the phantom type of
-  -- ~Constant~ which can be whatever you want
+-- Therefore to ~Constant "Hello"~ you can apply every function and
+-- make the type checker appy because the return type of the function
+-- (~(Num b) => b~ for ~(+1)~) will influence the phantom type of
+-- ~Constant~ which can be whatever you want
 
-  :t fmap (+1) (Constant "Hello") -- Num b => Constant String b
+:t fmap (+1) (Constant "Hello") -- Num b => Constant String b
 
-  :t fmap (id) (Constant "Hello") -- Constant String b
+:t fmap (id) (Constant "Hello") -- Constant String b
 
-  :t fmap (++ [2, 3, 4]) (Constant "Hello") -- Num a => Constant String [a]
-  #+END_SRC
+:t fmap (++ [2, 3, 4]) (Constant "Hello") -- Num a => Constant String [a]
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Constant {getConstant = 3}
+3
+2
+2
+2
+Constant {getConstant = 3}
+Constant {getConstant = "Hello"}
+fmap (+1) -- fmap (+1) :: (Num b, Functor f) => f b -> f b
+  :: (Functor f, Num b) => f b -> f b
+fmap (+1) (Constant "Hello") -- Num b => Constant String b
+  :: Num b => Constant [Char] b
+fmap (id) (Constant "Hello") -- Constant String b
+  :: Constant [Char] b
+fmap (++ [2, 3, 4]) (Constant "Hello") -- Num a => Constant String [a]
+  :: Num a => Constant [Char] [a]
+#+END_EXAMPLE
 
 * 16.13 More Structure, More Functors
-  An instance of ~Functor~ may be implemented for an intermediate
-  datatype. Note that the type argument is ~f a~ so a type that has
-  kind ~* -> *~
+An instance of ~Functor~ may be implemented for an intermediate
+datatype. Note that the type argument is ~f a~ so a type that has
+kind ~* -> *~
 
-  Note that the data costructor wraps ~f a~ in parentheses because it
-  is a single argument but we need to state that ~f~ is a type
-  constructor.
-  #+NAME: wrap-definition
-  #+BEGIN_SRC haskell :eval never
-  data Wrap f a = Wrap (f a) deriving (Eq, Show)
-  #+END_SRC
+Note that the data costructor wraps ~f a~ in parentheses because it
+is a single argument but we need to state that ~f~ is a type
+constructor.
+#+NAME: wrap-definition
+#+BEGIN_SRC haskell :eval never
+data Wrap f a = Wrap (f a) deriving (Eq, Show)
+#+END_SRC
 
-  The type ~f~ wrapped must be somthing that ha a ~Functor~ instance
-  #+BEGIN_SRC haskell :results silent
-  :{
-  instance Functor f => Functor (Wrap f) where
-    fmap f (Wrap fa) = Wrap (fmap f fa)
-  :}
-  #+END_SRC
+The type ~f~ wrapped must be somthing that ha a ~Functor~ instance
+#+BEGIN_SRC haskell :results silent
+:{
+instance Functor f => Functor (Wrap f) where
+  fmap f (Wrap fa) = Wrap (fmap f fa)
+:}
+#+END_SRC
 
 * 16.14 IO Functor
 
-  We can reach the values inside an ~IO~ only by typeclasses and
-  ~Functor~ is one of them
-  #+BEGIN_SRC haskell :results silent
-  :{
-  getInt :: IO Int
-  getInt = fmap read getLine
-  :}
-  #+END_SRC
+We can reach the values inside an ~IO~ only by typeclasses and
+~Functor~ is one of them
+#+BEGIN_SRC haskell :eval never
+getInt :: IO Int
+getInt = fmap read getLine
+#+END_SRC
 
 * 16.15 What if we want to do something different?
-  What if we want to transform the /structure/ and leave the /type
-  argument/ alone? Perfectly reasonable and it is called /natural
-  transformation/
+What if we want to transform the /structure/ and leave the /type
+argument/ alone? Perfectly reasonable and it is called /natural
+transformation/
 
-  We would like to write something like
-  #+BEGIN_SRC haskell :eval never
-  nat :: (f -> g) -> (f a) -> (g a)
-  nat = undefined
-  #+END_SRC
+We would like to write something like
+#+BEGIN_SRC haskell :eval never
+nat :: (f -> g) -> (f a) -> (g a)
+nat = undefined
+#+END_SRC
 
-  But we cannot because ~f~ and ~g~ as argument of a function they
-  must have kind ~*~. To fix it we have to use the language feature
-  ~RankNTypes~ and define
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  :set -XRankNTypes
+But we cannot because ~f~ and ~g~ as argument of a function they must
+have kind ~*~. To fix it we have to use the language feature
+~RankNTypes~ and define
 
-  type Nat f g = forall a . f a -> g a
+#+BEGIN_SRC haskell
+:seti -XRankNTypes
 
-  :{
-  maybeToList :: Nat Maybe []
-  maybeToList Nothing = []
-  maybeToList (Just a) = [a]
-  :}
+type Nat f g = forall a . f a -> g a
 
-  -- or extensively
-  -- maybeToList :: forall a . Maybe a -> [a]
-  -- maybeToList Nothing = []
-  -- maybeToList (Just a) = [a]
+:{
+maybeToList :: Nat Maybe []
+maybeToList Nothing = []
+maybeToList (Just a) = [a]
+:}
 
-  maybeToList (Just 1)
-  maybeToList Nothing
-  #+END_SRC
+-- or extensively
+-- maybeToList :: forall a . Maybe a -> [a]
+-- maybeToList Nothing = []
+-- maybeToList (Just a) = [a]
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  [1]
-  []
-  #+END_EXAMPLE
+maybeToList (Just 1)
+maybeToList Nothing
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[1]
+[]
+#+END_EXAMPLE
 
 * 16.15 Functors are Unique to a Datatype
-  Like for ~Monoid~ we can define newtypes to provide different
-  implementation for typeclass. If we want to apply ~fmap~ the the
-  first element of a tuple we cannot write something like
-  #+BEGIN_EXAMPLE
-  instance Functor (Tuple ? b) where
-    fmap f (Tuple a b) = Tuple (f a) b
-  #+END_EXAMPLE
+Like for ~Monoid~ we can define newtypes to provide different
+implementation for typeclass. If we want to apply ~fmap~ the the first
+element of a tuple we cannot write something like
 
-  We can create a new datatype using a ~Flip~ newtype
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  :set -XFlexibleInstances
+#+BEGIN_EXAMPLE
+instance Functor (Tuple ? b) where
+  fmap f (Tuple a b) = Tuple (f a) b
+#+END_EXAMPLE
 
-  data Tuple a b = Tuple a b deriving (Eq, Show)
+We can create a new datatype using a ~Flip~ newtype
+#+BEGIN_SRC haskell
+:set -XFlexibleInstances
 
-  newtype Flip f a b = Flip (f b a) deriving (Eq, Show)
+data Tuple a b = Tuple a b deriving (Eq, Show)
 
-  :{
-  instance Functor (Flip Tuple a) where
-    fmap f (Flip (Tuple a b)) = Flip $ Tuple (f a) b
-  :}
+newtype Flip f a b = Flip (f b a) deriving (Eq, Show)
 
-  fmap (+1) (Flip (Tuple 1 "blah"))
-  #+END_SRC
+:{
+instance Functor (Flip Tuple a) where
+  fmap f (Flip (Tuple a b)) = Flip $ Tuple (f a) b
+:}
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  Flip (Tuple 2 "blah")
-  #+END_EXAMPLE
+<<functor-properties-check>>
+
+:{
+instance (Arbitrary a, Arbitrary b) => Arbitrary (Flip Tuple a b) where
+  arbitrary = do
+    a <- arbitrary
+    b <- arbitrary
+    return $ Flip (Tuple b a)
+:}
+
+quickCheckWithOutput (functorIdentityProperty @(Flip Tuple String) @String)
+quickCheckWithOutput (functorCompositionProperty @(Flip Tuple String) @String @String @String)
+
+fmap (+1) (Flip (Tuple 1 "blah"))
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
++++ OK, passed 100 tests.\n
++++ OK, passed 100 tests.\n
+Flip (Tuple 2 "blah")
+#+END_EXAMPLE
 
 * Exercises
-
-  #+NAME: ghci-clean
-  #+BEGIN_SRC emacs-lisp :var content="" :results raw
-  (defun report-compiling-module-p (line)
-    (string-match-p "\\[[0-9]+ of [0-9]+\\] Compiling" line))
-
-  (defun report-loaded-module-p (line)
-    (string-match-p "Ok, .+ modules? loaded\\." line))
-
-  (defun report-eoe-p (line)
-    (string-match-p "org-babel-haskell-eoe" line))
-
-  (defun clean-line (line)
-    (->> line remove-prompt unquote))
-
-  (defun remove-prompt (line)
-    (let ((current-prompt (current-prompt line)))
-      (message "current prompt: %S" current-prompt)
-      (if (string-empty-p current-prompt)
-          line
-        (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
-
-  (defun current-prompt (line)
-    (if (string-match "\\(^[^|:>]+\\)[|>]" line)
-        (match-string 1 line)
-      ""))
-
-  (defun unquote (line)
-    (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" line))
-
-  (string-join
-   (seq-map #'clean-line
-            (seq-filter
-             (lambda (line)
-               (and
-                (not (string-empty-p line))
-                (not (report-eoe-p line))
-                (not (report-compiling-module-p line))
-                (not (report-loaded-module-p line))))
-             (split-string content "\n")))
-   "\n")
-  #+END_SRC
-
-  #+NAME: add-current-chapter-directory-in-path
-  #+BEGIN_SRC emacs-lisp :output raw
-  (concat
-   ":set -i"
-   (file-name-as-directory (file-name-directory (buffer-file-name)))
-   (file-name-base (buffer-file-name)))
-  #+END_SRC
-
-  #+NAME: add-chapter-directory-in-path
-  #+BEGIN_SRC emacs-lisp :var chapter="" :output raw
-  (concat
-   ":set -i"
-   (file-name-as-directory (file-name-directory (buffer-file-name)))
-   chapter)
-  #+END_SRC
-
 ** Exercise
-   1. Determine if a valid ~Functor~ instance can be written for the following datatype
-      #+BEGIN_SRC haskell :eval never
-      data Bool = True | False
-      #+END_SRC
-      No, ~Bool~ it's a type constant with kind ~*~ you need at least
-      kind ~* -> *~ to implement ~Functor~.
+1. Determine if a valid ~Functor~ instance can be written for the following datatype
+   #+BEGIN_SRC haskell :eval never
+   data Bool = True | False
+   #+END_SRC
 
-   2. Determine if a valid ~Functor~ instance can be written for the following datatype
-      #+BEGIN_SRC haskell :eval never
-      data BoolAndSomethingElse a = False' a | True' a
-      #+END_SRC
-      Yes.
+   No, ~Bool~ it's a type constant with kind ~*~ you need at least
+   kind ~* -> *~ to implement ~Functor~.
 
-   3. Determine if a valid ~Functor~ instance can be written for the following datatype
-      #+BEGIN_SRC haskell :eval never
-      data BoolAndMaybeSomethingElse a = Falsish | Truish a
-      #+END_SRC
-      Yes.
+2. Determine if a valid ~Functor~ instance can be written for the following datatype
+   #+BEGIN_SRC haskell :eval never
+   data BoolAndSomethingElse a = False' a | True' a
+   #+END_SRC
 
-   4. Determine if a valid ~Functor~ instance can be written for the following datatype
-      #+BEGIN_SRC haskell :eval never
-      newtype Mu f = InF { outF :: f (Mu f) }
-      #+END_SRC
-      No. Kind is ~(* -> *) -> *~ not compatible with what we need ~* -> *~
+   Yes.
 
-   5. Determine if a valid ~Functor~ instance can be written for the following datatype
-      #+BEGIN_SRC haskell :eval never
-      import GHC.Arr
-      data D = D (Array Word Word) Int Int
-      #+END_SRC
-      No, same reason of (1)
+3. Determine if a valid ~Functor~ instance can be written for the following datatype
+   #+BEGIN_SRC haskell :eval never
+   data BoolAndMaybeSomethingElse a = Falsish | Truish a
+   #+END_SRC
+
+   Yes.
+
+4. Determine if a valid ~Functor~ instance can be written for the following datatype
+   #+BEGIN_SRC haskell :eval never
+   newtype Mu f = InF { outF :: f (Mu f) }
+   #+END_SRC
+
+   No. Kind is ~(* -> *) -> *~ not compatible with what we need ~* -> *~
+
+5. Determine if a valid ~Functor~ instance can be written for the following datatype
+   #+BEGIN_SRC haskell :eval never
+   import GHC.Arr
+   data D = D (Array Word Word) Int Int
+   #+END_SRC
+
+   No, same reason of (1)
 
 ** Exercise
 
-   1. Rearrange the arguments to the type constructor of the datatype
-      so the Functor instance works.
-      #+BEGIN_SRC haskell :results silent
-      data Sum a b = First a | Second b
+1. Rearrange the arguments to the type constructor of the datatype so
+   the Functor instance works.
 
-      -- was
-      -- instance Functor (Sum e) where
-      --   fmap f (First a) = First (f a)
-      --   fmap f (Second b) = Second b
-
-      :{
-      instance Functor (Sum e) where
-        fmap _ (First a) = First a
-        fmap f (Second b) = Second (f b)
-      :}
-      #+END_SRC
-
-   2. Rearrange the arguments to the type constructor of the datatype
-      so the Functor instance works.
-      #+BEGIN_SRC haskell :results silent
-      data Company a b c = DeepBlue a c | Something b
-
-      -- was
-      -- instance Functor (Company e e') where
-      --   fmap f (Something b) = Something (f b)
-      --   fmap _ (DeepBlue a c) = DeepBlue a c
-
-      :{
-      instance Functor (Company e e') where
-        fmap f (DeepBlue a c) = DeepBlue a (f c)
-        fmap _ (Something b) = Something b
-      :}
-      #+END_SRC
-
-   3. Rearrange the arguments to the type constructor of the datatype
-      so the Functor instance works.
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      data More a b = L a b a | R b a b deriving (Eq, Show)
-
-      -- was
-      -- instance Functor (More x) where
-      --   fmap f (L a b a') = L (f a) b (f a')
-      --   fmap f (R b a b') = R b (f a) b'd
-
-      :{
-      instance Functor (More x) where
-        fmap f (L a b a') = L a (f b) a'
-        fmap f (R b a b') = R (f b) a (f b')
-      :}
-
-      newtype Flip f a b = Flip (f b a) deriving (Eq, Show)
-
-      :{
-      instance Functor (Flip More x) where
-        fmap f (Flip (L a b a')) = Flip $ L (f a) b (f a')
-        fmap f (Flip (R b a b')) = Flip $ R b (f a) b'
-      :}
-
-      fmap (+1) (Flip (L 1 2 3)) == Flip (L 2 2 4)
-      fmap (+1) (Flip (L 1 2 3))
-
-      fmap (+1) (Flip (R 1 2 3)) == Flip (R 1 3 3)
-      fmap (+1) (Flip (R 1 2 3))
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      True
-      Flip (L 2 2 4)
-      True
-      Flip (R 1 3 3)
-      #+END_EXAMPLE
-
-** Exercise
-   #+NAME: better-functor-laws-as-properties
-   #+BEGIN_SRC haskell :eval never :noweb yes
-   <<functor-laws-as-properties>>
-
-   import Test.QuickCheck
-   import Test.QuickCheck.Function
-
-   identityProperty = functorIdentity
+   #+BEGIN_SRC haskell :results silent
+   -- was: data Sum a b = First a | Second b
+   data Sum b a = First a | Second b
 
    :{
-   compositionProperty :: (Functor f, Eq (f a)) => f a -> Fun a a -> Fun a a -> Bool
-   compositionProperty f (Fun _ u) (Fun _ v) = fmap (u . v) f == ((fmap u) . (fmap v)) f
+   instance Functor (Sum e) where
+     fmap f (First a) = First (f a)
+     fmap f (Second b) = Second b
    :}
    #+END_SRC
 
-   1. Write an instance of ~Functor~ for the following type
-      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      data Quant a b = Finance | Desk a | Bloor b deriving (Eq, Show)
-
-      :{
-      instance Functor (Quant a) where
-       fmap _ Finance = Finance
-       fmap _ (Desk a) = Desk a
-       fmap f (Bloor b) = Bloor (f b)
-      :}
-
-      <<better-functor-laws-as-properties>>
-
-      :{
-      instance (Arbitrary a, Arbitrary b) => Arbitrary (Quant a b) where
-        arbitrary = do
-          a <- arbitrary
-          b <- arbitrary
-          elements [Finance, Desk a, Bloor b]
-      :}
-
-      quickCheckWithResult (stdArgs {chatty=False}) (identityProperty :: Quant String Int -> Bool)
-      quickCheckWithResult (stdArgs {chatty=False}) (compositionProperty :: Quant String Int -> Fun Int Int -> Fun Int Int -> Bool)
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      #+END_EXAMPLE
-
-   2. Write an instance of ~Functor~ for the following type
-      #+NAME: k-datatype-definition
-      #+BEGIN_SRC haskell :eval never :noweb yes
-      data K a b = K a deriving (Eq, Show)
-
-      :{
-      instance Functor (K a) where
-        fmap _ (K a) = K a
-      :}
-
-      <<better-functor-laws-as-properties>>
-
-      :{
-      instance (Arbitrary a) => Arbitrary (K a b) where
-        arbitrary = do
-          a <- arbitrary
-          return $ K a
-      :}
-      #+END_SRC
-
-      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      <<k-datatype-definition>>
-
-      quickCheckWithResult (stdArgs {chatty=False}) (identityProperty :: K String Int -> Bool)
-      quickCheckWithResult (stdArgs {chatty=False}) (compositionProperty :: K String Int -> Fun Int Int -> Fun Int Int -> Bool)
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      #+END_EXAMPLE
-
-   3. Write an instance of ~Functor~ for the following type
-      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      :set -XFlexibleInstances
-
-      <<k-datatype-definition>>
-
-      newtype Flip f a b = Flip (f b a) deriving (Eq, Show)
-
-      :{
-      instance Functor (Flip K a) where
-        fmap f (Flip (K a)) = Flip (K (f a))
-      :}
-
-      :{
-      instance (Arbitrary a, Arbitrary b) => Arbitrary (Flip K a b) where
-        arbitrary = do
-          a <- arbitrary
-          return $ Flip (K a)
-      :}
-
-      quickCheckWithResult (stdArgs {chatty=False}) (identityProperty :: Flip K String Int -> Bool)
-      quickCheckWithResult (stdArgs {chatty=False}) (compositionProperty :: Flip K String Int -> Fun Int Int -> Fun Int Int -> Bool)
-      quickCheckWithResult (stdArgs {chatty=False}) (compositionProperty :: Flip K Int String -> Fun String String -> Fun String String -> Bool)
-
-      fmap (+1) (K 1)
-      fmap (+1) (Flip (K 1))
-      fmap (++ " World") (Flip (K "Hello"))
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      K 1
-      Flip (K 2)
-      Flip (K "Hello World")
-      #+END_EXAMPLE
-
-   4. Write an instance of ~Functor~ for the following type
-      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      <<better-functor-laws-as-properties>>
-
-      data EvilGoateeConst a b = GoatyConst b deriving (Eq, Show)
-
-      :{
-      instance Functor (EvilGoateeConst a) where
-        fmap f (GoatyConst b) = GoatyConst (f b)
-      :}
-
-      :{
-      instance (Arbitrary b) => Arbitrary (EvilGoateeConst a b) where
-        arbitrary = do
-          b <- arbitrary
-          return $ GoatyConst b
-      :}
-
-      quickCheckWithResult (stdArgs {chatty=False}) (identityProperty :: EvilGoateeConst String Int -> Bool)
-      quickCheckWithResult (stdArgs {chatty=False}) (compositionProperty :: EvilGoateeConst String Int -> Fun Int Int -> Fun Int Int -> Bool)
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      #+END_EXAMPLE
-
-   5. Write an instance of ~Functor~ for the following type
-      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      <<better-functor-laws-as-properties>>
-
-      data LiftItOut f a = LiftItOut (f a) deriving (Eq, Show)
-
-      :{
-      instance Functor f => Functor (LiftItOut f) where
-        fmap f (LiftItOut fa) = LiftItOut $ fmap f fa
-      :}
-
-      :{
-      instance (Arbitrary (f a)) => Arbitrary (LiftItOut f a) where
-        arbitrary = do
-          a <- arbitrary
-          return $ LiftItOut a
-      :}
-
-      quickCheckWithResult (stdArgs {chatty=False}) (identityProperty :: LiftItOut [] Int -> Bool)
-      quickCheckWithResult (stdArgs {chatty=False}) (compositionProperty :: LiftItOut [] Int -> Fun Int Int -> Fun Int Int -> Bool)
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      #+END_EXAMPLE
-
-   6. Write an instance of ~Functor~ for the following type
-      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      <<better-functor-laws-as-properties>>
-
-      data Parappa f g a = DaWrappa (f a) (g a) deriving (Eq, Show)
-
-      :{
-      instance (Functor f, Functor g) => Functor (Parappa f g) where
-        fmap f (DaWrappa fa ga) = DaWrappa (fmap f fa) (fmap f ga)
-      :}
-
-      :{
-      instance (Arbitrary (f a), Arbitrary (g a)) => Arbitrary (Parappa f g a) where
-        arbitrary = do
-          f <- arbitrary
-          g <- arbitrary
-          return $ DaWrappa f g
-      :}
-
-      quickCheckWithResult (stdArgs {chatty=False}) (identityProperty :: Parappa [] Maybe Int -> Bool)
-      quickCheckWithResult (stdArgs {chatty=False}) (compositionProperty :: Parappa [] Maybe Int -> Fun Int Int -> Fun Int Int -> Bool)
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      #+END_EXAMPLE
-
-   7. Write an instance of ~Functor~ for the following type
-      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      <<better-functor-laws-as-properties>>
-
-      data IgnoreOne f g a b = IgnoringSomething (f a) (g b) deriving (Eq, Show)
-
-      :{
-      instance Functor g => Functor (IgnoreOne f g a) where
-        fmap f (IgnoringSomething fa gb) = IgnoringSomething fa (fmap f gb)
-      :}
-
-      :{
-      instance (Arbitrary (f a), Arbitrary (g b)) => Arbitrary (IgnoreOne f g a b) where
-        arbitrary = do
-          fa <- arbitrary
-          gb <- arbitrary
-          return $ IgnoringSomething fa gb
-      :}
-
-      quickCheckWithResult (stdArgs {chatty=False}) (identityProperty :: IgnoreOne [] Maybe Int String -> Bool)
-      quickCheckWithResult (stdArgs {chatty=False}) (compositionProperty :: IgnoreOne [] Maybe Int String -> Fun String String -> Fun String String -> Bool)
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      #+END_EXAMPLE
-
-   8. Write an instance of ~Functor~ for the following type
-      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      <<better-functor-laws-as-properties>>
-
-      data Notorious g o a t = Notorious (g o) (g a) (g t) deriving (Eq, Show)
-
-      :{
-      instance Functor g => Functor (Notorious g o a) where
-        fmap f (Notorious go ga gt) = Notorious go ga (fmap f gt)
-      :}
-
-      :{
-      instance (Arbitrary (g o), Arbitrary (g a), Arbitrary (g t)) => Arbitrary (Notorious g o a t) where
-        arbitrary = do
-          go <- arbitrary
-          ga <- arbitrary
-          gt <- arbitrary
-          return $ Notorious go ga gt
-      :}
-
-      quickCheckWithResult (stdArgs {chatty=False}) (identityProperty :: Notorious [] Int Bool String -> Bool)
-      quickCheckWithResult (stdArgs {chatty=False}) (compositionProperty :: Notorious [] Int Bool String -> Fun String String -> Fun String String -> Bool)
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      #+END_EXAMPLE
-
-   9. Write an instance of ~Functor~ for the following type
-      #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      <<better-functor-laws-as-properties>>
-
-      data List a = Nil | Cons a (List a) deriving (Eq, Show)
-
-      :{
-      instance Functor List where
-        fmap _ Nil = Nil
-        fmap f (Cons a l) = Cons (f a) (fmap f l)
-      :}
-
-      :{
-      instance Arbitrary a => Arbitrary (List a) where
-        arbitrary = do
-          l <- arbitrary
-          a <- arbitrary
-          frequency [(1, return $ Cons a l), (2, return Nil)]
-      :}
-
-      quickCheckWithResult (stdArgs {chatty=False}) (identityProperty :: List Int -> Bool)
-      quickCheckWithResult (stdArgs {chatty=False}) (compositionProperty :: List Int -> Fun Int Int -> Fun Int Int -> Bool)
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-      #+END_EXAMPLE
-
-   10. Write an instance of ~Functor~ for the following type
-       #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-       <<better-functor-laws-as-properties>>
-
-       :{
-       data GoatLord a = NoGoat
-                       | OneGoat a
-                       | MoreGoats (GoatLord a) (GoatLord a) (GoatLord a)
-                       deriving (Eq, Show)
-       :}
-
-       :{
-       instance Functor GoatLord where
-         fmap _ NoGoat = NoGoat
-         fmap f (OneGoat a) = OneGoat (f a)
-         fmap f (MoreGoats m1 m2 m3) = MoreGoats (fmap f m1) (fmap f m2) (fmap f m3)
-       :}
-
-       :{
-       instance (Arbitrary a) => Arbitrary (GoatLord a) where
-         arbitrary = do
-           a <- arbitrary
-           g1 <- arbitrary
-           g2 <- arbitrary
-           g3 <- arbitrary
-           frequency [(2, return NoGoat), (2, return $ OneGoat a), (1, return $ MoreGoats g1 g2 g3)]
-       :}
-
-       quickCheckWithResult (stdArgs {chatty=False}) (identityProperty :: GoatLord Int -> Bool)
-       quickCheckWithResult (stdArgs {chatty=False}) (compositionProperty :: GoatLord Int -> Fun Int Int -> Fun Int Int -> Bool)
-       #+END_SRC
-
-       #+RESULTS:
-       #+BEGIN_EXAMPLE
-       Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-       Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-       #+END_EXAMPLE
-
-   11. Write an instance of ~Functor~ for the following type
-       #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-       <<better-functor-laws-as-properties>>
-
-       :{
-       data TalkToMe a = Halt
-                       | Print String a
-                       | Read (String -> a)
-       :}
-
-       :{
-       instance Functor TalkToMe where
-         fmap _ Halt = Halt
-         fmap f (Print s a) = Print s (f a)
-         fmap f (Read g) = Read (f . g)
-       :}
-
-       :{
-       instance Show a => Show (TalkToMe a) where
-         show Halt = "Halt"
-         show (Print s a) = "(Print " ++ s ++ " " ++ (show a) ++ ")"
-         show (Read _) = "(Show <String -> a>)"
-       :}
-
-       :{
-       instance Eq a => Eq (TalkToMe a) where
-         Halt == Halt = True
-         (Print sl al) == (Print sr ar) = sl == sr && al == ar
-         (Read fl) == (Read fr) = fl "" == fr ""
-       :}
-
-       :{
-       instance Arbitrary a => Arbitrary (TalkToMe a) where
-         arbitrary = do
-           a <- arbitrary
-           s <- arbitrary
-           frequency [(2, return Halt), (2, return $ Print s a), (1, return $ Read (\_ -> a))]
-       :}
-
-       quickCheckWithResult (stdArgs {chatty=False}) (identityProperty :: TalkToMe Int -> Bool)
-       quickCheckWithResult (stdArgs {chatty=False}) (compositionProperty :: TalkToMe Int -> Fun Int Int -> Fun Int Int -> Bool)
-       #+END_SRC
-
-       #+RESULTS:
-       #+BEGIN_EXAMPLE
-       Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-       Success {numTests = 100, labels = [], output = "+++ OK, passed 100 tests.\n"}
-       #+END_EXAMPLE
+2. Rearrange the arguments to the type constructor of the datatype so
+   the Functor instance works.
+
+   #+BEGIN_SRC haskell :results silent
+   -- was: data Company a b c = DeepBlue a c | Something b
+   data Company a c b = DeepBlue a c | Something b
+
+   :{
+   instance Functor (Company e e') where
+     fmap f (Something b) = Something (f b)
+     fmap _ (DeepBlue a c) = DeepBlue a c
+   :}
+   #+END_SRC
+
+3. Rearrange the arguments to the type constructor of the datatype so
+   the Functor instance works.
+
+   #+BEGIN_SRC haskell
+   -- was: data More a b = L a b a | R b a b deriving (Eq, Show)
+   data More b a = L a b a | R b a b deriving (Eq, Show)
+
+   :{
+   instance Functor (More x) where
+     fmap f (L a b a') = L (f a) b (f a')
+     fmap f (R b a b') = R b (f a) b'
+   :}
+
+   fmap (+1) (L 1 2 3)
+   fmap (+1) (R 1 2 3)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   L 2 2 4
+   R 1 3 3
+   #+END_EXAMPLE
+
+** Exercise
+
+1. Write an instance of ~Functor~ for the following type
+
+   #+BEGIN_SRC haskell
+   data Quant a b = Finance | Desk a | Bloor b deriving (Eq, Show)
+
+   :{
+   instance Functor (Quant a) where
+     fmap _ Finance = Finance
+     fmap _ (Desk a) = Desk a
+     fmap f (Bloor b) = Bloor $ f b
+   :}
+
+   <<functor-properties-check>>
+
+   :{
+   instance (Arbitrary a, Arbitrary b) => Arbitrary (Quant a b) where
+     arbitrary = do
+       a <- arbitrary
+       b <- arbitrary
+       elements [Finance, Desk a, Bloor b]
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @(Quant String) @String)
+   quickCheckWithOutput (functorCompositionProperty @(Quant String) @String @String @String)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+2. Write an instance of ~Functor~ for the following type
+   #+NAME: k-datatype-definition
+   #+BEGIN_SRC haskell :eval never
+   data K a b = K a deriving (Eq, Show)
+
+   :{
+   instance Functor (K a) where
+     fmap _ (K a) = K a
+   :}
+
+   <<functor-properties-check>>
+
+   :{
+   instance (Arbitrary a) => Arbitrary (K a b) where
+     arbitrary = K <$> arbitrary
+   :}
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   <<k-datatype-definition>>
+
+   quickCheckWithOutput (functorIdentityProperty @(K String) @String)
+   quickCheckWithOutput (functorCompositionProperty @(K String) @String @String @String)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+3. Write an instance of ~Functor~ for the following type ~Flip K a b~
+   #+BEGIN_SRC haskell
+   :set -XFlexibleInstances
+
+   <<k-datatype-definition>>
+
+   newtype Flip f a b = Flip (f b a) deriving (Eq, Show)
+
+   :{
+   instance Functor (Flip K a) where
+     fmap f (Flip (K b)) = Flip $ K (f b)
+   :}
+
+   <<functor-properties-check>>
+
+   :{
+   instance (Arbitrary b) => Arbitrary (Flip K a b) where
+     arbitrary = do
+       b <- arbitrary
+       return $ Flip $ K b
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @(Flip K String) @String)
+   quickCheckWithOutput (functorCompositionProperty @(Flip K String) @String @String @String)
+
+   fmap (+1) (K 1)
+   fmap (+1) (Flip (K 1))
+   fmap (++ " World") (Flip (K "Hello"))
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   K 1
+   Flip (K 2)
+   Flip (K "Hello World")
+   #+END_EXAMPLE
+
+4. Write an instance of ~Functor~ for the following type
+   #+BEGIN_SRC haskell
+   data EvilGoateeConst a b = GoatyConst b deriving (Eq, Show)
+
+   :{
+   instance Functor (EvilGoateeConst a) where
+     fmap f (GoatyConst b) = GoatyConst $ f b
+   :}
+
+   <<functor-properties-check>>
+
+   :{
+   instance (Arbitrary b) => Arbitrary (EvilGoateeConst a b) where
+     arbitrary = GoatyConst <$> arbitrary
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @(EvilGoateeConst String) @String)
+   quickCheckWithOutput (functorCompositionProperty @(EvilGoateeConst String) @String @String @String)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+5. Write an instance of ~Functor~ for the following type
+   #+BEGIN_SRC haskell
+   data LiftItOut f a = LiftItOut (f a) deriving (Eq, Show)
+
+   :{
+   instance Functor f => Functor (LiftItOut f) where
+     fmap f (LiftItOut fa) = LiftItOut $ fmap f fa
+   :}
+
+   <<functor-properties-check>>
+
+   :{
+   instance (Arbitrary a) => Arbitrary (LiftItOut Maybe a) where
+     arbitrary = do
+       a <- arbitrary
+       elements [LiftItOut Nothing, LiftItOut (Just a)]
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @(LiftItOut Maybe) @String)
+   quickCheckWithOutput (functorCompositionProperty @(LiftItOut Maybe) @String @String @String)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+6. Write an instance of ~Functor~ for the following type
+   #+BEGIN_SRC haskell
+   data Parappa f g a = DaWrappa (f a) (g a) deriving (Eq, Show)
+
+   :{
+   instance (Functor f, Functor g) => Functor (Parappa f g) where
+     fmap f (DaWrappa fa ga) = DaWrappa (f <$> fa) (f <$> ga)
+   :}
+
+   <<functor-properties-check>>
+
+   :{
+   instance Arbitrary a => Arbitrary (Parappa Maybe [] a) where
+     arbitrary = do
+       a <- arbitrary
+       elements [ DaWrappa Nothing []
+                , DaWrappa (Just a) []
+                , DaWrappa Nothing [a]
+                , DaWrappa (Just a) [a]
+                ]
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @(Parappa Maybe []) @String)
+   quickCheckWithOutput (functorCompositionProperty @(Parappa Maybe []) @String @String @String)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+7. Write an instance of ~Functor~ for the following type
+   #+BEGIN_SRC haskell
+   data IgnoreOne f g a b = IgnoringSomething (f a) (g b) deriving (Eq, Show)
+
+   :{
+   instance Functor g => Functor (IgnoreOne f g a) where
+     fmap f (IgnoringSomething fa gb) = IgnoringSomething fa (f <$> gb)
+   :}
+
+   <<functor-properties-check>>
+
+   :{
+   instance (Arbitrary a, Arbitrary b) => Arbitrary (IgnoreOne Maybe [] a b) where
+     arbitrary = do
+       a <- arbitrary
+       b <- arbitrary
+       elements [ IgnoringSomething Nothing []
+                , IgnoringSomething (Just a) []
+                , IgnoringSomething Nothing [b]
+                , IgnoringSomething (Just a) [b]
+                ]
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @(IgnoreOne Maybe [] String) @String)
+   quickCheckWithOutput (functorCompositionProperty @(IgnoreOne Maybe [] String) @String @String @String)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+
+8. Write an instance of ~Functor~ for the following type
+   #+BEGIN_SRC haskell
+   data Notorious g o a t = Notorious (g o) (g a) (g t) deriving (Eq, Show)
+
+   :{
+   instance Functor g => Functor (Notorious g o a) where
+     fmap f (Notorious go ga gt) = Notorious go ga (f <$> gt)
+   :}
+
+   <<functor-properties-check>>
+
+   :{
+   instance (Arbitrary a, Arbitrary b, Arbitrary c) => Arbitrary (Notorious Maybe a b c) where
+     arbitrary = do
+       a <- arbitrary
+       b <- arbitrary
+       c <- arbitrary
+       elements [ Notorious ga gb gc | ga <- [Nothing, Just a]
+                                     , gb <- [Nothing, Just b]
+                                     , gc <- [Nothing, Just c]
+                ]
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @(Notorious Maybe String String) @String)
+   quickCheckWithOutput (functorCompositionProperty @(Notorious Maybe String String) @String @String @String)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+9. Write an instance of ~Functor~ for the following type
+   #+BEGIN_SRC haskell
+   data List a = Nil | Cons a (List a) deriving (Eq, Show)
+
+   :{
+   instance Functor List where
+     fmap _ Nil = Nil
+     fmap f (Cons a l) = Cons (f a) (fmap f l)
+   :}
+
+   <<functor-properties-check>>
+
+   :{
+   instance Arbitrary a => Arbitrary (List a) where
+     arbitrary = do
+       a <- arbitrary
+       la <- arbitrary
+       frequency [ (4, return $ Cons a la)
+                 , (1, return Nil)
+                 ]
+   :}
+
+   quickCheckWithOutput (functorIdentityProperty @List @String)
+   quickCheckWithOutput (functorCompositionProperty @List @String @String @String)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   +++ OK, passed 100 tests.\n
+   +++ OK, passed 100 tests.\n
+   #+END_EXAMPLE
+
+10. Write an instance of ~Functor~ for the following type
+    #+BEGIN_SRC haskell
+
+    :{
+    data GoatLord a = NoGoat
+                    | OneGoat a
+                    | MoreGoats (GoatLord a) (GoatLord a) (GoatLord a)
+                    deriving (Eq, Show)
+    :}
+
+    :{
+    instance Functor GoatLord where
+      fmap _ NoGoat = NoGoat
+      fmap f (OneGoat a) = OneGoat (f a)
+      fmap f (MoreGoats gl1 gl2 gl3) = MoreGoats (fmap f gl1) (fmap f gl2) (fmap f gl3)
+    :}
+
+    <<functor-properties-check>>
+
+    :{
+    instance Arbitrary a => Arbitrary (GoatLord a) where
+      arbitrary = do
+        a <- arbitrary
+        gl1 <- arbitrary
+        gl2 <- arbitrary
+        gl3 <- arbitrary
+        frequency [ (2, return $ OneGoat a)
+                  , (1, return $ MoreGoats gl1 gl2 gl3)
+                  , (1, return NoGoat)
+                  ]
+    :}
+
+    quickCheckWithOutput (functorIdentityProperty @GoatLord @String)
+    quickCheckWithOutput (functorCompositionProperty @GoatLord @String @String @String)
+    #+END_SRC
+
+    #+RESULTS:
+    #+BEGIN_EXAMPLE
+    +++ OK, passed 100 tests.\n
+    +++ OK, passed 100 tests.\n
+    #+END_EXAMPLE
+
+11. Write an instance of ~Functor~ for the following type
+    #+BEGIN_SRC haskell
+    :{
+    data TalkToMe a = Halt
+                    | Print String a
+                    | Read (String -> a)
+    :}
+
+    :{
+    instance Functor TalkToMe where
+      fmap _ Halt = Halt
+      fmap f (Print s a) = Print s (f a)
+      fmap f (Read g) = Read (f . g)
+    :}
+
+    <<functor-properties-check>>
+
+    :{
+    instance Arbitrary a => Arbitrary (TalkToMe a) where
+      arbitrary = do
+        a <- arbitrary
+        s <- arbitrary
+        frequency [ (1, return Halt)
+                  , (2, return $ Print s a)
+                  , (2, return $ Read (\_ -> a))
+                  ]
+    :}
+
+    :{
+    instance Show a => Show (TalkToMe a) where
+      show Halt = "Halt"
+      show (Print s a) = "Print " <> s <> " " <> show a
+      show (Read _) = "Show (String -> a)"
+    :}
+
+    :{
+    instance Eq a => Eq (TalkToMe a) where
+      Halt == Halt = True
+      (Print sl al) == (Print sr ar) = sl == sr && al == ar
+      (Read fl) == (Read fr) = fl "" == fr ""
+    :}
+
+    quickCheckWithOutput (functorIdentityProperty @TalkToMe @String)
+    quickCheckWithOutput (functorCompositionProperty @TalkToMe @String @String @String)
+    #+END_SRC
+
+    #+RESULTS:
+    #+BEGIN_EXAMPLE
+    +++ OK, passed 100 tests.\n
+    +++ OK, passed 100 tests.\n
+    #+END_EXAMPLE
