@@ -41,9 +41,24 @@
 
 #+NAME: quickcheck-with-output
 #+BEGIN_SRC haskell :eval never
+import Test.QuickCheck
+import Test.QuickCheck.Checkers
+import Test.QuickCheck.Classes
+
 :{
 quickCheckWithOutput :: Testable prop => prop -> IO ()
 quickCheckWithOutput p = quickCheckWithResult (stdArgs {chatty=False}) p >>= print . output
+:}
+
+:{
+quickCheckBatchWithOutput :: TestBatch -> IO ()
+quickCheckBatchWithOutput (batchName, tests) = do
+  putStrLn $ ">>> " <> batchName <> "\n"
+  testOutputs <- sequence $ (fmap . fmap) output (quickCheckWithResult (stdArgs {chatty=False}) <$> testProperties)
+  (putStr . unlines) (zipWith (<>) testNames testOutputs)
+  putStrLn $ "<<< " <> batchName <> "\n"
+  where testProperties = snd <$> tests
+        testNames = (\n -> "[" <> n <> "] ") <$> fst <$> tests
 :}
 #+END_SRC
 

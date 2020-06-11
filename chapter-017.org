@@ -1,1459 +1,1377 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
 #+TITLE: Applicative
 
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+
 * 17.01 Applicative
-  - ~Monoid~ -> ~mappend~ -> joining structure with some logic
-  - ~Functor~ -> ~fmap~ -> changing content with a function and leaving the structure alone
-  - ~Applicative~ -> ??? -> monoidal functor ???
+- ~Monoid~ has ~mappend~ which is joining structure with some logic
+- ~Functor~ has ~fmap~ which is changing content with a function and
+  leaving the structure alone
+- ~Applicative~ -> ??? -> monoidal functor ???
 
 * 17.02 Defining Applicative
+#+BEGIN_SRC haskell :eval never
+class Functor f => Applicative f where
+  pure :: a -> f a
+  (<*>) :: f (a -> b) -> f a -> f b
+#+END_SRC
+
+- Every type that can have an instance of ~Applicative~ must also an
+  instance of ~Functor~
+- The ~pure~ function lifts something into the functorial
+  (applicative) structure
+- The ~<*>~ (called /apply/ or /app/ or /tie fighter/) lets see it
+  compared with the functorial ~fmap~
   #+BEGIN_SRC haskell :eval never
-  class Functor f => Applicative f where
-    pure :: a -> f a
-    (<*>) :: f (a -> b) -> f a -> f b
+  fmap :: Functor f => (a -> b) -> f a -> f b
+  (<*>) :: Applicative f => f (a -> b) -> f a -> f b
   #+END_SRC
+- Along with these ~Control.Applicative~ provides useful functions
+  like: ~liftA~, ~liftA2~ and ~liftA3~
+  #+BEGIN_SRC haskell :eval never
+  liftA :: Applicative f
+        -> (a -> b)
+        -> f a
+        -> f b
 
-  - Every type that can have an instance of ~Applicative~ must also an
-    instance of ~Functor~
-  - The ~pure~ function lifts something into the functorial
-    (applicative) structure
-  - The ~<*>~ (called /apply/ or /app/ or /tie fighter/) lets see it
-    compared with the functorial ~fmap~
-    #+BEGIN_SRC haskell :eval never
-    fmap :: Functor f => (a -> b) -> f a -> f b
-    (<*>) :: Applicative f => f (a -> b) -> f a -> f b
-    #+END_SRC
-  - Along with these ~Control.Applicative~ provides useful ~liftA~,
-    ~liftA2~ and ~liftA3~
-    #+BEGIN_SRC haskell :eval never
-    liftA :: Applicative f
-          -> (a -> b)
-          -> f a
-          -> f b
+  liftA2 :: Applicative f
+         -> (a -> b -> c)
+         -> f a
+         -> f b
+         -> f c
 
-    liftA2 :: Applicative f
-           -> (a -> b -> c)
-           -> f a
-           -> f b
-           -> f c
-
-    liftA3 :: Applicative f
-           -> (a -> b -> c -> d)
-           -> f a
-           -> f b
-           -> f c
-           -> f d
-    #+END_SRC
+  liftA3 :: Applicative f
+         -> (a -> b -> c -> d)
+         -> f a
+         -> f b
+         -> f c
+         -> f d
+  #+END_SRC
 
 * 17.03 Fuctor Vs Applicative
-  The functorial ~fmap~ can be implemented with what we get with ~Applicative~
-  #+BEGIN_SRC haskell :eval never
-  fmap f x = (pure f) <*> x
-  #+END_SRC
+The functorial ~fmap~ can be implemented with what we get with
+~Applicative~
+#+BEGIN_SRC haskell :eval never
+fmap f x = (pure f) <*> x
+#+END_SRC
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  fmap (+1) [1, 2, 3]
-  pure (+1) <*> [1, 2, 3]
-  #+END_SRC
+#+BEGIN_SRC haskell
+fmap (+1) [1, 2, 3]
+pure (+1) <*> [1, 2, 3]
+#+END_SRC
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  [2,3,4]
-  [2,3,4]
-  #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[2,3,4]
+[2,3,4]
+#+END_EXAMPLE
 
-  The applicative ~pure~ is able to lift everything in the applicative
-  context, as always the right part of ~Either~ and ~(,)~ is not
-  touched because it is part of the structure like for ~Functor~
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  pure 1 :: [Int]
-  pure 1 :: Maybe Int
-  pure 1 :: Either a Int
-  pure 1 :: ([a], Int)
-  #+END_SRC
+The applicative ~pure~ is able to lift everything in the applicative
+context, as always the right part of ~Either~ and ~(,)~ is not touched
+because it is part of the structure like for ~Functor~
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  [1]
-  Just 1
-  Right 1
-  ([],1)
-  #+END_EXAMPLE
+#+BEGIN_SRC haskell
+pure 1 :: [Int]
+pure 1 :: Maybe Int
+pure 1 :: Either a Int
+pure 1 :: ([a], Int)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[1]
+Just 1
+Right 1
+([],1)
+#+END_EXAMPLE
 
 * 17.04 Applicative Functors are Monoidal Functors
-  #+BEGIN_SRC haskell :eval never
-   $  ::   (a -> b) ->   a ->   b
-  <$> ::   (a -> b) -> f a -> f b
-  <*> :: f (a -> b) -> f a -> f b
-  #+END_SRC
+#+BEGIN_SRC haskell :eval never
+ $  ::   (a -> b) ->   a ->   b
+<$> ::   (a -> b) -> f a -> f b
+<*> :: f (a -> b) -> f a -> f b
+#+END_SRC
 
-  In ~Functor~ we have only one piece of structure (~f a~) that we
-  need to preserve. In ~Applicative~ we have two piece of structure:
-  ~f (a -> b)~ and ~f a~ that we need to combine somehow
+In ~Functor~ we have only one piece of structure (~f a~) that we need
+to preserve. In ~Applicative~ we have two piece of structure: ~f (a ->
+b)~ and ~f a~ that we need to combine somehow
 
-  #+BEGIN_SRC haskell :eval never
-  <*> :: f (a -> b) -> f a -> f b
-  --     f             f      f
-  --    [1]           [2]    [3]
-  --       (a -> b)      a      b
-  #+END_SRC
+#+BEGIN_SRC haskell :eval never
+<*> :: f (a -> b) -> f a -> f b
+--     f             f      f
+--    [1]           [2]    [3]
+--       (a -> b)      a      b
+#+END_SRC
 
-  The ~f~ must be of the same type by construction, /[1]/ and /[2]/
-  must be combined to provide /[3]/, we know what combines two things
-  of the same type in another thing of the same type, ~mappend~ from
-  ~Monoid~
+The ~f~ must be of the same type by construction, /[1]/ and /[2]/ must
+be combined to provide /[3]/, we know what combines two things of the
+same type in another thing of the same type, ~mappend~ from ~Monoid~
 
-  #+BEGIN_SRC haskell :eval never
-  mappend :: f ->          f ->   f
-  $ ::         (a -> b) ->   a ->   b
-  <*> ::     f (a -> b) -> f a -> f b
-  #+END_SRC
+#+BEGIN_SRC haskell :eval never
+mappend :: f          -> f   -> f
+$ ::         (a -> b) ->   a ->   b
+<*> ::     f (a -> b) -> f a -> f b
+#+END_SRC
 
-  Examples
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  [(*2), (+5)] <*> [4, 5]
-  Just (*2) <*> Just 5
-  Just (*2) <*> Nothing
-  Nothing <*> Nothing
-  #+END_SRC
+Examples
+#+BEGIN_SRC haskell
+[(*2), (+5)] <*> [4, 5]
+Just (*2) <*> Just 5
+Just (*2) <*> Nothing
+Nothing <*> Nothing
+#+END_SRC
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  [8,10,9,10]
-  Just 10
-  Nothing
-  Nothing
-  #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[8,10,9,10]
+Just 10
+Nothing
+Nothing
+#+END_EXAMPLE
 
-  The monoidal behaviour is evident with tuples, with ~fmap~ we can
-  ignore the first element of the tuple and preserve it but with ~<*>~
-  we cannot, we need to combine it in some way
+The monoidal behaviour is evident with tuples, with ~fmap~ we can
+ignore the first element of the tuple and preserve it but with ~<*>~
+we cannot, we need to combine it in some way
 
-  #+BEGIN_SRC haskell :eval
-     ("Hello", (+1)) <*> ("World", 5)
-  --           (+1)   $            5    => 6
-  --  "Hello"        ???  "World"       => ???
-  #+END_SRC
+#+BEGIN_SRC haskell :eval
+   ("Hello", (+1)) <*> ("World", 5)
+--           (+1)   $            5    => 6
+--  "Hello"        ???  "World"       => ???
+#+END_SRC
 
-  If we constrain the type of the first element of the tuple to have
-  an instance of ~Monoid~ then we can use it
+If we constrain the type of the first element of the tuple to have an
+instance of ~Monoid~ then we can use it
 
-  #+BEGIN_SRC haskell :eval
-     ("Hello", (+1)) <*> ("World", 5)
-  --           (+1)   $            5    => 6
-  --  "Hello"        <>   "World"       => "HelloWorld"
-  #+END_SRC
+#+BEGIN_SRC haskell :eval
+   ("Hello", (+1)) <*> ("World", 5)
+--           (+1)   $            5    => 6
+--  "Hello"        <>   "World"       => "HelloWorld"
+#+END_SRC
 
-  And that's exactly how it works
+And that's exactly how it works
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  ("Hello", (+1)) <*> ("World", 5)   -- [Char] have an instance of Monoid
-  (Sum 1, (+1)) <*> (Sum 2, 5)   -- Num a => Sum a, have an instance of Monoid
-  (All True, (+1)) <*> (All False, 5)   -- All Bool, have an instance of Monoid
-  (Any True, (+1)) <*> (Any False, 5)   -- All Bool, have an instance of Monoid
-  #+END_SRC
+#+BEGIN_SRC haskell
+import Data.Semigroup
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  ("HelloWorld",6)
-  (Sum {getSum = 3},6)
-  (All {getAll = False},6)
-  (Any {getAny = True},6)
-  #+END_EXAMPLE
+("Hello", (+1)) <*> ("World", 5)      -- [Char] have an instance of Monoid
+(Sum 1, (+1)) <*> (Sum 2, 5)          -- Num a => Sum a, have an instance of Monoid
+(All True, (+1)) <*> (All False, 5)   -- All Bool, have an instance of Monoid
+(Any True, (+1)) <*> (Any False, 5)   -- All Bool, have an instance of Monoid
+#+END_SRC
 
-  It is not guaranteed that the monoidal behaviour of the applicative
-  instance is the same as the monoid instance of the involved type.
+#+RESULTS:
+#+BEGIN_EXAMPLE
+("HelloWorld",6)
+(Sum {getSum = 3},6)
+(All {getAll = False},6)
+(Any {getAny = True},6)
+#+END_EXAMPLE
+
+It is not guaranteed that the monoidal behavior of the applicative
+instance is the same as the monoid instance of the involved type.
 
 * 17.05 Applicative in Use
-
 ** List Applicative
-   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   [(+1), (*3)] <*> [3, 2]
-   -- [(+1) 3, (+1) 2, (*3) 3, (*3) 2]
-   #+END_SRC
+#+BEGIN_SRC haskell
+[(+1), (*3)] <*> [3, 2] -- [(+1) 3, (+1) 2, (*3) 3, (*3) 2]
+#+END_SRC
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   [4,3,9,6]
-   #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[4,3,9,6]
+#+END_EXAMPLE
 
-   - It returns one list, not two lists or a nested list, this is the
-     monoidal behaviour.
-   - It returns one list with the function applied to the values and
-     not functions concatened with values, this is the functorial
-     behaviour.
+- It returns one list, not two lists or a nested list, this is the
+  monoidal behavior.
+- It returns one list with the function applied to the values and not
+  functions concatenated with values, this is the functorial
+  behavior.
 
-   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   import Control.Applicative (liftA2)
+  #+BEGIN_SRC haskell
+  import Control.Applicative (liftA2)
 
-   (,) <$> [1, 2] <*> [3, 4]
-   (+) <$> [1, 2] <*> [3, 4]
-   (max) <$> [1, 2] <*> [3, 4]
+  (,) <$> [1, 2] <*> [3, 4]
+  (+) <$> [1, 2] <*> [3, 4]
+  (max) <$> [1, 2] <*> [3, 4]
 
-   -- same as
-   liftA2 (,) [1, 2] [3, 4]
-   liftA2 (+) [1, 2] [3, 4]
-   liftA2 (max) [1, 2] [3, 4]
-   #+END_SRC
+  -- same as
+  liftA2 (,) [1, 2] [3, 4]
+  liftA2 (+) [1, 2] [3, 4]
+  liftA2 (max) [1, 2] [3, 4]
+  #+END_SRC
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   [(1,3),(1,4),(2,3),(2,4)]
-   [4,5,5,6]
-   [3,4,3,4]
-   [(1,3),(1,4),(2,3),(2,4)]
-   [4,5,5,6]
-   [3,4,3,4]
-   #+END_EXAMPLE
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  [(1,3),(1,4),(2,3),(2,4)]
+  [4,5,5,6]
+  [3,4,3,4]
+  [(1,3),(1,4),(2,3),(2,4)]
+  [4,5,5,6]
+  [3,4,3,4]
+  #+END_EXAMPLE
 
-   Considering the ~lookup~ function
-   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   import Control.Applicative (liftA2)
+  Considering the ~lookup~ function
+  #+BEGIN_SRC haskell
+  import Control.Applicative (liftA2)
 
-   :t lookup
-   lookup 1 [(1, "hello"), (2, "world")]
-   lookup 3 [(1, "hello"), (2, "world")]
+  :t lookup
+  lookup 1 [(1, "hello"), (2, "world")]
+  lookup 3 [(1, "hello"), (2, "world")]
 
-   f x = lookup x [(3, "hello"), (4, "julie"), (5, "kbai")]
-   g y = lookup y [(7, "sup?"), (8, "chris"), (9, "aloha")]
-   h z = lookup z [(2, 3), (5, 6), (7, 8)]
-   m x = lookup x [(4, 10), (8, 13), (1, 9001)]
+  f x = lookup x [(3, "hello"), (4, "julie"), (5, "kbai")]
+  g y = lookup y [(7, "sup?"), (8, "chris"), (9, "aloha")]
+  h z = lookup z [(2, 3), (5, 6), (7, 8)]
+  m x = lookup x [(4, 10), (8, 13), (1, 9001)]
 
-   f 3
-   g 8
-   :t (++) <$> f 3
-   (++) <$> f 3 <*> g 8
-   (+) <$> h 5 <*> m 1
+  f 3
+  g 8
+  :t (++) <$> f 3
+  (++) <$> f 3 <*> g 8
+  (+) <$> h 5 <*> m 1
 
-   -- same as
-   liftA2 (++) (f 3) (g 8)
-   liftA2 (+) (h 5) (m 1)
-   #+END_SRC
+  -- same as
+  liftA2 (++) (f 3) (g 8)
+  liftA2 (+) (h 5) (m 1)
+  #+END_SRC
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   lookup :: Eq a => a -> [(a, b)] -> Maybe b
-   Just "hello"
-   Nothing
-   Just "hello"
-   Just "chris"
-   (++) <$> f 3 :: Maybe ([Char] -> [Char])
-   Just "hellochris"
-   Just 9007
-   Just "hellochris"
-   Just 9007
-   #+END_EXAMPLE
+  #+RESULTS:
+  #+BEGIN_EXAMPLE
+  lookup :: Eq a => a -> [(a, b)] -> Maybe b
+  Just "hello"
+  Nothing
+  Just "hello"
+  Just "chris"
+  (++) <$> f 3 :: Maybe ([Char] -> [Char])
+  Just "hellochris"
+  Just 9007
+  Just "hellochris"
+  Just 9007
+  #+END_EXAMPLE
 
 ** Exercise: Lookup
-   Use ~pure~, ~<$>~ and ~<*>~ to make the following code to typecheck
+Use ~pure~, ~<$>~ and ~<*>~ to make the following code to typecheck
 
-   1. Make the following code to typecheck
-      #+BEGIN_SRC haskell :results silent
-      -- was
-      -- added :: Maybe Integer
-      -- added = (+3) (lookup 3 $ zip [1, 2, 3] [4, 5, 6])
-      :{
-      added :: Maybe Integer
-      added = (+3) <$> (lookup 3 $ zip [1, 2, 3] [4, 5, 6])
-      :}
-      #+END_SRC
+1. Make the following code to typecheck
+   #+BEGIN_SRC haskell :results silent
+   -- was
+   -- added :: Maybe Integer
+   -- added = (+3) (lookup 3 $ zip [1, 2, 3] [4, 5, 6])
+   :{
+   added :: Maybe Integer
+   added = (+3) <$> (lookup 3 $ zip [1, 2, 3] [4, 5, 6])
+   :}
+   #+END_SRC
 
-   2. Make the following code to typecheck
-      #+BEGIN_SRC haskell :results silent
-      :{
-      y :: Maybe Integer
-      y = lookup 3 $ zip [1, 2, 3] [4, 5, 6]
-      :}
+2. Make the following code to typecheck
+   #+BEGIN_SRC haskell :results silent
+   :{
+   y :: Maybe Integer
+   y = lookup 3 $ zip [1, 2, 3] [4, 5, 6]
+   :}
 
-      :{
-      z :: Maybe Integer
-      z = lookup 2 $ zip [1, 2, 3] [4, 5, 6]
-      :}
+   :{
+   z :: Maybe Integer
+   z = lookup 2 $ zip [1, 2, 3] [4, 5, 6]
+   :}
 
-      -- tupled :: Maybe (Integer, Integer)
-      -- tupled = (,) y z
-      :{
-      tupled :: Maybe (Integer, Integer)
-      tupled = (,) <$> y <*> z
-      -- or
-      -- tupled = Control.Applicative.liftA2 (,) y z
-      :}
-      #+END_SRC
+   -- was
+   -- tupled :: Maybe (Integer, Integer)
+   -- tupled = (,) y z
+   :{
+   tupled :: Maybe (Integer, Integer)
+   tupled = (,) <$> y <*> z
+   -- or
+   -- tupled = Control.Applicative.liftA2 (,) y z
+   :}
+   #+END_SRC
 
-   3. Make the following code to typecheck
-      #+BEGIN_SRC haskell :results silent
-      import Data.List (elemIndex)
+3. Make the following code to typecheck
+   #+BEGIN_SRC haskell :results silent
+   import Data.List (elemIndex)
 
-      :{
-      x :: Maybe Int
-      x = elemIndex 3 [1, 2, 3, 4, 5]
-      :}
+   :{
+   x :: Maybe Int
+   x = elemIndex 3 [1, 2, 3, 4, 5]
+   :}
 
-      :{
-      y :: Maybe Int
-      y = elemIndex 4 [1, 2, 3, 4, 5]
-      :}
+   :{
+   y :: Maybe Int
+   y = elemIndex 4 [1, 2, 3, 4, 5]
+   :}
 
-      :{
-      max' :: Int -> Int -> Int
-      max' = max
-      :}
+   :{
+   max' :: Int -> Int -> Int
+   max' = max
+   :}
 
-      -- was
-      -- maxed :: Maybe Int
-      -- maxed = max' x y
+   -- was
+   -- maxed :: Maybe Int
+   -- maxed = max' x y
 
-      :{
-      maxed :: Maybe Int
-      maxed = max' <$> x <*> y
-      -- or
-      -- maxed = Control.Applicative.liftA2 max' x y
-      :}
-      #+END_SRC
+   :{
+   maxed :: Maybe Int
+   maxed = max' <$> x <*> y
+   -- or
+   -- maxed = Control.Applicative.liftA2 max' x y
+   :}
+   #+END_SRC
 
-   4. Make the following code to typecheck
-      #+BEGIN_SRC haskell :results silent
-      xs = [1, 2, 3]
-      ys = [4, 5, 6]
+4. Make the following code to typecheck
+   #+BEGIN_SRC haskell :results silent
+   xs = [1, 2, 3]
+   ys = [4, 5, 6]
 
-      :{
-      x :: Maybe Integer
-      x = lookup 3 $ zip xs ys
-      :}
+   :{
+   x :: Maybe Integer
+   x = lookup 3 $ zip xs ys
+   :}
 
-      :{
-      y :: Maybe Integer
-      y = lookup 2 $ zip xs ys
-      :}
+   :{
+   y :: Maybe Integer
+   y = lookup 2 $ zip xs ys
+   :}
 
-      -- was
-      -- summed :: Maybe Integer
-      -- summed = sum $ (,) x y
+   -- was
+   -- summed :: Maybe Integer
+   -- summed = sum $ (,) x y
 
-      :{
-      summed :: Maybe Integer
-      summed = sum <$> ((fmap (,) x) <*> y)
-      -- or
-      -- summed = sum <$> Control.Applicative.liftA2 (,) x y
-      :}
-      #+END_SRC
+   :{
+   summed :: Maybe Integer
+   summed = sum <$> ((,) <$> x <*> y)
+   -- or
+   -- summed = sum <$> Control.Applicative.liftA2 (,) x y
+   :}
+   #+END_SRC
 
 ** Identity
-   #+BEGIN_SRC haskell :eval never
-   (<*>) :: f        (a -> b) -> f        a -> f        b
-   (<*>) :: Identity (a -> b) -> Identity a -> Identity b
+#+BEGIN_SRC haskell :eval never
+(<*>) :: f        (a -> b) -> f        a -> f        b
+(<*>) :: Identity (a -> b) -> Identity a -> Identity b
 
-   pure :: a -> f        a
-   pure :: a -> Identity a
-   #+END_SRC
+pure :: a -> f        a
+pure :: a -> Identity a
+#+END_SRC
 
-   What's the meaning of having only a little bit of structure around
-   our values? To lift ~const~ to map over ~Identity~
-   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   import Data.Functor.Identity
+What's the meaning of having only a little bit of structure around our
+values? To lift ~const~ to map over ~Identity~
 
-   xs = [1, 2, 3]
-   ys = [9, 9, 9]
-   -- here ~const~ will map over the list structure
-   const <$> xs <*> ys
+#+BEGIN_SRC haskell
+import Data.Functor.Identity
 
-   Identity xs
-   :t const <$> (Identity xs)
-   -- here const will map over the Identity structure
-   -- const will preserve the content, in this case xs
-   const <$> (Identity xs) <*> Identity ys
-   -- whatever you give it's fine because const (const :: a -> b -> a) the second argument of type b
-   const <$> (Identity xs) <*> Identity "Hello"
-   #+END_SRC
+xs = [1, 2, 3]
+ys = [9, 9, 9]
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   [1,1,1,2,2,2,3,3,3]
-   [1,2,3]
-   Identity [1,2,3]
-   (Identity xs) :: Num a => Identity (b -> [a])
-   Identity [1,2,3]
-   Identity [1,2,3]
-   #+END_EXAMPLE
+-- here ~const~ will map over the list structure
+const <$> xs <*> ys
+
+Identity xs
+:t const <$> (Identity xs)
+-- here const will map over the Identity structure
+-- const will preserve the content, in this case xs
+const <$> (Identity xs) <*> Identity ys
+-- whatever you give it's fine because const (const :: a -> b -> a)
+-- the second argument of type b
+const <$> (Identity xs) <*> Identity "Hello"
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[1,1,1,2,2,2,3,3,3]
+Identity [1,2,3]
+const <$> (Identity xs) :: Num a => Identity (b -> [a])
+Identity [1,2,3]
+Identity [1,2,3]
+#+END_EXAMPLE
 
 ** Exercise: Identity Instance
-   Write an ~Applicative~ instance for ~Identity~
-   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   newtype Identity a = Identity a deriving (Eq, Ord, Show)
+Write an ~Applicative~ instance for ~Identity~
+#+BEGIN_SRC haskell
+newtype Identity a = Identity a deriving (Eq, Ord, Show)
 
-   :{
-   instance Functor Identity where
-     fmap f (Identity a) = Identity (f a)
-   :}
+:{
+instance Functor Identity where
+  fmap f (Identity a) = Identity $ f a
+:}
 
-   :{
-   instance Applicative Identity where
-     pure a = Identity a
-     (<*>) (Identity f) (Identity a) = Identity (f a)
-   :}
+:{
+instance Applicative Identity where
+  pure a = Identity a
+  (Identity f) <*> (Identity a) = Identity $ f a
+:}
 
-   xs = [1, 2, 3]
-   const <$> (Identity xs) <*> Identity "Hello"
-   #+END_SRC
+xs = [1, 2, 3]
+const <$> (Identity xs) <*> Identity "Hello"
+#+END_SRC
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   Identity [1,2,3]
-   #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Identity [1,2,3]
+#+END_EXAMPLE
 
 ** Constant
-   It can only hold a value, it can't do anything, the function
-   doesn't exists and so it cannot be applied
+It can only hold a value, it can't do anything, the function doesn't
+exists and so it cannot be applied
 
 ** Exercise: Constant Instance
-   Write an ~Applicative~ instance for ~Constant~
-   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   newtype Constant a b = Constant {getConstant :: a} deriving (Eq, Ord, Show)
+Write an ~Applicative~ instance for ~Constant~
+#+BEGIN_SRC haskell
+newtype Constant a b = Constant {getConstant :: a} deriving (Eq, Ord, Show)
 
-   :{
-   instance Functor (Constant a) where
-     fmap _ (Constant a) = Constant a
-   :}
+:{
+instance Functor (Constant a) where
+  fmap _ (Constant a) = Constant a
+:}
 
-   :{
-   instance Monoid a => Applicative (Constant a) where
-     pure _ = Constant (mempty)
-     (<*>) (Constant x) (Constant y) = Constant (x <> y)
-   :}
+:{
+instance Monoid a => Applicative (Constant a) where
+  pure b = Constant mempty
+  (Constant a1) <*> (Constant a2) = Constant $ a1 <> a2
+:}
 
-   let f = Constant (Sum 1)
-   let g = Constant (Sum 2)
-   f <*> g
-   #+END_SRC
+f = Constant (Sum 1)
+g = Constant (Sum 2)
+f <*> g
+#+END_SRC
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   Constant {getConstant = Sum {getSum = 3}}
-   #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Constant {getConstant = Sum {getSum = 3}}
+#+END_EXAMPLE
 
 ** Maybe (Applicative)
-   #+BEGIN_SRC haskell :eval never
-   (<*>) :: f     (a -> b) -> f     a -> f     b
-   (<*>) :: Maybe (a -> b) -> Maybe a -> Maybe b
+#+BEGIN_SRC haskell :eval never
+(<*>) :: f     (a -> b) -> f     a -> f     b
+(<*>) :: Maybe (a -> b) -> Maybe a -> Maybe b
 
-   pure :: a -> f     a
-   pure :: a -> Maybe a
-   #+END_SRC
+pure :: a -> f     a
+pure :: a -> Maybe a
+#+END_SRC
 
-   Here we are saying that not only the value but also the function
-   may not exists aka can be ~Nothing~. Consider the following code to
-   validate some input to create a value of type ~Person~
+Here we are saying that not only the value but also the function may
+not exists aka can be ~Nothing~. Consider the following code to
+validate some input to create a value of type ~Person~
 
-   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   newtype Name = Name String deriving (Eq, Show)
+#+BEGIN_SRC haskell
+newtype Name = Name String deriving (Eq, Show)
 
-   newtype Address = Address String deriving (Eq, Show)
+newtype Address = Address String deriving (Eq, Show)
 
-   data Person = Person Name Address deriving (Eq, Show)
+data Person = Person Name Address deriving (Eq, Show)
 
-   :{
-   validateLength :: Int -> String -> Maybe String
-   validateLength n s
-     | length s > n = Nothing
-     | otherwise    = Just s
-   :}
+:{
+validateLength :: Int -> String -> Maybe String
+validateLength n s
+  | length s > n = Nothing
+  | otherwise    = Just s
+:}
 
-   :{
-   mkName :: String -> Maybe Name
-   mkName s = Name <$> (validateLength 25 s)
-   :}
+:{
+mkName :: String -> Maybe Name
+mkName s = Name <$> (validateLength 25 s)
+:}
 
-   :{
-   mkAddress :: String -> Maybe Address
-   mkAddress s = Address <$> (validateLength 100 s)
-   :}
+:{
+mkAddress :: String -> Maybe Address
+mkAddress s = Address <$> (validateLength 100 s)
+:}
 
-   -- this is what we can do on a first attempt
-   :{
-   mkPerson :: String -> String -> Maybe Person
-   mkPerson name address =
-     case mkName name of
-       Just name' ->
-         case mkAddress address of
-           Just address' ->
-             Just (Person name' address')
-           Nothing ->
-             Nothing
-       Nothing ->
-         Nothing
-   :}
+-- this is what we can do on a first attempt
+:{
+mkPerson :: String -> String -> Maybe Person
+mkPerson name address =
+  case mkName name of
+    Just name' ->
+      case mkAddress address of
+        Just address' ->
+          Just (Person name' address')
+        Nothing ->
+          Nothing
+    Nothing ->
+      Nothing
+:}
 
-   :{
-   mkPerson' :: String -> String -> Maybe Person
-   mkPerson' name address =
-     Person <$> (mkName name) <*> (mkAddress address)
-   :}
+:{
+mkPerson' :: String -> String -> Maybe Person
+mkPerson' name address =
+  Person <$> (mkName name) <*> (mkAddress address)
+:}
 
-   :{
-   mkPerson'' :: String -> String -> Maybe Person
-   mkPerson'' name address =
-     Control.Applicative.liftA2 Person (mkName name) (mkAddress address)
-   :}
+:{
+mkPerson'' :: String -> String -> Maybe Person
+mkPerson'' name address =
+  Control.Applicative.liftA2 Person (mkName name) (mkAddress address)
+:}
 
-   mkPerson "Gabriele" "piazza la bomba e scappa, 1"
-   mkPerson' "Gabriele" "piazza la bomba e scappa, 1"
-   mkPerson'' "Gabriele" "piazza la bomba e scappa, 1"
-   #+END_SRC
+mkPerson "Gabriele" "piazza la bomba e scappa, 1"
+mkPerson' "Gabriele" "piazza la bomba e scappa, 1"
+mkPerson'' "Gabriele" "piazza la bomba e scappa, 1"
+#+END_SRC
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   Just (Person (Name "Gabriele") (Address "piazza la bomba e scappa, 1"))
-   Just (Person (Name "Gabriele") (Address "piazza la bomba e scappa, 1"))
-   Just (Person (Name "Gabriele") (Address "piazza la bomba e scappa, 1"))
-   #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Just (Person (Name "Gabriele") (Address "piazza la bomba e scappa, 1"))
+Just (Person (Name "Gabriele") (Address "piazza la bomba e scappa, 1"))
+Just (Person (Name "Gabriele") (Address "piazza la bomba e scappa, 1"))
+#+END_EXAMPLE
 
 ** Exercise: Fixer Upper
 
-   1. Make the following code to typecheck using ~(<$>)~, ~(<*>)~ and ~pure~.
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      -- was
-      -- const <$> Just "Hello" <*> "World"
-
-      const <$> Just "Hello" <*> Just "World"
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      Just "Hello"
-      #+END_EXAMPLE
-
-   2. Make the following code to typecheck using ~(<$>)~, ~(<*>)~ and ~pure~.
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      -- was
-      -- (,,,) Just 90 <*> Just 10 Just "Tierness" [1, 2, 3]
-
-      (,,,) <$> Just 90 <*> Just 10 <*> Just "Tierness" <*> Just [1, 2, 3]
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      Just (90,10,"Tierness",[1,2,3])
-      #+END_EXAMPLE
-
-* 17.06 Applicative Laws
-  1. Identity
-     #+BEGIN_SRC haskell :eval never
-     pure id <*> v = v
-     #+END_SRC
-
-     Compare with other identities
-     #+BEGIN_SRC haskell :eval never
-     id [1, 2, 3]
-     fmap id [1, 2, 3]
-     pure id <*> [1, 2, 3]
-     #+END_SRC
-
-     Examples
-     #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-     pure id <*> [1, 2, 3]
-     pure id <*> "Hello Everybody"
-     pure id <*> Just "Hello Everybody"
-     pure id <*> Nothing
-     pure id <*> Left "Error"
-     pure id <*> Right 42
-     #+END_SRC
-
-     #+RESULTS:
-     #+BEGIN_EXAMPLE
-     [1,2,3]
-     Hello Everybody
-     Just "Hello Everybody"
-     Nothing
-     Left "Error"
-     Right 42
-     #+END_EXAMPLE
-
-  2. Composition
-     #+BEGIN_SRC haskell :eval never
-     pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
-     #+END_SRC
-
-     Composition functions first and the applying the resulting
-     function
-     #+BEGIN_SRC haskell :eval never
-     pure (.) <*> [(+1)]
-     -- Num c => [(a -> c) -> a -> c]
-     -- [(.)(+1)]
-
-     pure (.) <*> [(+1)] <*> [(*2)]
-     -- Num c => [c -> c]
-     -- [(.)(+1)(*2)]
-
-     pure (.) <*> [(+1)] <*> [(*2)] <*> [1, 2, 3]
-     -- Num c => [c]
-     -- [3, 5, 7]
-     #+END_SRC
-
-     Application of the functions sequentially
-     #+BEGIN_SRC haskell :eval never
-     [(*2)] <*> [1, 2, 3]
-     -- Num c => [c]
-     -- [2, 4, 6]
-
-     [(+1)] <*> ([(*2)] <*> [1, 2, 3])
-     -- Num c => [c]
-     -- [(+1)] <*> [2, 4, 6]
-     -- [3, 5, 7]
-     #+END_SRC
-
-     Are the same. This law ensure that ~(<*>)~ is transparent to
-     function composition. If the functions compose outside of
-     functorial structure ~(.)(+1)(*2)~ then they compose in the same
-     one inside of functorial structure ~pure (.) <*> [(+1)] <*> [(*2)]~
-
-  3. Homomorphism
-     #+BEGIN_SRC haskell :eval never
-     pure f <*> pure x = pure (f x)
-     #+END_SRC
-
-     An /homomorphism/ is a structure preserving map between two
-     algebraic structure. This law ensure that the effect of applying
-     a function embedded in some functorial structure to a value that
-     is embedded in the same functorial structure will be the same as
-     applying the function to the value and then wrapping the result
-     in the functorial structure.
-
-     #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-     pure (+1) <*> pure 1
-
-     pure ((+1) 1)
-
-     -- We cannot write ~== 2~ because ~pure~ works for every functorial
-     -- structure that is not stated yet, we need to state it, ~2~ has no
-     -- structure
-     (pure (+1) <*> pure 1) == Just 2
-
-     pure ((+1) 1) == Just 2
-
-     -- Same as
-     ((pure (+1) <*> pure 1) :: Maybe Int) == pure ((+1) 1)
-     #+END_SRC
-
-     #+RESULTS:
-     #+BEGIN_EXAMPLE
-     2
-     2
-     True
-     True
-     True
-     #+END_EXAMPLE
-
-     It is like with ~fmap~, the structure must be preserved but with
-     ~<*>~ also the function is in the structure so the structure must
-     be /monoidal/ aka the structure itself must be composable in some
-     sense.
-
-  4. Commutative
-     #+BEGIN_SRC haskell :eval never
-     u <*> pure y = pure ($ y) <*> u
-     #+END_SRC
-
-     To the left of ~(<*>)~ must be a function embedded in some
-     structrure. To be able to swap the operands we need to transform
-     a value into a function ~($ y)~ it's a function that will take a
-     function and returns the application of the function to the given
-     value ~y~.
-
-     Examples
-     #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-     x1 = Just (+2) <*> pure 3
-     x2 = pure ($ 3) <*> Just (+2)
-
-     x1
-     x2
-     x1 == x2
-     #+END_SRC
-
-     #+RESULTS:
-     #+BEGIN_EXAMPLE
-     Just 5
-     Just 5
-     True
-     #+END_EXAMPLE
-
-* 17.07 You Knew This Was Coming
-  We want to check the compliance to the laws with /QuickCheck/. We
-  are gonna use an help, a package written to check this laws:
-  /checkers/.
-
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  import Data.Monoid
-  import Test.QuickCheck
-  import Test.QuickCheck.Checkers
-  import Test.QuickCheck.Classes
-
-  data Bull = Fools | Twoo deriving (Eq, Show)
-
-  :{
-  instance Arbitrary Bull where
-    arbitrary = frequency [(1, return Fools), (1, return Twoo)]
-  :}
-
-  -- Bad instance of Monoid so that tests will fail
-  :{
-  instance Monoid Bull where
-    mempty = Fools
-    mappend _ _ = Fools
-  :}
-
-  -- Needed by checkers
-  :{
-  instance EqProp Bull where
-    (=-=) = eq
-  :}
-
-  -- TODO: silenced until I'm able to process escape ansi codes in output
-  -- quickBatch $ (monoid Twoo)
-  checkBatch (stdArgs {chatty=False}) (monoid Twoo)
-  #+END_SRC
-
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  #+END_EXAMPLE
-
-  To verify the applicative laws we need to generate a ~TestBatch~ for
-  ~Applicative~ like we did for ~Monoid~ with the /checkers/ library
-  function ~monoid~
-
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  import Test.QuickCheck.Checkers
-
-  :t applicative
-  #+END_SRC
-
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  applicative
-    :: (EqProp (m c), EqProp (m b), EqProp (m a), Show (m (a -> b)),
-  c)), Show (m a), Show a, Arbitrary (m (a -> b)),
-  c)), Arbitrary (m a), Arbitrary b, Arbitrary a,
-        CoArbitrary a, Applicative m) =>
-  m (a, b, c) -> TestBatch
-  #+END_EXAMPLE
-
-  So we need to provide a value for the applicative structure (~m~)
-  and three values of possibly different types ~(a, b, c)~
-
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  import Test.QuickCheck.Checkers
-
-  -- TODO: silenced until I'm able to process escape ansi codes in output
-  -- quickBatch (applicative [("b", "w", 1)])
-  checkBatch (stdArgs {chatty=False}) (applicative [("b", "w", 1)])
-  #+END_SRC
-
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  #+END_EXAMPLE
-
-  Values are given only to provide types, an alternative way would be
-
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  import Test.QuickCheck.Checkers
-
-  :{
-  xs :: (String, String, Int)
-  xs = undefined
-  :}
-
-  -- TODO: silenced until I'm able to process escape ansi codes in output
-  -- quickBatch $ applicative [xs]
-  checkBatch (stdArgs {chatty=False}) $ applicative [xs]
-  #+END_SRC
-
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  #+END_EXAMPLE
-
-* 17.08 ZipList Monoid
-  The default monoidal behavior of lists is to concatenate, so that
-  ~[1, 2, 3] <> [4, 5, 6]~ is equal to ~[1, 2, 3] ++ [4, 5, 6]~
-
-  An alternative would be to rely on the monoidal behavior of the
-  types contained in the list and to obtain something like
-  ~[x, y] <> [u, w]~ to be equal to ~[x <> u, y <> w]~
-
-  We are going to define an instance of ~Monoid~ for ~ZipList~
-  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  <<add-current-chapter-directory-in-path()>>
-  :load ZipListMonoid
-
-  -- TODO: silenced until I'm able to process escape ansi codes in output
-  -- quickBatch $ monoid (ZipList [Sum 1])
-  checkBatch (stdArgs {chatty=False}) $ monoid (ZipList [Sum 1])
-  #+END_SRC
-
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  #+END_EXAMPLE
-
-  It fails because the empty ~ZipList~ (~ZipList []~) is not the zero,
-  is the identity, the ~mempty~ of ~Monoid~ must be the identity so
-  that ~memtpy <> a == a <> mempty~
-
-  We can exploit the monoid instance of the content of the ~ZipList~
-  that we required and use its ~mempty~
-
-  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  <<add-current-chapter-directory-in-path()>>
-  :load ZipListMonoid2
-
-  -- mempty = pure mempty
-  -- we are gonna se what pure does when we are gonna implement Applicative for ZipList
-
-  -- TODO: silenced until I'm able to process escape ansi codes in output
-  -- quickBatch $ monoid (ZipList [Sum 1])
-  checkBatch (stdArgs {chatty=False}) $ monoid (ZipList [Sum 1])
-  #+END_SRC
-
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  #+END_EXAMPLE
-
-** Exercise: List Applicative
-   Implement ~Applicative~ for ~List~
-
-   #+NAME: list-applicative
-   #+BEGIN_SRC haskell :eval never
-   import Data.Monoid
-
-   data List a = Nil | Cons a (List a) deriving (Eq, Show)
-
-   :{
-   instance Monoid (List a) where
-     -- mempty :: a
-     mempty = Nil
-     -- mappend :: a -> a -> a
-     mappend Nil x = x
-     mappend x Nil = x
-     mappend (Cons x ll) lr = Cons x (ll <> lr)
-   :}
-
-   :{
-   instance Functor List where
-     -- fmap :: (a -> b) -> f a -> f b
-     fmap _ Nil = Nil
-     fmap f (Cons a fa) = Cons (f a) (fmap f fa)
-   :}
-
-   -- identity
-   -- pure id <*> v = v
-
-   -- composition (preserve function composition)
-   -- pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
-
-   -- homomorphism (structure preserving transformation)
-   -- pure f <*> pure x = pure (f x)
-
-   -- interchange
-   -- u <*> pure y = pure ($ y) <*> u
-
-   :{
-   instance Applicative List where
-     -- pure :: a -> f a
-     pure x = Cons x Nil
-     -- (<*>) :: f (a -> b) -> f a -> f b
-     (<*>) Nil _ = Nil
-     (<*>) _ Nil = Nil
-     (<*>) (Cons f ll) lr@(Cons a tr) = (Cons (f a) (f <$> tr)) <> (ll <*> lr)
-   :}
-
-   import Test.QuickCheck
-   import Test.QuickCheck.Checkers
-   import Test.QuickCheck.Classes
-
-   :{
-   instance Arbitrary a => Arbitrary (List a) where
-     arbitrary = do
-       a <- arbitrary
-       l <- arbitrary
-       frequency [(1, return Nil), (2, return (Cons a l))]
-   :}
-
-   :{
-   instance Eq a => EqProp (List a) where
-     (=-=) = eq
-   :}
-   #+END_SRC
-
-   #+BEGIN_SRC haskell :results silent :noweb yes
-   <<list-applicative>>
-
-   :{
-   xs :: (String, String, Int)
-   xs = undefined
-   :}
-
-   -- TODO: silenced until I'm able to process escape ansi codes in output
-   -- quickBatch $ monoid (Cons "foo" Nil)
-   -- quickBatch $ functor (Cons xs Nil)
-   -- quickBatch $ applicative (Cons xs Nil)
-   checkBatch (stdArgs {chatty=True}) $ monoid (Cons "foo" Nil)
-   checkBatch (stdArgs {chatty=True}) $ functor (Cons xs Nil)
-   checkBatch (stdArgs {chatty=True}) $ applicative (Cons xs Nil)
-   #+END_SRC
-
-** Exercise: ZipList Applicative
-   Implement ~Applicative~ for ~ZipList~
-
-   #+BEGIN_SRC haskell :results silent :noweb yes
-   <<list-applicative>>
-
-   -- Need to implement for later
-   :{
-   take' :: Int -> List a -> List a
-   take' 0 _ = Nil
-   take' _ Nil = Nil
-   take' n (Cons x xs) = (Cons x (take' (n - 1) xs))
-   :}
-
-   :{
-   repeat' :: a -> List a
-   repeat' x = Cons x (repeat' x)
-   :}
-
-   :{
-   zipWith' :: (a -> b -> c) -> (List a) -> (List b) -> (List c)
-   zipWith' _ Nil _ = Nil
-   zipWith' _ _ Nil = Nil
-   zipWith' f (Cons x xs) (Cons y ys) = Cons (f x y) (zipWith' f xs ys)
-   :}
-
-   newtype ZipList' a = ZipList' (List a) deriving (Eq, Show)
-
-   :{
-   instance Functor ZipList' where
-   -- fmap :: (a -> b) -> f a -> f b
-     fmap f (ZipList' l) = ZipList' $ f <$> l
-   :}
-
-   -- identity
-   -- pure id <*> v = v
-
-   -- composition
-   -- pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
-
-   -- homomorphism (structure preserving transformation)
-   -- pure f <*> pure x = pure (f x)
-
-   -- interchange
-   -- u <*> pure v = pure ($ v) <*> u
-
-   :{
-   instance Applicative ZipList' where
-     -- pure :: a -> f a
-     pure x = ZipList' $ repeat' x
-
-     -- (<*>) :: f (a -> b) -> f a -> f b
-     (<*>) (ZipList' xs) (ZipList' ys) = ZipList' (zipWith' ($) xs ys)
-   :}
-
-   -- To check that the behavior is as expected
-   fs = ZipList' (Cons (+9) (Cons (*2) (Cons (+8) Nil)))
-   xs = ZipList' (Cons 1 (Cons 2 (Cons 3 Nil)))
-
-   fs <*> xs
-   (fs <*> xs) == ZipList' (Cons 10 (Cons 4 (Cons 11 Nil)))
-
-   import Test.QuickCheck
-   import Test.QuickCheck.Checkers
-   import Test.QuickCheck.Classes
-
-   :{
-   instance Eq a => EqProp (ZipList' a) where
-     (=-=) xs ys = xs' `eq` ys'
-       where xs' = let (ZipList' l) = xs in take' 3000 l
-             ys' = let (ZipList' l) = ys in take' 3000 l
-   :}
-
-   :{
-   instance Arbitrary a => Arbitrary (ZipList' a) where
-     -- we can have a ~Gen (List a)~ but we need ~Gen (ZipList' (List a))~
-     -- fmap does exactly that :-)
-     arbitrary = ZipList' <$> arbitrary
-   :}
-
-   :{
-   xs :: (String, String, Int)
-   xs = undefined
-   :}
-
-   -- TODO: silenced until I'm able to process escape ansi codes in output
-   -- quickBatch $ applicative (Cons xs Nil)
-   checkBatch (stdArgs {chatty=True}) $ applicative (ZipList' (Cons xs Nil))
-   #+END_SRC
-
-   Unlike ~Functor~, ~Applicative~ can have more lawful instances for datatype (FC)
-
-** Exercise: Validation Applicative
-   Write an ~Applicative~ instance for ~Validation~. It's the same as
-   ~Either~ but the applicative composition must rely on the monoidal
-   composition (aka. append the errors)
-
-   #+BEGIN_SRC haskell :results silent
-   import Data.Monoid
-
-   data Validation e a = Failure e | Success a deriving (Eq, Show)
-
-   :{
-   instance Functor (Validation e) where
-     -- fmap :: (a -> b) -> f a -> f b
-     fmap f (Success x) = Success (f x)
-     fmap _ (Failure e) = Failure e
-   :}
-
-   -- identity
-   -- pure id <*> v = v
-
-   -- composition
-   -- pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
-
-   -- homomorphism
-   -- pure f <*> pure x = pure (f x)
-
-   -- interchange
-   -- u <*> pure y = pure ($ y) <*> u
-
-   :{
-   instance Monoid e => Applicative (Validation e) where
-     -- pure :: a -> f a
-     pure x = Success x
-     -- (<*>) :: f (a -> b) -> f a -> f b
-     (<*>) (Success _) (Failure e) = Failure e
-     (<*>) (Failure e) (Success _) = Failure e
-     (<*>) (Failure el) (Failure er) = Failure (el <> er)
-     (<*>) (Success f) (Success x) = Success (f x)
-   :}
-
-   import Test.QuickCheck
-   import Test.QuickCheck.Checkers
-   import Test.QuickCheck.Classes
-
-   :{
-   instance (Arbitrary e, Arbitrary a) => Arbitrary (Validation e a) where
-     arbitrary = oneof [Success <$> arbitrary, Failure <$> arbitrary]
-   :}
-
-   :{
-   instance (Eq e, Eq a) => EqProp (Validation e a) where
-     (=-=) = eq
-   :}
-
-   -- TODO: silenced until I'm able to process escape ansi codes in output
-   quickBatch $ applicative (Success ("foo", True, 3::Int))
-   #+END_SRC
-
-* 17.09 Exercises
-
-  #+NAME: ghci-clean
-  #+BEGIN_SRC emacs-lisp :var content="" :results raw
-  (defun report-compiling-module-p (line)
-    (string-match-p "\\[[0-9]+ of [0-9]+\\] Compiling" line))
-
-  (defun report-loaded-module-p (line)
-    (string-match-p "Ok, .+ modules? loaded\\." line))
-
-  (defun report-eoe-p (line)
-    (string-match-p "org-babel-haskell-eoe" line))
-
-  (defun clean-line (line)
-    (->> line remove-prompt unquote))
-
-  (defun remove-prompt (line)
-    (let ((current-prompt (current-prompt line)))
-      (message "current prompt: %S" current-prompt)
-      (if (string-empty-p current-prompt)
-          line
-        (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
-
-  (defun current-prompt (line)
-    (if (string-match "\\(^[^|:>]+\\)[|>]" line)
-        (match-string 1 line)
-      ""))
-
-  (defun unquote (line)
-    (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" line))
-
-  (string-join
-   (seq-map #'clean-line
-            (seq-filter
-             (lambda (line)
-               (and
-                (not (string-empty-p line))
-                (not (report-eoe-p line))
-                (not (report-compiling-module-p line))
-                (not (report-loaded-module-p line))))
-             (split-string content "\n")))
-   "\n")
-  #+END_SRC
-
-  #+NAME: add-current-chapter-directory-in-path
-  #+BEGIN_SRC emacs-lisp :output raw
-  (concat
-   ":set -i"
-   (file-name-as-directory (file-name-directory (buffer-file-name)))
-   (file-name-base (buffer-file-name)))
-  #+END_SRC
-
-  #+NAME: add-chapter-directory-in-path
-  #+BEGIN_SRC emacs-lisp :var chapter="" :output raw
-  (concat
-   ":set -i"
-   (file-name-as-directory (file-name-directory (buffer-file-name)))
-   chapter)
-  #+END_SRC
-
-** Specializing Method Types
-   Given a type that has an instance of Applicative, specialize the
-   types of the methods.
-
-   1. Specialize method types for ~[]~
-      #+BEGIN_SRC haskell :results silent
-      :{
-      -- pure :: a -> ? a
-      pure' :: a -> [a]
-      pure' = undefined
-      :}
-
-      :{
-      -- (<*>) :: ? (a -> b) -> ? a -> ? b
-      applicative' :: [(a -> b)] -> [a] -> [b]
-      -- same thing as
-      -- applicative' :: [] (a -> b) -> [] a -> [] b
-      applicative' = undefined
-      :}
-      #+END_SRC
-
-   2. Specialize method types for ~IO~
-      #+BEGIN_SRC haskell :results silent
-      :{
-      -- pure :: a -> ? a
-      pure' :: a -> IO a
-      pure' = undefined
-      :}
-
-      :{
-      -- (<*>) :: ? (a -> b) -> ? a -> ? b
-      applicative' :: IO (a -> b) -> IO a -> IO b
-      applicative' = undefined
-      :}
-      #+END_SRC
-
-   3. Specialize method types for ~(,) a~
-      #+BEGIN_SRC haskell :results silent
-      :{
-      -- pure :: a -> ? a
-      pure' :: b -> (a, b)
-      pure' = undefined
-      :}
-
-      :{
-      -- (<*>) :: ? (a -> b) -> ? a -> ? b
-      applicative' :: (a, (b -> c)) -> (a, b) -> (a, c)
-      applicative' = undefined
-      :}
-      #+END_SRC
-
-   4. Specialize method types for ~(->) e~
-      #+BEGIN_SRC haskell :results silent
-      :{
-      -- pure :: a -> ? a
-      pure' :: b -> (e -> b)
-      pure' = undefined
-      :}
-
-      :{
-      -- (<*>) :: ? (a -> b) -> ? a -> ? b
-      applicative' :: (e -> (b -> c)) -> (e -> b) -> (e -> c)
-      applicative' = undefined
-      :}
-      #+END_SRC
-
-** Applicative Instances
-
-   1. Write an instance of ~Applicative~ for the following type
-      #+BEGIN_SRC haskell :results silent
-      data Pair a = Pair a a deriving (Eq, Show)
-
-      :{
-      instance Functor Pair where
-        -- fmap :: (a -> b) -> f a -> f b
-        fmap f (Pair x y) = Pair (f x) (f y)
-      :}
-
-      -- identity
-      -- pure id <*> v = v
-
-      -- composition
-      -- pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
-
-      -- homomorphism
-      -- pure f <*> pure x = pure (f x)
-
-      -- interchange
-      -- u <*> (pure y) = pure ($ y) <*> u
-
-      :{
-      instance Applicative Pair where
-        -- pure :: a -> f a
-        pure x = Pair x x
-
-        -- (<*>) :: f (a -> b) -> f a -> f b
-        (<*>) (Pair f g) (Pair x y) = Pair (f x) (g y)
-      :}
-
-      import Test.QuickCheck
-      import Test.QuickCheck.Checkers
-      import Test.QuickCheck.Classes
-      import Control.Applicative
-
-      :{
-      instance Arbitrary a => Arbitrary (Pair a) where
-        arbitrary = liftA2 Pair arbitrary arbitrary
-      :}
-
-      :{
-      instance Eq a => EqProp (Pair a) where
-        (=-=) = eq
-      :}
-
-      -- TODO: silenced until I'm able to process escape ansi codes in output
-      x :: (String, Int, Bool)
-      quickBatch $ applicative (Pair x x)
-      #+END_SRC
-
-   2. Write an instance of ~Applicative~ for the following type
-      #+BEGIN_SRC haskell :results silent
-      data Two a b = Two a b deriving (Eq, Show)
-
-      :{
-      instance Functor (Two a) where
-        -- fmap :: (a -> b) -> f a -> f b
-        fmap f (Two x y) = Two x (f y)
-      :}
-
-      import Data.Monoid
-
-      :{
-      instance Monoid a => Applicative (Two a) where
-        -- pure :: a -> f a
-        pure x = (Two mempty x)
-
-        -- (<*>) :: f (a -> b) -> f a -> f b
-        (<*>) (Two x1 f) (Two x2 y) = Two (x1 <> x2) (f y)
-      :}
-
-      import Test.QuickCheck
-      import Test.QuickCheck.Checkers
-      import Test.QuickCheck.Classes
-      import Control.Applicative
-
-      :{
-      instance (Arbitrary a, Arbitrary b) => Arbitrary (Two a b) where
-        arbitrary = liftA2 Two arbitrary arbitrary
-      :}
-
-      :{
-      instance (Eq a, Eq b) => EqProp (Two a b) where
-        (=-=) = eq
-      :}
-
-      -- TODO: silenced until I'm able to process escape ansi codes in output
-      x = undefined :: String
-      y = undefined :: (String, Int, Bool)
-      quickBatch $ applicative (Two x y)
-      #+END_SRC
-
-   3. Write an instance of ~Applicative~ for the following type
-      #+BEGIN_SRC haskell :results silent
-      data Three a b c = Three a b c deriving (Eq, Show)
-
-      :{
-      instance Functor (Three a b) where
-        -- fmap :: (a -> b) -> f a -> f b
-        fmap f (Three x y z) = Three x y (f z)
-      :}
-
-      import Data.Monoid
-
-      :{
-      instance (Monoid a, Monoid b) => Applicative (Three a b) where
-         -- pure :: a -> f a
-         pure x = Three mempty mempty x
-
-         -- (<*>) :: f (a -> b) -> f a -> f b
-         (<*>) (Three x1 y1 f) (Three x2 y2 z) = Three (x1 <> x2) (y1 <> y2) (f z)
-      :}
-
-      import Test.QuickCheck
-      import Test.QuickCheck.Checkers
-      import Test.QuickCheck.Classes
-      import Control.Applicative
-
-      :{
-      instance (Arbitrary a, Arbitrary b, Arbitrary c) => Arbitrary (Three a b c) where
-        arbitrary = liftA3 Three arbitrary arbitrary arbitrary
-      :}
-
-      :{
-      instance (Eq a, Eq b, Eq c) => EqProp (Three a b c) where
-        (=-=) = eq
-      :}
-
-      -- TODO: silenced until I'm able to process escape ansi codes in output
-      x = undefined :: String
-      y = undefined :: String
-      z = undefined :: (String, Int, Bool)
-      quickBatch $ applicative (Three x y z)
-      #+END_SRC
-
-   4. Write an instance of ~Applicative~ for the following type
-      #+BEGIN_SRC haskell :results silent
-      data Three' a b = Three' a b b deriving (Eq, Show)
-
-      :{
-      instance Functor (Three' a) where
-        -- fmap :: (a -> b) -> f a -> f b
-        fmap f (Three' x y z) = Three' x (f y) (f z)
-      :}
-
-      :{
-      instance Monoid a => Applicative (Three' a) where
-        -- pure :: a -> f a
-        pure x = Three' mempty x x
-
-        -- (<*>) :: f (a -> b) -> f a -> f b
-        (<*>) (Three' x1 f1 f2) (Three' x2 y1 y2) = Three' (x1 <> x2) (f1 y1) (f2 y2)
-      :}
-
-      import Test.QuickCheck
-      import Test.QuickCheck.Checkers
-      import Test.QuickCheck.Classes
-      import Control.Applicative
-
-      :{
-      instance (Arbitrary a, Arbitrary b) => Arbitrary (Three' a b) where
-        arbitrary = liftA3 Three' arbitrary arbitrary arbitrary
-      :}
-
-      :{
-      instance (Eq a, Eq b) => EqProp (Three' a b) where
-        (=-=) = eq
-      :}
-
-      x = undefined :: String
-      y = undefined :: (String, Int, Bool)
-      quickBatch $ applicative (Three' x y y)
-      #+END_SRC
-
-   5. Write an instance of ~Applicative~ for the following type
-      #+BEGIN_SRC haskell :results silent
-      data Four a b c d = Four a b c d deriving (Eq, Show)
-
-      :{
-      instance Functor (Four a b c) where
-        fmap f (Four x y z q) = Four x y z (f q)
-      :}
-
-      import Data.Monoid
-
-      :{
-      instance (Monoid a, Monoid b, Monoid c) => Applicative (Four a b c) where
-        pure x = Four mempty mempty mempty x
-        (<*>) (Four x1 y1 z1 f) (Four x2 y2 z2 q) = Four (x1 <> x2) (y1 <> y2) (z1 <> z2) (f q)
-      :}
-
-      import Test.QuickCheck
-      import Test.QuickCheck.Checkers
-      import Test.QuickCheck.Classes
-      import Control.Applicative
-
-      :{
-      instance (Arbitrary a, Arbitrary b, Arbitrary c, Arbitrary d) => Arbitrary (Four a b c d) where
-        arbitrary = (liftA3 Four arbitrary arbitrary arbitrary) <*> arbitrary
-      :}
-
-      :{
-      instance (Eq a, Eq b, Eq c, Eq d) => EqProp (Four a b c d) where
-        (=-=) = eq
-      :}
-
-      x = undefined :: String
-      y = undefined :: String
-      z = undefined :: String
-      q = undefined :: (String, Int, Bool)
-      quickBatch $ applicative (Four x y z q)
-      #+END_SRC
-
-   6. Write an instance of ~Applicative~ for the following type
-      #+BEGIN_SRC haskell :results silent
-      data Four' a b = Four' a a a b deriving (Eq, Show)
-
-      :{
-      instance Functor (Four' a) where
-        fmap f (Four' x y z q) = Four' x y z (f q)
-      :}
-
-      import Data.Monoid
-
-      :{
-      instance Monoid a => Applicative (Four' a) where
-        pure x = Four' mempty mempty mempty x
-        (<*>) (Four' x1 y1 z1 f) (Four' x2 y2 z2 q) = Four' (x1 <> x2) (y1 <> y2) (z1 <> z2) (f q)
-      :}
-
-      import Test.QuickCheck
-      import Test.QuickCheck.Checkers
-      import Test.QuickCheck.Classes
-      import Control.Applicative
-
-      :{
-      instance (Arbitrary a, Arbitrary b) => Arbitrary (Four' a b) where
-        arbitrary = (liftA3 Four' arbitrary arbitrary arbitrary) <*> arbitrary
-      :}
-
-      :{
-      instance (Eq a, Eq b) => EqProp (Four' a b) where
-        (=-=) = eq
-      :}
-
-      x = undefined :: String
-      y = undefined :: String
-      z = undefined :: String
-      q = undefined :: (String, Int, Bool)
-      quickBatch $ applicative (Four' x y z q)
-      #+END_SRC
-
-** Combinations
-   Write the function to generate the possible combinations of three
-   input lists using ~liftA3~ from ~Control.Applicative~.
-
-   #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   import Control.Applicative
-
-   :{
-   stops :: String
-   stops = "pbtdkg"
-   :}
-
-   :{
-   vowels :: String
-   vowels = "aeiou"
-   :}
-
-   :{
-   combos :: [a] -> [b] -> [c] -> [(a, b, c)]
-   combos l m r = liftA3 (,,) l m r
-   :}
-
-   combos stops vowels stops
+1. Make the following code to typecheck using ~(<$>)~, ~(<*>)~ and ~pure~.
+   #+BEGIN_SRC haskell
+   -- was
+   -- const <$> Just "Hello" <*> "World"
+
+   const <$> Just "Hello" <*> pure "World"
    #+END_SRC
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
-   [('p','a','p'),('p','a','b'),('p','a','t'),('p','a','d'),('p','a','k'),('p','a','g'),('p','e','p'),('p','e','b'),('p','e','t'),('p','e','d'),('p','e','k'),('p','e','g'),('p','i','p'),('p','i','b'),('p','i','t'),('p','i','d'),('p','i','k'),('p','i','g'),('p','o','p'),('p','o','b'),('p','o','t'),('p','o','d'),('p','o','k'),('p','o','g'),('p','u','p'),('p','u','b'),('p','u','t'),('p','u','d'),('p','u','k'),('p','u','g'),('b','a','p'),('b','a','b'),('b','a','t'),('b','a','d'),('b','a','k'),('b','a','g'),('b','e','p'),('b','e','b'),('b','e','t'),('b','e','d'),('b','e','k'),('b','e','g'),('b','i','p'),('b','i','b'),('b','i','t'),('b','i','d'),('b','i','k'),('b','i','g'),('b','o','p'),('b','o','b'),('b','o','t'),('b','o','d'),('b','o','k'),('b','o','g'),('b','u','p'),('b','u','b'),('b','u','t'),('b','u','d'),('b','u','k'),('b','u','g'),('t','a','p'),('t','a','b'),('t','a','t'),('t','a','d'),('t','a','k'),('t','a','g'),('t','e','p'),('t','e','b'),('t','e','t'),('t','e','d'),('t','e','k'),('t','e','g'),('t','i','p'),('t','i','b'),('t','i','t'),('t','i','d'),('t','i','k'),('t','i','g'),('t','o','p'),('t','o','b'),('t','o','t'),('t','o','d'),('t','o','k'),('t','o','g'),('t','u','p'),('t','u','b'),('t','u','t'),('t','u','d'),('t','u','k'),('t','u','g'),('d','a','p'),('d','a','b'),('d','a','t'),('d','a','d'),('d','a','k'),('d','a','g'),('d','e','p'),('d','e','b'),('d','e','t'),('d','e','d'),('d','e','k'),('d','e','g'),('d','i','p'),('d','i','b'),('d','i','t'),('d','i','d'),('d','i','k'),('d','i','g'),('d','o','p'),('d','o','b'),('d','o','t'),('d','o','d'),('d','o','k'),('d','o','g'),('d','u','p'),('d','u','b'),('d','u','t'),('d','u','d'),('d','u','k'),('d','u','g'),('k','a','p'),('k','a','b'),('k','a','t'),('k','a','d'),('k','a','k'),('k','a','g'),('k','e','p'),('k','e','b'),('k','e','t'),('k','e','d'),('k','e','k'),('k','e','g'),('k','i','p'),('k','i','b'),('k','i','t'),('k','i','d'),('k','i','k'),('k','i','g'),('k','o','p'),('k','o','b'),('k','o','t'),('k','o','d'),('k','o','k'),('k','o','g'),('k','u','p'),('k','u','b'),('k','u','t'),('k','u','d'),('k','u','k'),('k','u','g'),('g','a','p'),('g','a','b'),('g','a','t'),('g','a','d'),('g','a','k'),('g','a','g'),('g','e','p'),('g','e','b'),('g','e','t'),('g','e','d'),('g','e','k'),('g','e','g'),('g','i','p'),('g','i','b'),('g','i','t'),('g','i','d'),('g','i','k'),('g','i','g'),('g','o','p'),('g','o','b'),('g','o','t'),('g','o','d'),('g','o','k'),('g','o','g'),('g','u','p'),('g','u','b'),('g','u','t'),('g','u','d'),('g','u','k'),('g','u','g')]
+   Just "Hello"
    #+END_EXAMPLE
+
+2. Make the following code to typecheck using ~(<$>)~, ~(<*>)~ and ~pure~.
+   #+BEGIN_SRC haskell
+   -- was
+   -- (,,,) Just 90 <*> Just 10 Just "Tierness" [1, 2, 3]
+
+   (,,,) <$> Just 90 <*> Just 10 <*> Just "Tierness" <*> pure [1, 2, 3]
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Just (90,10,"Tierness",[1,2,3])
+   #+END_EXAMPLE
+
+* 17.06 Applicative Laws
+1. Identity
+   #+BEGIN_SRC haskell :eval never
+   pure id <*> v = v
+   #+END_SRC
+
+   Compare with other identities
+   #+BEGIN_SRC haskell :eval never
+   id [1, 2, 3]
+   fmap id [1, 2, 3]
+   pure id <*> [1, 2, 3]
+   #+END_SRC
+
+   Examples
+   #+BEGIN_SRC haskell
+   pure id <*> [1, 2, 3]
+   pure id <*> "Hello Everybody"
+   pure id <*> Just "Hello Everybody"
+   pure id <*> Nothing
+   pure id <*> Left "Error"
+   pure id <*> Right 42
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1,2,3]
+   Hello Everybody
+   Just "Hello Everybody"
+   Nothing
+   Left "Error"
+   Right 42
+   #+END_EXAMPLE
+
+2. Composition
+   #+BEGIN_SRC haskell :eval never
+   pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
+   #+END_SRC
+
+   Composition functions first and the applying the resulting function
+   #+BEGIN_SRC haskell
+   :t pure (.) <*> [(+1)]
+   -- Num c => [(a -> c) -> a -> c]
+   -- [(.)(+1)]
+
+   :t pure (.) <*> [(+1)] <*> [(*2)]
+   -- Num c => [c -> c]
+   -- [(.)(+1)(*2)]
+
+   pure (.) <*> [(+1)] <*> [(*2)] <*> [1, 2, 3]
+   -- Num c => [c]
+   -- [3, 5, 7]
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   pure (.) <*> [(+1)] :: Num c => [(a -> c) -> a -> c]
+   pure (.) <*> [(+1)] <*> [(*2)] :: Num c => [c -> c]
+   [3,5,7]
+   #+END_EXAMPLE
+
+   Application of the functions sequentially
+   #+BEGIN_SRC haskell :eval never
+   [(*2)] <*> [1, 2, 3]
+   -- Num c => [c]
+   -- [2, 4, 6]
+
+   [(+1)] <*> ([(*2)] <*> [1, 2, 3])
+   -- Num c => [c]
+   -- [(+1)] <*> [2, 4, 6]
+   -- [3, 5, 7]
+   #+END_SRC
+
+   Are the same. This law ensure that ~(<*>)~ is transparent to
+   function composition. If the functions compose outside of
+   functorial structure ~(.)(+1)(*2)~ then they compose in the same
+   way inside of functorial structure ~pure (.) <*> [(+1)] <*> [(*2)]~
+
+3. Homomorphism
+   #+BEGIN_SRC haskell :eval never
+   pure f <*> pure x = pure (f x)
+   #+END_SRC
+
+   An /homomorphism/ is a structure preserving map between two
+   algebraic structure. This law ensure that the effect of applying a
+   function embedded in some functorial structure to a value that is
+   embedded in the same functorial structure will be the same as
+   applying the function to the value and then wrapping the result in
+   the functorial structure.
+
+   #+BEGIN_SRC haskell
+   pure (+1) <*> pure 1
+
+   pure ((+1) 1)
+
+   -- We cannot write ~== 2~ because ~pure~ works for every functorial
+   -- structure that is not stated yet, we need to state it, ~2~ has no
+   -- structure
+   (pure (+1) <*> pure 1) == Just 2
+
+   pure ((+1) 1) == Just 2
+
+   -- Same as
+   ((pure (+1) <*> pure 1) :: Maybe Int) == pure ((+1) 1)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   2
+   2
+   True
+   True
+   True
+   #+END_EXAMPLE
+
+   It is like with ~fmap~, the structure must be preserved but with
+   ~<*>~ also the function is in the structure so the structure must
+   be /monoidal/ aka the structure itself must be composable in some
+   sense.
+
+4. Commutative
+   #+BEGIN_SRC haskell :eval never
+   u <*> pure y = pure ($ y) <*> u
+   #+END_SRC
+
+   To the left of ~(<*>)~ must be a function embedded in some
+   structrure. To be able to swap the operands we need to transform a
+   value into a function ~($ y)~ it's a function that will take a
+   function and returns the application of the function to the given
+   value ~y~.
+
+   Examples
+   #+BEGIN_SRC haskell
+   x1 = Just (+2) <*> pure 3
+   x2 = pure ($ 3) <*> Just (+2)
+
+   x1
+   x2
+   x1 == x2
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Just 5
+   Just 5
+   True
+   #+END_EXAMPLE
+
+* 17.07 You Knew This Was Coming
+We want to check the compliance to the laws with /QuickCheck/. What
+follows is my attempt to create the properties like for the other laws
+
+#+BEGIN_SRC haskell :eval never
+-- identity
+-- pure id <*> x == x
+:{
+applicativeIdentityProperty :: (Applicative f, Eq (f a)) => f a -> Bool
+applicativeIdentityProperty x = (pure id <*> x) == x
+:}
+
+-- composition
+-- pure (.) <*> f <*> g <*> x == f <*> (g <*> x)
+:{
+applicativeCompositionProperty :: (Applicative f, Eq (f c)) => f (b -> c) -> f (a -> b) -> f a -> Bool
+applicativeCompositionProperty f g x = (pure (.) <*> f <*> g <*> x) == (f <*> (g <*> x))
+:}
+
+-- TODO: right now seems like I'm unable to do this... maybe one day :-D
+-- homomorphism
+-- pure f <*> pure x == pure (f x)
+-- :{
+-- applicativeHomomorphismProperty :: (Applicative f, Eq (f b)) => (a -> b) -> a -> Bool
+-- applicativeHomomorphismProperty f x = ((pure f) <*> (pure x)) == pure (f x)
+-- :}
+
+-- commutativity
+-- f <*> (pure x) == pure ($ x) <*> f
+:{
+applicativeCommutativityProperty :: (Applicative f, Eq (f b)) => f (a -> b) -> a -> Bool
+applicativeCommutativityProperty f x = (f <*> (pure x)) == (pure ($ x) <*> f)
+:}
+#+END_SRC
+
+We are gonna use an help, a package written to check this laws:
+/checkers/.
+
+#+BEGIN_SRC haskell
+import Data.Monoid
+
+data Bull = Fools | Twoo deriving (Eq, Show)
+
+:{
+instance Arbitrary Bull where
+  arbitrary = frequency [(1, return Fools), (1, return Twoo)]
+:}
+
+-- Bad instance of Monoid so that tests will fail
+:{
+instance Semigroup Bull where
+  _ <> _ = Fools
+
+instance Monoid Bull where
+  mempty = Fools
+:}
+
+-- Needed by checkers
+:{
+instance EqProp Bull where
+  (=-=) = eq
+:}
+
+<<quickcheck-with-output>>
+
+quickCheckBatchWithOutput (monoid Twoo)
+quickCheckBatchWithOutput (monoid Fools)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+>>> monoid
+
+[left  identity] *** Failed! Falsified (after 1 test):
+Twoo
+
+[right identity] *** Failed! Falsified (after 2 tests):
+Twoo
+
+[associativity] +++ OK, passed 100 tests.
+
+[mappend = (<>)] +++ OK, passed 100 tests.
+
+[mconcat] +++ OK, passed 100 tests.
+
+<<< monoid
+>>> monoid
+
+[left  identity] *** Failed! Falsified (after 4 tests):
+Twoo
+
+[right identity] *** Failed! Falsified (after 1 test):
+Twoo
+
+[associativity] +++ OK, passed 100 tests.
+
+[mappend = (<>)] +++ OK, passed 100 tests.
+
+[mconcat] +++ OK, passed 100 tests.
+
+<<< monoid
+#+END_EXAMPLE
+
+To verify the applicative laws we need to generate a ~TestBatch~ for
+~Applicative~ like we did for ~Monoid~ with the /checkers/ library
+function ~monoid~
+
+#+BEGIN_SRC haskell
+import Test.QuickCheck.Checkers
+
+:t applicative
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+applicative
+  :: (Applicative m, CoArbitrary a, Arbitrary a, Arbitrary b,
+      Arbitrary (m a), Arbitrary (m (b -> c)), Arbitrary (m (a -> b)),
+      Show a, Show (m a), Show (m (b -> c)), Show (m (a -> b)),
+      EqProp (m a), EqProp (m b), EqProp (m c)) =>
+     m (a, b, c) -> TestBatch
+#+END_EXAMPLE
+
+So we need to provide a value for the applicative structure (~m~) and
+three values of possibly different types ~(a, b, c)~
+
+#+BEGIN_SRC haskell :eval never
+<<quickcheck-with-output>>
+
+-- We don't run it because it's gonna to generate list too big to
+-- handle, I don't know why
+quickCheckBatchWithOutput (applicative [("a", "b", 1)])
+#+END_SRC
+
+Values are given only to provide types, an alternative way would be
+
+#+BEGIN_SRC haskell :eval never
+<<quickcheck-with-output>>
+
+:{
+xs :: (String, String, Int)
+xs = undefined
+:}
+
+-- We don't run it because it's gonna to generate list too big to
+-- handle, I don't know why
+quickCheckBatchWithOutput (applicative [xs])
+#+END_SRC
+
+* 17.08 ZipList Monoid
+The default monoidal behavior of lists is to concatenate, so that ~[1,
+2, 3] <> [4, 5, 6]~ is equal to ~[1, 2, 3] ++ [4, 5, 6]~
+
+An alternative would be to rely on the monoidal behavior of the types
+contained in the list and to obtain something like ~[x, y] <> [u, w]~
+to be equal to ~[x <> u, y <> w]~
+
+We are going to define an instance of ~Monoid~ for ~ZipList~
+#+BEGIN_SRC haskell
+<<add-current-chapter-directory-in-path()>>
+
+:load ZipListMonoid
+
+<<quickcheck-with-output>>
+quickCheckBatchWithOutput (monoid (ZipList [Sum 1]))
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[1 of 1] Compiling ZipListMonoid    ( /home/coder/code/haskellbook-exercises/chapter-017/ZipListMonoid.hs, interpreted )
+Ok, one module loaded.
+monoid
+======
+
+[left  identity] *** Failed! Falsified (after 2 tests):
+ZipList {getZipList = [Sum {getSum = 0}]}
+
+[right identity] *** Failed! Falsified (after 2 tests and 1 shrink):
+ZipList {getZipList = [Sum {getSum = 0}]}
+
+[associativity] +++ OK, passed 100 tests.
+
+[mappend = (<>)] +++ OK, passed 100 tests.
+
+[mconcat] +++ OK, passed 100 tests.
+#+END_EXAMPLE
+
+It fails because the empty ~ZipList~ (~ZipList []~) is not the zero,
+is the identity, the ~mempty~ of ~Monoid~ must be the identity so that
+~memtpy <> a == a <> mempty~
+
+We can exploit the monoid instance of the content of the ~ZipList~
+that we required and use its ~mempty~
+
+#+BEGIN_SRC haskell :eval never
+<<add-current-chapter-directory-in-path()>>
+:load ZipListMonoid2
+
+-- mempty = pure mempty
+-- we are gonna se what pure does when we are gonna implement Applicative for ZipList
+
+<<quickcheck-with-output>>
+quickCheckBatchWithOutput (monoid (ZipList [Sum 1]))
+#+END_SRC
+
+** Exercise: List Applicative
+Implement ~Applicative~ for ~List~
+
+#+NAME: list-applicative
+#+BEGIN_SRC haskell :eval never
+import Data.Monoid
+
+data List a = Nil | Cons a (List a) deriving (Eq, Show)
+
+:{
+instance Semigroup (List a) where
+  Nil <> x = x
+  x <> Nil = x
+  (Cons x ll) <> lr = Cons x (ll <> lr)
+:}
+
+:{
+instance Monoid (List a) where
+  mempty = Nil
+:}
+
+:{
+instance Functor List where
+  fmap _ Nil = Nil
+  fmap f (Cons a fa) = Cons (f a) (fmap f fa)
+:}
+
+:{
+instance Applicative List where
+  -- pure :: a -> f a
+  pure x = Cons x Nil
+
+  -- (<*>) :: f (a -> b) -> f a -> f b
+  Nil <*> _ = Nil
+  _ <*> Nil = Nil
+  (Cons f ll) <*> lr@(Cons a tr) = (Cons (f a) (f <$> tr)) <> (ll <*> lr)
+:}
+
+<<quickcheck-with-output>>
+
+:{
+instance Arbitrary a => Arbitrary (List a) where
+  arbitrary = do
+    a <- arbitrary
+    l <- arbitrary
+    frequency [(1, return Nil), (2, return (Cons a l))]
+:}
+
+:{
+take' :: Int -> List a -> List a
+take' 0 _ = Nil
+take' _ Nil = Nil
+take' n (Cons x xs) = (Cons x (take' (n - 1) xs))
+:}
+
+:{
+-- To make tests finish quickly
+instance Eq a => EqProp (List a) where
+  x =-= y = x' `eq` y'
+    where x' = take' 3000 x
+          y' = take' 3000 y
+:}
+#+END_SRC
+
+#+BEGIN_SRC haskell :results silent
+<<list-applicative>>
+
+:{
+xs :: (String, String, Int)
+xs = undefined
+:}
+
+quickCheckBatchWithOutput (monoid (Cons "foo" Nil))
+quickCheckBatchWithOutput (functor (Cons xs Nil))
+quickCheckBatchWithOutput (applicative (Cons xs Nil))
+#+END_SRC
+
+** Exercise: ZipList Applicative
+Implement ~Applicative~ for ~ZipList~
+
+#+BEGIN_SRC haskell :results silent
+<<list-applicative>>
+
+:{
+take' :: Int -> List a -> List a
+take' 0 _ = Nil
+take' _ Nil = Nil
+take' n (Cons x xs) = (Cons x (take' (n - 1) xs))
+:}
+
+newtype ZipList' a = ZipList' (List a) deriving (Eq, Show)
+
+:{
+instance Semigroup a => Semigroup (ZipList' a) where
+  (ZipList' Nil) <> x = x
+  x <> (ZipList' Nil) = x
+  (ZipList' (Cons x xs)) <> (ZipList' (Cons y ys)) = ZipList' $ Cons (x <> y) (xs <> ys)
+:}
+
+:{
+instance Monoid a => Monoid (ZipList' a) where
+  mempty = ZipList' mempty
+:}
+
+:{
+instance Functor ZipList' where
+  fmap _ (ZipList' Nil) = ZipList' Nil
+  fmap f (ZipList' (Cons x xs)) = ZipList' $ Cons (f x) (f <$> xs)
+:}
+
+:{
+instance Applicative ZipList' where
+  pure x = ZipList' $ Cons x Nil
+
+  _ <*> ZipList' Nil = ZipList' Nil
+  ZipList' Nil <*> _ = ZipList' Nil
+  (ZipList' (Cons f Nil)) <*> (ZipList' (Cons x xs)) = ZipList' $ Cons (f x) (f <$> xs)
+  (ZipList' (Cons f fs)) <*> (ZipList' (Cons x Nil)) = ZipList' $ Cons (f x) (fs <*> pure x)
+  (ZipList' (Cons f fs)) <*> (ZipList' (Cons x xs)) = ZipList' $ Cons (f x) rest
+    where (ZipList' rest) = (ZipList' fs) <*> (ZipList' xs)
+:}
+
+<<quickcheck-with-output>>
+
+:{
+instance Eq a => EqProp (ZipList' a) where
+  (=-=) xs ys = xs' `eq` ys'
+    where xs' = let (ZipList' l) = xs in take' 3000 l
+          ys' = let (ZipList' l) = ys in take' 3000 l
+:}
+
+:{
+instance Arbitrary a => Arbitrary (ZipList' a) where
+  -- we can have a ~Gen (List a)~ but we need ~Gen (ZipList' (List a))~
+  -- fmap does exactly that :-)
+  arbitrary = ZipList' <$> arbitrary
+:}
+
+quickCheckBatchWithOutput (monoid (ZipList' (Cons "" Nil)))
+quickCheckBatchWithOutput (functor (ZipList' (Cons ("", "", "") Nil)))
+quickCheckBatchWithOutput (applicative (ZipList' (Cons ("", "", "") Nil)))
+#+END_SRC
+
+Unlike ~Functor~, ~Applicative~ can have more lawful instances for datatype (FC)
+
+** Exercise: Validation Applicative
+Write an ~Applicative~ instance for ~Validation~. It's the same as
+~Either~ but the applicative composition must rely on the monoidal
+composition (aka. append the errors)
+
+#+BEGIN_SRC haskell :eval silent
+import Data.Monoid
+
+data Validation e a = Failure e | Success a deriving (Eq, Show)
+
+:{
+instance Functor (Validation e) where
+  fmap _ (Failure e) = Failure e
+  fmap f (Success a) = Success $ (f a)
+:}
+
+:{
+instance Semigroup e => Applicative (Validation e) where
+  pure x = Success x
+
+  (Success f) <*> (Failure e) = Failure e
+  (Success f) <*> (Success e) = Success $ f e
+  (Failure e) <*> (Success _) = Failure e
+  (Failure e1) <*> (Failure e2) = Failure $ e1 <> e2
+:}
+
+:{
+instance (Arbitrary e, Arbitrary a) => Arbitrary (Validation e a) where
+  arbitrary = do
+    e <- arbitrary
+    a <- arbitrary
+    elements [Failure e, Success a]
+:}
+
+:{
+instance (Eq e, Eq a) => EqProp (Validation e a) where
+  (=-=) = eq
+:}
+
+<<quickcheck-with-output>>
+
+quickCheckBatchWithOutput (applicative (Success ("", "", "")))
+#+END_SRC
+
+* 17.09 Exercises
+** Specializing Method Types
+Given a type that has an instance of Applicative, specialize the types
+of the methods.
+
+1. Specialize method types for ~[]~
+   #+BEGIN_SRC haskell :results silent
+   :{
+   -- pure :: a -> ? a
+   pure' :: a -> [a]
+   pure' = undefined
+   :}
+
+   :{
+   -- (<*>) :: ? (a -> b) -> ? a -> ? b
+   applicative' :: [(a -> b)] -> [a] -> [b]
+   -- or applicative' :: [] (a -> b) -> [] a -> [] b
+   applicative' = undefined
+   :}
+   #+END_SRC
+
+2. Specialize method types for ~IO~
+   #+BEGIN_SRC haskell :results silent
+   :{
+   -- pure :: a -> ? a
+   pure' :: a -> IO a
+   pure' = undefined
+   :}
+
+   :{
+   -- (<*>) :: ? (a -> b) -> ? a -> ? b
+   applicative' :: IO (a -> b) -> IO a -> IO b
+   applicative' = undefined
+   :}
+   #+END_SRC
+
+3. Specialize method types for ~(,) a~
+   #+BEGIN_SRC haskell :results silent
+   :{
+   -- pure :: a -> ? a
+   pure' :: a -> (b, a)
+   pure' = undefined
+   :}
+
+   :{
+   -- (<*>) :: ? (a -> b) -> ? a -> ? b
+   applicative' :: (c, (a -> b)) -> (c, a) -> (c, b)
+   applicative' = undefined
+   :}
+   #+END_SRC
+
+4. Specialize method types for ~(->) e~
+   #+BEGIN_SRC haskell :results silent
+   :{
+   -- pure :: a -> ? a
+   pure' :: a -> (e -> a)
+   pure' = undefined
+   :}
+
+   :{
+   -- (<*>) :: ? (a -> b) -> ? a -> ? b
+   applicative' :: (e -> (a -> b)) -> (e -> a) -> (e -> b)
+   applicative' = undefined
+   :}
+   #+END_SRC
+
+** Applicative Instances
+
+1. Write an instance of ~Applicative~ for the following type
+   #+BEGIN_SRC haskell :results silent
+   data Pair a = Pair a a deriving (Eq, Show)
+
+   :{
+   instance Functor Pair where
+     fmap f (Pair a1 a2) = Pair (f a1) (f a2)
+   :}
+
+   :{
+   instance Applicative Pair where
+     pure x = Pair x x
+
+     (Pair f1 f2) <*> (Pair x1 x2) = Pair (f1 x1) (f2 x2)
+   :}
+
+   :{
+   instance Arbitrary a => Arbitrary (Pair a) where
+     arbitrary = Pair <$> arbitrary <*> arbitrary
+   :}
+
+   :{
+   instance Eq a => EqProp (Pair a) where
+     (=-=) = eq
+   :}
+
+   <<quickcheck-with-output>>
+
+   quickCheckBatchWithOutput (applicative (Pair ("", "", "") ("", "", "")))
+   #+END_SRC
+
+2. Write an instance of ~Applicative~ for the following type
+   #+BEGIN_SRC haskell :results silent
+   data Two a b = Two a b deriving (Eq, Show)
+
+   :{
+   instance Functor (Two a) where
+     fmap f (Two a b) = Two a (f b)
+   :}
+
+   :{
+   instance Monoid a => Applicative (Two a) where
+     pure x = Two mempty x
+
+     (Two a1 f) <*> (Two a2 b) = Two (a1 <> a2) (f b)
+   :}
+
+   :{
+   instance (Arbitrary a, Arbitrary b) => Arbitrary (Two a b) where
+     arbitrary = Two <$> arbitrary <*> arbitrary
+   :}
+
+   :{
+   instance (Eq a, Eq b) => EqProp (Two a b) where
+     (=-=) = eq
+   :}
+
+   <<quickcheck-with-output>>
+
+   quickCheckBatchWithOutput (applicative (Two (Sum 1, Sum 1, Sum 1) ("", "", "")))
+   #+END_SRC
+
+3. Write an instance of ~Applicative~ for the following type
+   #+BEGIN_SRC haskell :results silent
+   data Three a b c = Three a b c deriving (Eq, Show)
+
+   :{
+   instance Functor (Three a b) where
+     fmap f (Three a b c) = Three a b (f c)
+   :}
+
+   :{
+   instance (Monoid a, Monoid b) => Applicative (Three a b) where
+     pure x = Three mempty mempty x
+
+     (Three a1 b1 f) <*> (Three a2 b2 c) = Three (a1 <> a2) (b1 <> b2) (f c)
+   :}
+
+   :{
+   instance (Arbitrary a, Arbitrary b, Arbitrary c) => Arbitrary (Three a b c) where
+     arbitrary = Three <$> arbitrary <*> arbitrary <*> arbitrary
+   :}
+
+   :{
+   instance (Eq a, Eq b, Eq c) => EqProp (Three a b c) where
+     (=-=) = eq
+   :}
+
+   quickCheckBatchWithOutput (applicative (Three (Sum 1) (All True) ("", "", "")))
+   #+END_SRC
+
+4. Write an instance of ~Applicative~ for the following type
+   #+BEGIN_SRC haskell :eval silent
+   data Three' a b = Three' a b b deriving (Eq, Show)
+
+   -- identity: id <$> x == x
+   -- composition: (f . g) <$> x == f <$> (g <$> x) == (fmap f) . (fmap g)
+   :{
+   instance Functor (Three' a) where
+     fmap f (Three' a b1 b2) = Three' a (f b1) (f b2)
+   :}
+
+   -- identity: pure id <*> x = x
+   -- homomorphism: pure f <*> pure x == pure (f x)
+   -- composition: pure (.) <*> f <*> g <*> x == f <*> (g <*> x)
+   -- commutative: f <*> pure x == pure ($ x) <*> f
+   :{
+   instance Monoid a => Applicative (Three' a) where
+     pure x = Three' mempty x x
+
+     (Three' a1 f1 f2) <*> (Three' a2 b1 b2) = Three' (a1 <> a2) (f1 b1) (f2 b2)
+   :}
+
+   :{
+   instance (Arbitrary a, Arbitrary b) => Arbitrary (Three' a b) where
+     arbitrary = Three' <$> arbitrary <*> arbitrary <*> arbitrary
+   :}
+
+   :{
+   instance (Eq a, Eq b) => EqProp (Three' a b) where
+     (=-=) = eq
+   :}
+
+   <<quickcheck-with-output>>
+
+   quickCheckBatchWithOutput (applicative (Three' (Sum 1) ("", "", "") ("", "", "")))
+   #+END_SRC
+
+5. Write an instance of ~Applicative~ for the following type
+   #+BEGIN_SRC haskell :results silent
+   data Four a b c d = Four a b c d deriving (Eq, Show)
+
+   -- identity: fmap id x == x
+   -- composition: fmap (f . g) x == fmap f (fmap g x)
+   :{
+   instance Functor (Four a b c) where
+     fmap f (Four a b c d) = Four a b c (f d)
+   :}
+
+   :{
+   instance (Monoid a, Monoid b, Monoid c) => Applicative (Four a b c) where
+     pure x = Four mempty mempty mempty x
+
+     (Four a1 b1 c1 f) <*> (Four a2 b2 c2 d) = Four (a1 <> a2) (b1 <> b2) (c1 <> c2) (f d)
+   :}
+
+   :{
+   instance (Arbitrary a, Arbitrary b, Arbitrary c, Arbitrary d) => Arbitrary (Four a b c d) where
+     arbitrary = Four <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+   :}
+
+   :{
+   instance (Eq a, Eq b, Eq c, Eq d) => EqProp (Four a b c d) where
+     (=-=) = eq
+   :}
+
+   <<quickcheck-with-output>>
+
+   quickCheckBatchWithOutput (applicative (Four (Sum 1) (All True) LT ("", "", "")))
+   #+END_SRC
+
+6. Write an instance of ~Applicative~ for the following type
+   #+BEGIN_SRC haskell
+   data Four' a b = Four' a a a b deriving (Eq, Show)
+
+   :{
+   instance Functor (Four' a) where
+     fmap f (Four' a1 a2 a3 b) = Four' a1 a2 a3 (f b)
+   :}
+
+   :{
+   instance Monoid a => Applicative (Four' a) where
+     pure x = Four' mempty mempty mempty x
+
+     (Four' al1 al2 al3 f) <*> (Four' ar1 ar2 ar3 b) = Four' (al1 <> ar1) (al2 <> ar2) (al3 <> ar3) (f b)
+   :}
+
+   :{
+   instance (Arbitrary a, Arbitrary b) => Arbitrary (Four' a b) where
+     arbitrary = Four' <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+   :}
+
+   :{
+   instance (Eq a, Eq b) => EqProp (Four' a b) where
+     (=-=) = eq
+   :}
+
+   <<quickcheck-with-output>>
+
+   quickCheckBatchWithOutput (applicative (Four' (Sum 1) (Sum 2) (Sum 3) ("", "", "")))
+   #+END_SRC
+
+** Combinations
+Write the function to generate the possible combinations of three
+input lists using ~liftA3~ from ~Control.Applicative~.
+
+#+BEGIN_SRC haskell
+import Control.Applicative (liftA3)
+
+:{
+stops :: String
+stops = "pbtdkg"
+:}
+
+:{
+vowels :: String
+vowels = "aeiou"
+:}
+
+:{
+combos :: [a] -> [b] -> [c] -> [(a, b, c)]
+combos = liftA3 (,,)
+:}
+
+combos stops vowels stops
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[('p','a','p'),('p','a','b'),('p','a','t'),('p','a','d'),('p','a','k'),('p','a','g'),('p','e','p'),('p','e','b'),('p','e','t'),('p','e','d'),('p','e','k'),('p','e','g'),('p','i','p'),('p','i','b'),('p','i','t'),('p','i','d'),('p','i','k'),('p','i','g'),('p','o','p'),('p','o','b'),('p','o','t'),('p','o','d'),('p','o','k'),('p','o','g'),('p','u','p'),('p','u','b'),('p','u','t'),('p','u','d'),('p','u','k'),('p','u','g'),('b','a','p'),('b','a','b'),('b','a','t'),('b','a','d'),('b','a','k'),('b','a','g'),('b','e','p'),('b','e','b'),('b','e','t'),('b','e','d'),('b','e','k'),('b','e','g'),('b','i','p'),('b','i','b'),('b','i','t'),('b','i','d'),('b','i','k'),('b','i','g'),('b','o','p'),('b','o','b'),('b','o','t'),('b','o','d'),('b','o','k'),('b','o','g'),('b','u','p'),('b','u','b'),('b','u','t'),('b','u','d'),('b','u','k'),('b','u','g'),('t','a','p'),('t','a','b'),('t','a','t'),('t','a','d'),('t','a','k'),('t','a','g'),('t','e','p'),('t','e','b'),('t','e','t'),('t','e','d'),('t','e','k'),('t','e','g'),('t','i','p'),('t','i','b'),('t','i','t'),('t','i','d'),('t','i','k'),('t','i','g'),('t','o','p'),('t','o','b'),('t','o','t'),('t','o','d'),('t','o','k'),('t','o','g'),('t','u','p'),('t','u','b'),('t','u','t'),('t','u','d'),('t','u','k'),('t','u','g'),('d','a','p'),('d','a','b'),('d','a','t'),('d','a','d'),('d','a','k'),('d','a','g'),('d','e','p'),('d','e','b'),('d','e','t'),('d','e','d'),('d','e','k'),('d','e','g'),('d','i','p'),('d','i','b'),('d','i','t'),('d','i','d'),('d','i','k'),('d','i','g'),('d','o','p'),('d','o','b'),('d','o','t'),('d','o','d'),('d','o','k'),('d','o','g'),('d','u','p'),('d','u','b'),('d','u','t'),('d','u','d'),('d','u','k'),('d','u','g'),('k','a','p'),('k','a','b'),('k','a','t'),('k','a','d'),('k','a','k'),('k','a','g'),('k','e','p'),('k','e','b'),('k','e','t'),('k','e','d'),('k','e','k'),('k','e','g'),('k','i','p'),('k','i','b'),('k','i','t'),('k','i','d'),('k','i','k'),('k','i','g'),('k','o','p'),('k','o','b'),('k','o','t'),('k','o','d'),('k','o','k'),('k','o','g'),('k','u','p'),('k','u','b'),('k','u','t'),('k','u','d'),('k','u','k'),('k','u','g'),('g','a','p'),('g','a','b'),('g','a','t'),('g','a','d'),('g','a','k'),('g','a','g'),('g','e','p'),('g','e','b'),('g','e','t'),('g','e','d'),('g','e','k'),('g','e','g'),('g','i','p'),('g','i','b'),('g','i','t'),('g','i','d'),('g','i','k'),('g','i','g'),('g','o','p'),('g','o','b'),('g','o','t'),('g','o','d'),('g','o','k'),('g','o','g'),('g','u','p'),('g','u','b'),('g','u','t'),('g','u','d'),('g','u','k'),('g','u','g')]
+#+END_EXAMPLE

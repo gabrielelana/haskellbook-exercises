@@ -8,9 +8,12 @@ import Test.QuickCheck.Classes
 
 
 -- This will not work intentionally
+
+instance Semigroup a => Semigroup (ZipList a) where
+  (<>) = liftA2 (<>)
+
 instance Monoid a => Monoid (ZipList a) where
   mempty = pure mempty
-  mappend = liftA2 mappend
 
-instance Eq a => EqProp (ZipList a) where
-  (=-=) = eq
+-- instance Eq a => EqProp (ZipList a) where
+--   (=-=) = eq
