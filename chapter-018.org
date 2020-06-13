@@ -1,975 +1,909 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
 #+TITLE: Monad
 
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+
 * 18.01 Monad
-  Monads are applicative functors with something that makes them
-  special and more powerful.
+Monads are applicative functors with something that makes them special
+and more powerful.
 
 * 18.02 A Monad is not a Burrito
-  #+BEGIN_SRC haskell :eval never
-  class Applicative m => Monad m where
-    (>>=) :: m a -> (a -> m b) -> m b
-    (>>) :: m a -> m b -> m b
-    return :: a -> m a
-  #+END_SRC
+#+BEGIN_SRC haskell :eval never
+class Applicative m => Monad m where
+  (>>=) :: m a -> (a -> m b) -> m b
+  (>>) :: m a -> m b -> m b
+  return :: a -> m a
+#+END_SRC
 
-  Whenever you have implemented an instance of ~Monad~ then you
-  necessarily have an instance of ~Applicative~ and ~Functor~ aka an
-  instance of ~Applicative~ and ~Functor~ can be derived directly from
-  an instance of ~Monad~
-  #+BEGIN_EXAMPLE
-  Functor -> Applicative -> Monad
-  #+END_EXAMPLE
+Whenever you have implemented an instance of ~Monad~ then you
+necessarily have an instance of ~Applicative~ and ~Functor~ aka an
+instance of ~Applicative~ and ~Functor~ can be derived directly from
+an instance of ~Monad~
+
+#+BEGIN_EXAMPLE
+Functor -> Applicative -> Monad
+#+END_EXAMPLE
 
   - return :: works like the ~pure~ of ~Applicative~
   - (>>) :: /sequencing operator/, sequence two actions and discard the
-            first result, works like the ~*>~ of ~Applicative~
+    first result, works like the ~*>~ of ~Applicative~
   - (>>=) :: /bind/, that's what make ~Monad~ special, see below
 
-  Let's see the type of ~bind~
-  #+BEGIN_SRC haskell :eval never
-  (>>=) :: m a -> (a -> m b) -> m b
-  #+END_SRC
+    Let's see the type of ~bind~
+    #+BEGIN_SRC haskell :eval never
+    (>>=) :: m a -> (a -> m b) -> m b
+    #+END_SRC
 
-  When we want to use some function that adds structure ~(a -> m b)~
-  but we don't want an extra layer of structure at the end ~m (m b)~
-  then we need to have a means to flatten two layers of structrue into
-  one.
+    When we want to use some function that adds structure ~(a -> m b)~
+    but we don't want an extra layer of structure at the end ~m (m b)~
+    then we need to have a means to flatten two layers of structrue into
+    one.
 
-  This is the job of ~Control.Monad.join~, the unique part of ~Monad~
-  #+BEGIN_SRC haskell :eval never
-  join :: Monad m => m (m a) -> m a
-  #+END_SRC
+    This is the job of ~Control.Monad.join~, the unique part of ~Monad~
 
-  Until now we only have added structure, we never simplified
-  structure, this is what makes ~Monad~ special.
+    #+BEGIN_SRC haskell :eval never
+    join :: Monad m => m (m a) -> m a
+    #+END_SRC
 
-  How do we get ~bind~ (~bind~ here is proposed as ~(>>=)~ flipped,
-  don't know why)?  Implement it in terms of ~fmap~ and ~join~
-  #+BEGIN_SRC haskell :results silent
-  import Control.Monad (join)
+    Until now we only have added structure, we never simplified
+    structure, this is what makes ~Monad~ special.
 
-  :{
-  bind :: Monad m => (a -> m b) -> m a -> m b
-  bind f ma = join $ f <$> ma
-  :}
-  #+END_SRC
+    How do we get ~bind~ (~bind~ here is proposed as ~(>>=)~ flipped,
+    don't know why)?  Implement it in terms of ~fmap~ and ~join~
+
+    #+BEGIN_SRC haskell :results silent
+    import Control.Monad (join)
+
+    :{
+    bind :: Monad m => (a -> m b) -> m a -> m b
+    bind f ma = join $ f <$> ma
+    :}
+    #+END_SRC
 
 ** Misconceptions
-   1. ~Monad~ are impure. There's nothing impure about ~Monad~,
-      ~Monad~ can be used to represent impure (effectful) actions.
-   2. ~Monad~ are used to obtain imperative programming. ~Monad~ are
-      used for sequencing actions but that's not what imperative
-      programming is.
-   3. ~Monad~ are values. Typeclasses define relationships between
-      elements of a domain and some operations over them, when we say
-      "a monad" we do not refer to a value.
-   4. ~Monad~ are strict. The monadic operations of ~bind~ and
-      ~return~ are non strict but they can be made strict.
+1. ~Monad~ are impure. There's nothing impure about ~Monad~, ~Monad~
+   can be used to represent impure (effectful) actions.
+2. ~Monad~ are used to obtain imperative programming. ~Monad~ are used
+   for sequencing actions but that's not what imperative programming
+   is.
+3. ~Monad~ are values. Typeclasses define relationships between
+   elements of a domain and some operations over them, when we say "a
+   monad" we do not refer to a value.
+4. ~Monad~ are strict. The monadic operations of ~bind~ and ~return~
+   are non strict but they can be made strict.
 
 ** Monads can Lift
-   There are ~liftM*~ functions in ~Control.Monad~ like there are
-   ~liftA*~ functions in ~Control.Applicative~, they do the same
-   thing, they exist only for retro compatibility (~Applicative~ have
-   been added later)
+There are ~liftM*~ functions in ~Control.Monad~ like there are
+~liftA*~ functions in ~Control.Applicative~, they do the same thing,
+they exist only for retro compatibility (~Applicative~ have been added
+later)
 
 * 18.03 Do Syntax and Monads
-  Sequencing operations for ~Applicative~ and ~Monads~, same thing but
-  with different constraints.
-  #+BEGIN_SRC haskell :eval never
-  (*>) :: Applicative f => f a -> f b -> f b
-  (>>) :: Monad m => m a -> m b -> m b
-  #+END_SRC
+Sequencing operations for ~Applicative~ and ~Monads~, same thing but
+with different constraints.
 
-  We can express a sequence of operations in an applicative/monadic
-  context with sequencing operators or with a ~do~ notation
-  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  :{
-  sequencing :: IO ()
-  sequencing = do
-    putStr "Hello"
-    putStr " "
-    putStrLn "World!"
-  :}
+#+BEGIN_SRC haskell :eval never
+(*>) :: Applicative f => f a -> f b -> f b
+(>>) :: Monad m => m a -> m b -> m b
+#+END_SRC
 
-  :{
-  sequencing' :: IO ()
-  sequencing' = putStr "Hello" *> putStr " " *> putStrLn "World!"
-  :}
+We can express a sequence of operations in an applicative/monadic
+context with sequencing operators or with a ~do~ notation
 
-  :{
-  sequencing'' :: IO ()
-  sequencing'' = putStr "Hello" >> putStr " " >> putStrLn "World!"
-  :}
+#+BEGIN_SRC haskell
+:{
+sequencing :: IO ()
+sequencing = do
+  putStr "Hello"
+  putStr " "
+  putStrLn "World!"
+:}
 
-  sequencing
-  sequencing'
-  sequencing''
-  #+END_SRC
+:{
+sequencing' :: IO ()
+sequencing' = putStr "Hello" *> putStr " " *> putStrLn "World!"
+:}
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  Hello World!
-  Hello World!
-  Hello World!
-  #+END_EXAMPLE
+:{
+sequencing'' :: IO ()
+sequencing'' = putStr "Hello" >> putStr " " >> putStrLn "World!"
+:}
 
-  The ~do~ notation provides also the possibility of /variable
-  bindings/ which can be desugared with the ~(>>=)~ /bind/ operator.
-  #+BEGIN_SRC haskell :eval never
-  binding :: IO ()
-  binding = do
-    name <- getLine
-    putStrLn name
+sequencing
+sequencing'
+sequencing''
+#+END_SRC
 
-  binding' :: IO ()
-  binding' = getLine >>= putStrLn
-  #+END_SRC
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Hello World!
+Hello World!
+Hello World!
+#+END_EXAMPLE
+
+The ~do~ notation provides also the possibility of /variable bindings/
+which can be desugared with the ~(>>=)~ /bind/ operator.
+
+#+BEGIN_SRC haskell :eval never
+binding :: IO ()
+binding = do
+  name <- getLine
+  putStrLn name
+
+binding' :: IO ()
+binding' = getLine >>= putStrLn
+#+END_SRC
 
 ** When ~fmap~ is not enough
-   The following code will ask for input but the it does nothing, why
-   ~putStrLn~ doesn't work?
-   #+BEGIN_SRC haskell :eval never
-   putStrLn <$> getLine
-   #+END_SRC
+The following code will ask for input but then it does nothing, why
+~putStrLn~ doesn't work?
 
-   Let's see the types
-   #+BEGIN_SRC haskell :eval never
-   getLine :: IO String
-   putStrLn :: String -> IO ()
-   (<$>) :: (a -> b) -> f a -> f b
+#+BEGIN_SRC haskell :eval never
+putStrLn <$> getLine
+#+END_SRC
 
-   -- using ~putStrLn~ as ~(a -> b)~ means that ~a~ is String~ and ~b~ is ~IO ()~
-   -- (<$>) :: (a      -> b    ) -> f a      -> f  b
-   --           String -> IO ()) -> f String -> f (IO ())
+Let's see the types
+#+BEGIN_SRC haskell :eval never
+getLine :: IO String
+putStrLn :: String -> IO ()
+(<$>) :: (a -> b) -> f a -> f b
 
-   -- using ~getLine~ as ~f a~ means that ~f~ is ~IO~
-   --           String -> IO ()) -> f  String -> f  (IO ())
-   --           String -> IO ()) -> IO String -> IO (IO ())
-   #+END_SRC
+-- using ~putStrLn~ as ~(a -> b)~ means that ~a~ is String~ and ~b~ is ~IO ()~
+-- (<$>) :: (a      -> b    ) -> f a      -> f  b
+--           String -> IO ()) -> f String -> f (IO ())
 
-   So we end up with an ~IO~ inside another ~IO~, the outermost is the
-   ~getLine~ ~IO~ and it's the only one that gets resolved
+-- using ~getLine~ as ~f a~ means that ~f~ is ~IO~
+--           String -> IO ()) -> f  String -> f  (IO ())
+--           String -> IO ()) -> IO String -> IO (IO ())
+#+END_SRC
 
-   Haskell can represent, compose and map over effectful computations
-   without performing them
-   #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   printOne = putStrLn "1"
-   printTwo = putStrLn "2"
-   twoActions = (printOne, printTwo)
+So we end up with an ~IO~ inside another ~IO~, the outermost is the
+~getLine~ ~IO~ and it's the only one that gets resolved
 
-   :t twoActions
-   -- until now nothing happened
+Haskell can represent, compose and map over effectful computations
+without performing them
 
-   fst twoActions -- prints 1
-   snd twoActions -- prints 2
-   fst twoActions -- prints 1 again, we can run effectful computation more than once
-   #+END_SRC
+#+BEGIN_SRC haskell
+printOne = putStrLn "1"
+printTwo = putStrLn "2"
+twoActions = (printOne, printTwo)
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   twoActions :: (IO (), IO ())
-   1
-   2
-   1
-   #+END_EXAMPLE
+:t twoActions
+-- until now nothing happened
 
-   When we have something like ~IO (IO ())~ we ca resolve the
-   outermost ~IO~ but not the innermost, we need to squash them in a
-   single ~IO~, that's what ~join~ of ~Monad~ is for
+fst twoActions -- prints 1
+snd twoActions -- prints 2
+fst twoActions -- prints 1 again, we can run effectful computation more than once
+#+END_SRC
 
-   #+BEGIN_SRC haskell :eval never
-   -- join :: Monad m => m (m a) -> m a
-   join $ putStrLn <$> getLine
+#+RESULTS:
+#+BEGIN_EXAMPLE
+twoActions :: (IO (), IO ())
+1
+2
+1
+#+END_EXAMPLE
 
-   -- or more succinctly
-   getLine >>= putStrLn
-   #+END_SRC
+When we have something like ~IO (IO ())~ we ca resolve the outermost
+~IO~ but not the innermost, we need to squash them in a single ~IO~,
+that's what ~join~ of ~Monad~ is for
 
+#+BEGIN_SRC haskell :eval never
+-- join :: Monad m => m (m a) -> m a
+join $ putStrLn <$> getLine
 
-   #+BEGIN_SRC haskell :eval never
-   :{
-   bindingAndSequencing :: IO ()
-   bindingAndSequencing = do
-     putStrLn "What's your name?"
-     name <- getLine
-     putStrLn $ "Your name is " ++ name
-   :}
+-- or more succinctly
+getLine >>= putStrLn
+#+END_SRC
 
-   :{
-   bindingAndSequencing' :: IO ()
-   bindingAndSequencing' =
-     putStrLn "What's your name?" >>
-     getLine >>=
-       \name -> putStrLn $ "Your name is " ++ name"
-   :}
+#+BEGIN_SRC haskell :eval never
+:{
+bindingAndSequencing :: IO ()
+bindingAndSequencing = do
+  putStrLn "What's your name?"
+  name <- getLine
+  putStrLn $ "Your name is " ++ name
+:}
 
-   :{
-   twoBinds :: IO ()
-   twoBinds = do
-     putStrLn "What's your name?"
-     name <- getLine
-     putStrLn "What's your age?"
-     age <- getLine
-     putStrLn $ "Your name is " ++ name ++ " and you are " ++ age ++ " years old."
-   :}
+:{
+bindingAndSequencing' :: IO ()
+bindingAndSequencing' =
+  putStrLn "What's your name?" >>
+  getLine >>=
+    \name -> putStrLn $ "Your name is " ++ name"
+:}
 
-   :{
-   twoBinds' :: IO ()
-   twoBinds' =
-     putStrLn "What's your name?" >>
-     getLine >>=
-       \name ->
-         putStrLn "What's your age?" >>
-         getLine >>=
-           \age ->
-             putStrLn $ "Your name is " ++ name ++ " and you are " ++ age ++ " years old."
-   :}
-   #+END_SRC
+:{
+twoBinds :: IO ()
+twoBinds = do
+  putStrLn "What's your name?"
+  name <- getLine
+  putStrLn "What's your age?"
+  age <- getLine
+  putStrLn $ "Your name is " ++ name ++ " and you are " ++ age ++ " years old."
+:}
+
+:{
+twoBinds' :: IO ()
+twoBinds' =
+  putStrLn "What's your name?" >>
+  getLine >>=
+    \name ->
+      putStrLn "What's your age?" >>
+      getLine >>=
+        \age ->
+          putStrLn $ "Your name is " ++ name ++ " and you are " ++ age ++ " years old."
+:}
+#+END_SRC
 
 * 18.04 Examples of Monad Use
 ** List Monad
-   #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   :{
-   twiceWhenEven :: [Integer] -> [Integer]
-   twiceWhenEven xs = do
-     -- ~x~ will take every value in ~xs~
-     x <- xs
-     if even x then [x*x, x*x] else [x*x]
-   :}
+#+BEGIN_SRC haskell
+:{
+twiceWhenEven :: [Integer] -> [Integer]
+twiceWhenEven xs = do
+  -- ~x~ will take every value in ~xs~
+  x <- xs
+  if even x then [x*x, x*x] else [x*x]
+:}
 
-   twiceWhenEven [1..3]
-   #+END_SRC
+twiceWhenEven [1..3]
+#+END_SRC
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   [1,4,4,9]
-   #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[1,4,4,9]
+#+END_EXAMPLE
 
 ** Maybe Monad
-   #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   data Cow = Cow {name :: String, age :: Int, weight :: Int} deriving (Eq, Show)
+#+BEGIN_SRC haskell
+data Cow = Cow {name :: String, age :: Int, weight :: Int} deriving (Eq, Show)
 
-   :{
-   noEmpty :: String -> Maybe String
-   noEmpty "" = Nothing
-   noEmpty s = Just s
-   :}
+:{
+noEmpty :: String -> Maybe String
+noEmpty "" = Nothing
+noEmpty s = Just s
+:}
 
-   :{
-   noNegative :: Int -> Maybe Int
-   noNegative n | n >= 0 = Just n
-                | otherwise = Nothing
-   :}
+:{
+noNegative :: Int -> Maybe Int
+noNegative n | n >= 0 = Just n
+             | otherwise = Nothing
+:}
 
-   :{
-   weightCheck :: Cow -> Maybe Cow
-   weightCheck c =
-     let w = weight c
-         n = name c
-     in if n == "Bess" && w > 499 then Nothing else Just c
-   :}
+:{
+weightCheck :: Cow -> Maybe Cow
+weightCheck c =
+  let w = weight c
+      n = name c
+  in if n == "Bess" && w > 499 then Nothing else Just c
+:}
 
-   :{
-   mkCow :: String -> Int -> Int -> Maybe Cow
-   mkCow name age weight =
-     case noEmpty name of
-      Nothing ->
-        Nothing
-      Just name ->
-         case noNegative age of
-           Nothing ->
-             Nothing
-           Just age ->
-             case noNegative weight of
-               Nothing ->
-                 Nothing
-               Just weight ->
-                 weightCheck (Cow name age weight)
-   :}
+:{
+mkCow :: String -> Int -> Int -> Maybe Cow
+mkCow name age weight =
+  case noEmpty name of
+   Nothing ->
+     Nothing
+   Just name ->
+      case noNegative age of
+        Nothing ->
+          Nothing
+        Just age ->
+          case noNegative weight of
+            Nothing ->
+              Nothing
+            Just weight ->
+              weightCheck (Cow name age weight)
+:}
 
-   mkCow "Bess" 5 499
-   mkCow "Bess" 5 500
-   mkCow "" 5 499
+mkCow "Bess" 5 499
+mkCow "Bess" 5 500
+mkCow "" 5 499
 
-   :{
-   mkCow' :: String -> Int -> Int -> Maybe Cow
-   mkCow' name' age' weight' = do
-     name <- noEmpty name'
-     age <- noNegative age'
-     weight <- noNegative weight'
-     weightCheck (Cow name age weight)
-   :}
+:{
+mkCow' :: String -> Int -> Int -> Maybe Cow
+mkCow' name' age' weight' = do
+  name <- noEmpty name'
+  age <- noNegative age'
+  weight <- noNegative weight'
+  weightCheck (Cow name age weight)
+:}
 
-   mkCow' "Bess" 5 499
-   mkCow' "Bess" 5 500
-   mkCow' "" 5 499
+mkCow' "Bess" 5 499
+mkCow' "Bess" 5 500
+mkCow' "" 5 499
 
-   :{
-   mkCow'' :: String -> Int -> Int -> Maybe Cow
-   mkCow'' name' age' weight' =
-     noEmpty name' >>=
-       \name -> noNegative age' >>=
-         \age -> noNegative weight' >>=
-           \weight -> weightCheck (Cow name age weight)
-   :}
+:{
+mkCow'' :: String -> Int -> Int -> Maybe Cow
+mkCow'' name' age' weight' =
+  noEmpty name' >>=
+    \name -> noNegative age' >>=
+      \age -> noNegative weight' >>=
+        \weight -> weightCheck (Cow name age weight)
+:}
 
-   mkCow'' "Bess" 5 499
-   mkCow'' "Bess" 5 500
-   mkCow'' "" 5 499
-   #+END_SRC
+mkCow'' "Bess" 5 499
+mkCow'' "Bess" 5 500
+mkCow'' "" 5 499
+#+END_SRC
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   Just (Cow {name = "Bess", age = 5, weight = 499})
-   Nothing
-   Nothing
-   Just (Cow {name = "Bess", age = 5, weight = 499})
-   Nothing
-   Nothing
-   Just (Cow {name = "Bess", age = 5, weight = 499})
-   Nothing
-   Nothing
-   #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Just (Cow {name = "Bess", age = 5, weight = 499})
+Nothing
+Nothing
+Just (Cow {name = "Bess", age = 5, weight = 499})
+Nothing
+Nothing
+Just (Cow {name = "Bess", age = 5, weight = 499})
+Nothing
+Nothing
+#+END_EXAMPLE
 
 ** Either Monad
-   #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   type Founded = Int
-   type Coders = Int
+#+BEGIN_SRC haskell
+type Founded = Int
+type Coders = Int
 
-   data SoftwareShop = SoftwareShop {coders :: Coders, founded :: Founded} deriving (Eq, Show)
+data SoftwareShop = SoftwareShop {coders :: Coders, founded :: Founded} deriving (Eq, Show)
 
-   :{
-   data SoftwareShopError = NegativeYears Founded
-                          | TooManyYears Founded
-                          | NegativeCoders Coders
-                          | TooManyCoders Coders
-                          | TooManyCodersForYears Founded Coders
-                          deriving (Eq, Show)
-   :}
+:{
+data SoftwareShopError = NegativeYears Founded
+                       | TooManyYears Founded
+                       | NegativeCoders Coders
+                       | TooManyCoders Coders
+                       | TooManyCodersForYears Founded Coders
+                       deriving (Eq, Show)
+:}
 
-   :{
-   validateFounded :: Int -> Either SoftwareShopError Founded
-   validateFounded n
-     | n < 0 = Left $ NegativeYears n
-     | n > 500 = Left $ TooManyYears n
-     | otherwise = Right n
-   :}
+:{
+validateFounded :: Int -> Either SoftwareShopError Founded
+validateFounded n
+  | n < 0 = Left $ NegativeYears n
+  | n > 500 = Left $ TooManyYears n
+  | otherwise = Right n
+:}
 
-   :{
-   validateCoders :: Int -> Either SoftwareShopError Coders
-   validateCoders n
-     | n < 0 = Left $ NegativeCoders n
-     | n > 5000 = Left $ TooManyCoders n
-     | otherwise = Right n
-   :}
+:{
+validateCoders :: Int -> Either SoftwareShopError Coders
+validateCoders n
+  | n < 0 = Left $ NegativeCoders n
+  | n > 5000 = Left $ TooManyCoders n
+  | otherwise = Right n
+:}
 
-   :{
-   validateCodersForYears :: Founded -> Coders -> Either SoftwareShopError (Founded, Coders)
-   validateCodersForYears founded coders =
-     if coders > div founded 10 then
-       Left $ TooManyCodersForYears founded coders
-     else
-       Right $ (founded, coders)
-   :}
+:{
+validateCodersForYears :: Founded -> Coders -> Either SoftwareShopError (Founded, Coders)
+validateCodersForYears founded coders =
+  if coders > div founded 10 then
+    Left $ TooManyCodersForYears founded coders
+  else
+    Right $ (founded, coders)
+:}
 
-   :{
-   mkSoftwareShop :: Int -> Int -> Either SoftwareShopError SoftwareShop
-   mkSoftwareShop founded coders = do
-     founded' <- validateFounded founded
-     coders' <- validateCoders coders
-     (founded'', coders'') <- validateCodersForYears founded' coders'
-     Right $ SoftwareShop founded'' coders''
-   :}
+:{
+mkSoftwareShop :: Int -> Int -> Either SoftwareShopError SoftwareShop
+mkSoftwareShop founded coders = do
+  founded' <- validateFounded founded
+  coders' <- validateCoders coders
+  (founded'', coders'') <- validateCodersForYears founded' coders'
+  return $ SoftwareShop founded'' coders''
+:}
 
-   mkSoftwareShop 10 1
-   mkSoftwareShop 50 2
-   mkSoftwareShop 1 1
-   mkSoftwareShop 1 0
-   mkSoftwareShop (-1) 0
-   mkSoftwareShop 0 (-1)
-   #+END_SRC
+mkSoftwareShop 10 1
+mkSoftwareShop 50 2
+mkSoftwareShop 1 1
+mkSoftwareShop 1 0
+mkSoftwareShop (-1) 0
+mkSoftwareShop 0 (-1)
+#+END_SRC
 
-   #+RESULTS:
-   #+BEGIN_EXAMPLE
-   Right (SoftwareShop {coders = 10, founded = 1})
-   Right (SoftwareShop {coders = 50, founded = 2})
-   Left (TooManyCodersForYears 1 1)
-   Right (SoftwareShop {coders = 1, founded = 0})
-   Left (NegativeYears (-1))
-   Left (NegativeCoders (-1))
-   #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Right (SoftwareShop {coders = 10, founded = 1})
+Right (SoftwareShop {coders = 50, founded = 2})
+Left (TooManyCodersForYears 1 1)
+Right (SoftwareShop {coders = 1, founded = 0})
+Left (NegativeYears (-1))
+Left (NegativeCoders (-1))
+#+END_EXAMPLE
 
-   Note that ~Either~ short-circuits on the first ~Left~, cannot
-   accumulate errors because ~Monads~ later values can depend of
-   previous values. So there's no ~Monad~ instance for ~Validation~
+Note that ~Either~ short-circuits on the first ~Left~, cannot
+accumulate errors because ~Monads~ later values can depend of previous
+values. So there's no ~Monad~ instance for ~Validation~ (where
+validation is supposed to accumulate errors).
 
 ** Exercise: Either Monad
-   #+BEGIN_SRC haskell :results silent
-   data Sum a b = First a | Second b deriving (Eq, Show)
+#+BEGIN_SRC haskell :results silent
+data Two a b = First a | Second b deriving (Eq, Show)
 
-   :{
-   instance Functor (Sum a) where
-     -- fmap :: (b -> c) -> f b -> f c
-     fmap _ (First a) = First a
-     fmap f (Second b) = Second $ f b
-   :}
+:{
+instance Functor (Two a) where
+  -- fmap :: (b -> c) -> f b -> f c
+  fmap _ (First a) = First a
+  fmap f (Second b) = Second $ f b
+:}
 
-   :{
-   instance Applicative (Sum a) where
-     -- pure :: b -> f b
-     pure b = Second b
-     -- (<*>) :: f (b -> c) -> f b -> f c
-     (<*>) (First a) _ = First a
-     (<*>) (Second f) b = f <$> b
-   :}
+:{
+instance Applicative (Two a) where
+  -- pure :: b -> f b
+  pure b = Second b
+  -- (<*>) :: f (b -> c) -> f b -> f c
+  (First a) <*> _ = First a
+  (Second f) <*> b = f <$> b
+:}
 
-   :{
-   instance Monad (Sum a) where
-     -- return :: b -> m b
-     return = pure
-     -- (>>=) :: m b -> (b -> m c) -> m c
-     (>>=) (First a) _ = First a
-     (>>=) (Second b) f = f b
-   :}
+:{
+instance Monad (Two a) where
+  -- return :: b -> m b
+  return = pure
+  -- (>>=) :: m b -> (b -> m c) -> m c
+  (First a) >>= _ = First a
+  (Second b) >>= f = f b
+:}
 
-   import Test.QuickCheck
-   import Test.QuickCheck.Checkers
-   import Test.QuickCheck.Classes
+<<quickcheck-with-output>>
 
-   :{
-   instance (Arbitrary a, Arbitrary b) => Arbitrary (Sum a b) where
-     arbitrary = frequency [(1, First <$> arbitrary), (2, Second <$> arbitrary)]
-   :}
+:{
+instance (Arbitrary a, Arbitrary b) => Arbitrary (Two a b) where
+  arbitrary = frequency [(1, First <$> arbitrary), (2, Second <$> arbitrary)]
+:}
 
-   :{
-   instance (Eq a, Eq b) => EqProp (Sum a b) where
-     (=-=) = eq
-   :}
+:{
+instance (Eq a, Eq b) => EqProp (Two a b) where
+  (=-=) = eq
+:}
 
-   quickBatch $ functor (undefined :: Sum String (String, Maybe Bool, [Int]))
-   quickBatch $ applicative (undefined :: Sum String (String, Maybe Bool, [Int]))
-   quickBatch $ monad (undefined :: Sum String (String, Maybe Bool, [Int]))
-   #+END_SRC
+quickCheckBatchWithOutput $ functor (undefined :: Two String (String, Maybe Bool, [Int]))
+quickCheckBatchWithOutput $ applicative (undefined :: Two String (String, Maybe Bool, [Int]))
+quickCheckBatchWithOutput $ monad (undefined :: Two String (String, Maybe Bool, [Int]))
+#+END_SRC
 
 * 18.05 Monad Laws
 ** Identity Laws
-   Left identity
-   #+BEGIN_SRC haskell :eval never
-   m >>= return = m
 
-   -- (>>=) :: Monad m => m a -> (a -> m b) -> m b
+Left identity
+#+BEGIN_SRC haskell :eval never
+m >>= return = m
 
-   -- m a >>= (a -> m b) = m b
-   -- m   >>= return     = m
+-- (>>=) :: Monad m => m a -> (a -> m b) -> m b
 
-   -- so ~return~ does not change the content of the structure
-   #+END_SRC
+-- m a >>= (a -> m b) = m b
+-- m   >>= return     = m
 
-   Right identity
-   #+BEGIN_SRC haskell :eval never
-   return x >>= f = f x
+-- so ~return~ does not change the content of the structure
+#+END_SRC
 
-   -- (>>=) :: Monad m => m a -> (a -> m b) -> m b
+Right identity
+#+BEGIN_SRC haskell :eval never
+return x >>= f = f x
 
-   -- m a      >>= (a -> m b) = m b
-   -- return x >>= f          = f x
+-- (>>=) :: Monad m => m a -> (a -> m b) -> m b
 
-   -- so ~return~ does not change the content of the structure
-   #+END_SRC
+-- m a      >>= (a -> m b) = m b
+-- return x >>= f          = f x
+
+-- so ~return~ does not change the content of the structure
+#+END_SRC
 
 ** Associativity
-   #+BEGIN_SRC haskell :eval never
-   (m >>= f) >>= g = m >>= (\x -> f x >>= g)
-   #+END_SRC
+
+#+BEGIN_SRC haskell :eval never
+(m >>= f) >>= g = m >>= (\x -> f x >>= g)
+#+END_SRC
 
 ** Using Property Based Testing
-   #+BEGIN_SRC haskell :results silent
-   import Test.QuickCheck
-   import Test.QuickCheck.Checkers
-   import Test.QuickCheck.Classes
+#+BEGIN_SRC haskell :eval never
+import Test.QuickCheck
+import Test.QuickCheck.Checkers
+import Test.QuickCheck.Classes
 
-   quickBatch (monad [(1, 2, 3)])
-   #+END_SRC
+quickBatch (monad [(1, 2, 3)])
+#+END_SRC
 
 ** Example
-   Wrong
-   #+BEGIN_SRC haskell :results silent
-   data CountMe a = CountMe Integer a deriving (Eq, Show)
 
-   :{
-   instance Functor CountMe where
-     -- fmap :: (a -> b) -> f a -> f b
-     fmap f (CountMe i a) = CountMe (i + 1) (f a)
-   :}
+Wrong
+#+BEGIN_SRC haskell :results silent
+data CountMe a = CountMe Integer a deriving (Eq, Show)
 
-   :{
-   instance Applicative CountMe where
-     -- pure :: a -> f a
-     pure = CountMe 0
-     -- (<*>) :: f (a -> b) -> f a -> f b
-     (<*>) (CountMe n1 f) (CountMe n2 a) = CountMe (n1 + n2) (f a)
-   :}
+:{
+instance Functor CountMe where
+  -- fmap :: (a -> b) -> f a -> f b
+  fmap f (CountMe i a) = CountMe (i + 1) (f a)
+:}
 
-   :{
-   instance Monad CountMe where
-     -- return :: a -> m a
-     return = pure
-     -- (>>=) :: m a -> (a -> m b) -> m b
-     (>>=) (CountMe n a) f = CountMe (n + 1) b where
-       CountMe _ b = f a
-   :}
+:{
+instance Applicative CountMe where
+  -- pure :: a -> f a
+  pure = CountMe 0
+  -- (<*>) :: f (a -> b) -> f a -> f b
+  (<*>) (CountMe n1 f) (CountMe n2 a) = CountMe (n1 + n2) (f a)
+:}
 
-   import Test.QuickCheck
-   import Test.QuickCheck.Checkers
-   import Test.QuickCheck.Classes
+:{
+instance Monad CountMe where
+  -- return :: a -> m a
+  return = pure
+  -- (>>=) :: m a -> (a -> m b) -> m b
+  (>>=) (CountMe n a) f = CountMe (n + 1) b where
+    CountMe _ b = f a
+:}
 
-   :{
-   instance Arbitrary a => Arbitrary (CountMe a) where
-     arbitrary = CountMe <$> arbitrary <*> arbitrary
-   :}
+<<quickcheck-with-output>>
 
-   :{
-   instance (Eq a) => EqProp (CountMe a) where
-     (=-=) = eq
-   :}
+:{
+instance Arbitrary a => Arbitrary (CountMe a) where
+  arbitrary = CountMe <$> arbitrary <*> arbitrary
+:}
 
-   -- the following fails
-   quickBatch $ functor (undefined :: CountMe (Int, String, Int))
-   -- because the functor identity function is not true
-   fmap id (CountMe 1 True) == (CountMe 1 True)
+:{
+instance (Eq a) => EqProp (CountMe a) where
+  (=-=) = eq
+:}
 
-   -- the following fails
-   quickBatch $ applicative (undefined :: CountMe (Int, String, Int))
-   -- because the functor fails otherwise it would be fine
+-- the following fails
+quickCheckBatchWithOutput $ functor (undefined :: CountMe (Int, String, Int))
+-- because the functor identity function is not true
+fmap id (CountMe 1 True) == (CountMe 1 True)
 
-   -- the folowing fails
-   quickBatch $ monad (undefined :: CountMe (Int, String, Int))
-   -- because the left identity (m >>= return = m) law is not true
-   ((CountMe 1 True) >>= return) == (CountMe 1 True)
+-- the following fails
+quickCheckBatchWithOutput $ applicative (undefined :: CountMe (Int, String, Int))
+-- because the functor fails otherwise it would be fine
 
-   -- because the right identity law (return x >>= f = f x) is not true
-   ((return True :: CountMe Bool) >>= (\x -> return $ not x)) == (return False :: CountMe Bool)
-   #+END_SRC
+-- the folowing fails
+quickCheckBatchWithOutput $ monad (undefined :: CountMe (Int, String, Int))
+-- because the left identity (m >>= return = m) law is not true
+((CountMe 1 True) >>= return) == (CountMe 1 True)
 
-   To fix it we need to fix the ~Functor~ by not modifying the
-   structure (do not increment the integer) and the monoidal behaviour
-   of ~bind~
-   #+BEGIN_SRC haskell :results silent
-   data CountMe a = CountMe Integer a deriving (Eq, Show)
+-- because the right identity law (return x >>= f = f x) is not true
+((return True :: CountMe Bool) >>= (\x -> return $ not x)) == (return False :: CountMe Bool)
+#+END_SRC
 
-   :{
-   instance Functor CountMe where
-     -- fmap :: (a -> b) -> f a -> f b
-     fmap f (CountMe i a) = CountMe i (f a)
-   :}
+To fix it we need to fix the ~Functor~ by not modifying the structure
+(do not increment the integer) and the monoidal behaviour of ~bind~
 
-   :{
-   instance Applicative CountMe where
-     -- pure :: a -> f a
-     pure = CountMe 0
-     -- (<*>) :: f (a -> b) -> f a -> f b
-     (<*>) (CountMe n1 f) (CountMe n2 a) = CountMe (n1 + n2) (f a)
-   :}
+#+BEGIN_SRC haskell :results silent
+data CountMe a = CountMe Integer a deriving (Eq, Show)
 
-   :{
-   instance Monad CountMe where
-     -- return :: a -> m a
-     return = pure
-     -- (>>=) :: m a -> (a -> m b) -> m b
-     (>>=) (CountMe n1 a) f = CountMe (n1 + n2) b where
-       CountMe n2 b = f a
-   :}
+:{
+instance Functor CountMe where
+  -- fmap :: (a -> b) -> f a -> f b
+  fmap f (CountMe i a) = CountMe i (f a)
+:}
 
-   import Test.QuickCheck
-   import Test.QuickCheck.Checkers
-   import Test.QuickCheck.Classes
+:{
+instance Applicative CountMe where
+  -- pure :: a -> f a
+  pure = CountMe 0
+  -- (<*>) :: f (a -> b) -> f a -> f b
+  (<*>) (CountMe n1 f) (CountMe n2 a) = CountMe (n1 + n2) (f a)
+:}
 
-   :{
-   instance Arbitrary a => Arbitrary (CountMe a) where
-     arbitrary = CountMe <$> arbitrary <*> arbitrary
-   :}
+:{
+instance Monad CountMe where
+  -- return :: a -> m a
+  return = pure
+  -- (>>=) :: m a -> (a -> m b) -> m b
+  (>>=) (CountMe n1 a) f = CountMe (n1 + n2) b where
+    CountMe n2 b = f a
+:}
 
-   :{
-   instance (Eq a) => EqProp (CountMe a) where
-     (=-=) = eq
-   :}
+<<quickcheck-with-output>>
 
-   quickBatch $ functor (undefined :: CountMe (Int, String, Int))
-   quickBatch $ applicative (undefined :: CountMe (Int, String, Int))
-   quickBatch $ monad (undefined :: CountMe (Int, String, Int))
-   #+END_SRC
+:{
+instance Arbitrary a => Arbitrary (CountMe a) where
+  arbitrary = CountMe <$> arbitrary <*> arbitrary
+:}
+
+:{
+instance (Eq a) => EqProp (CountMe a) where
+  (=-=) = eq
+:}
+
+quickCheckBatchWithOutput $ functor (undefined :: CountMe (Int, String, Int))
+quickCheckBatchWithOutput $ applicative (undefined :: CountMe (Int, String, Int))
+quickCheckBatchWithOutput $ monad (undefined :: CountMe (Int, String, Int))
+#+END_SRC
 
 * 18.06 Application and Composition
-  What if we want to use composition with monad structure?
-  #+BEGIN_SRC haskell :eval never
-  -- we want something like that
-  (.) :: (b -> c) -> (a -> b) -> a -> c
+What if we want to use composition with monad structure?
 
-  mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
-  -- doesn't work because f will take a ~b~ and the output of g is ~m b~
-  mcompose f g a = f (g a)
+#+BEGIN_SRC haskell :eval never
+-- we want something like that
+(.) :: (b -> c) -> (a -> b) -> a -> c
 
-  -- when we want to apply a function to something ignoring the outside
-  -- structure we can use ~fmap~
-  mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
-  mcompose f g a = f <$> (g a)
+mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
+-- doesn't work because f will take a ~b~ and the output of g is ~m b~
+mcompose f g a = f (g a)
 
-  -- problem is that the result now is ~m (m c)~ because ~fmap~
-  -- preserves the structure, so we have two layer of structure that we
-  -- need to squash together, that is the ~join~ work
-  mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
-  mcompose f g a = join $ f <$> (g a)
+-- when we want to apply a function to something ignoring the outside
+-- structure we can use ~fmap~
+mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
+mcompose f g a = f <$> (g a)
 
-  -- which is ~>>=~
-  mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
-  mcompose f g a = (g a) >>= f
+-- problem is that the result now is ~m (m c)~ because ~fmap~
+-- preserves the structure, so we have two layer of structure that we
+-- need to squash together, that is the ~join~ work
+mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
+mcompose f g a = join $ f <$> (g a)
 
-  -- this pattern is captured by the /Kleisli operator/ ~>=>~
-  -- (>=>) :: Monad m => (a -> m b) -> (b -> m c) -> a -> m c
-  mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
-  mcompose = flip (>=>)
-  #+END_SRC
+-- which is ~>>=~
+mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
+mcompose f g a = (g a) >>= f
+
+-- this pattern is captured by the /Kleisli operator/ ~>=>~
+-- (>=>) :: Monad m => (a -> m b) -> (b -> m c) -> a -> m c
+mcompose :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
+mcompose = flip (>=>)
+#+END_SRC
 
 * Exercises
-  #+NAME: ghci-clean
-  #+BEGIN_SRC emacs-lisp :var content="" :results raw
-  (defun report-compiling-module-p (line)
-    (string-match-p "\\[[0-9]+ of [0-9]+\\] Compiling" line))
-
-  (defun report-loaded-module-p (line)
-    (string-match-p "Ok, .+ modules? loaded\\." line))
-
-  (defun report-eoe-p (line)
-    (string-match-p "org-babel-haskell-eoe" line))
-
-  (defun clean-line (line)
-    (->> line remove-prompt unquote))
-
-  (defun remove-prompt (line)
-    (let ((current-prompt (current-prompt line)))
-      (message "current prompt: %S" current-prompt)
-      (if (string-empty-p current-prompt)
-          line
-        (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
-
-  (defun current-prompt (line)
-    (if (string-match "\\(^[^|:>]+\\)[|>]" line)
-        (match-string 1 line)
-      ""))
-
-  (defun unquote (line)
-    (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" line))
-
-  (string-join
-   (seq-map #'clean-line
-            (seq-filter
-             (lambda (line)
-               (and
-                (not (string-empty-p line))
-                (not (report-eoe-p line))
-                (not (report-compiling-module-p line))
-                (not (report-loaded-module-p line))))
-             (split-string content "\n")))
-   "\n")
-  #+END_SRC
-
-  #+NAME: add-current-chapter-directory-in-path
-  #+BEGIN_SRC emacs-lisp :output raw
-  (concat
-   ":set -i"
-   (file-name-as-directory (file-name-directory (buffer-file-name)))
-   (file-name-base (buffer-file-name)))
-  #+END_SRC
-
-  #+NAME: add-chapter-directory-in-path
-  #+BEGIN_SRC emacs-lisp :var chapter="" :output raw
-  (concat
-   ":set -i"
-   (file-name-as-directory (file-name-directory (buffer-file-name)))
-   chapter)
-  #+END_SRC
-
 ** Exercises: Monad Instances
 
-   1. Write an instance of ~Monad~ for the following datatype
-      #+BEGIN_SRC haskell :results silent
-      data Nope a = NopeDotJpg deriving (Eq, Show)
+1. Write an instance of ~Monad~ for the following datatype
+   #+BEGIN_SRC haskell :results silent
+   data Nope a = Nope deriving (Eq, Show)
 
-      :{
-      instance Functor Nope where
-        -- fmap :: (a -> b) -> f a -> f b
-        fmap _ _ = NopeDotJpg
-      :}
+   :{
+   instance Functor Nope where
+     -- fmap :: (a -> b) -> f a -> f b
+     fmap _ _ = Nope
+   :}
 
-      :{
-      instance Applicative Nope where
-        -- pure :: a -> f a
-        pure _ = NopeDotJpg
-        -- (<*>) :: f (a -> b) -> f a -> f b
-        (<*>) _ _ = NopeDotJpg
-      :}
+   :{
+   instance Applicative Nope where
+     -- pure :: a -> f a
+     pure _ = Nope
+     -- (<*>) :: f (a -> b) -> f a -> f b
+     (<*>) _ _ = Nope
+   :}
 
-      :{
-      instance Monad Nope where
-        -- return :: a -> m a
-        return = pure
-        -- (>>=) :: m a -> (a -> m b) -> m b
-        (>>=) _ _ = NopeDotJpg
-      :}
+   :{
+   instance Monad Nope where
+     -- return :: a -> m a
+     return = pure
+     -- (>>=) :: m a -> (a -> m b) -> m b
+     (>>=) _ _ = Nope
+   :}
 
-      import Test.QuickCheck
-      import Test.QuickCheck.Checkers
-      import Test.QuickCheck.Classes
+   <<quickcheck-with-output>>
 
-      :{
-      instance Arbitrary (Nope a) where
-        arbitrary = return NopeDotJpg
-      :}
+   :{
+   instance Arbitrary (Nope a) where
+     arbitrary = return Nope
+   :}
 
-      :{
-      instance EqProp (Nope a) where
-        (=-=) = eq
-      :}
+   :{
+   instance EqProp (Nope a) where
+     (=-=) = eq
+   :}
 
-      quickBatch $ functor (undefined :: Nope (Int, String, Int))
-      quickBatch $ applicative (undefined :: Nope (Int, String, Int))
-      quickBatch $ monad (undefined :: Nope (Int, String, Int))
-      #+END_SRC
+   quickCheckBatchWithOutput $ functor (undefined :: Nope (Int, String, Int))
+   quickCheckBatchWithOutput $ applicative (undefined :: Nope (Int, String, Int))
+   quickCheckBatchWithOutput $ monad (undefined :: Nope (Int, String, Int))
+   #+END_SRC
 
-   2. Write an instance of ~Monad~ for the following datatype
-      #+BEGIN_SRC haskell :results silent
-      data PhhhbbtttEither b a = Left' a | Right' b deriving (Eq, Show)
+2. Write an instance of ~Monad~ for the following datatype
+   #+BEGIN_SRC haskell :results silent
+   data Either' b a = Left' a | Right' b deriving (Eq, Show)
 
-      import Test.QuickCheck
-      import Test.QuickCheck.Checkers
-      import Test.QuickCheck.Classes
+   <<quickcheck-with-output>>
 
-      :{
-      instance (Arbitrary a, Arbitrary b) => Arbitrary (PhhhbbtttEither b a) where
-        arbitrary = frequency [(1, Right' <$> arbitrary), (2, Left' <$> arbitrary)]
-      :}
+   :{
+   instance (Arbitrary a, Arbitrary b) => Arbitrary (Either' b a) where
+     arbitrary = oneof [Left' <$> arbitrary, Right' <$> arbitrary]
+   :}
 
-      :{
-      instance (Eq a, Eq b) => EqProp (PhhhbbtttEither b a) where
-        (=-=) = eq
-      :}
+   :{
+   instance (Eq a, Eq b) => EqProp (Either' b a) where
+     (=-=) = eq
+   :}
 
-      :{
-      instance Functor (PhhhbbtttEither b) where
-        -- fmap :: (a -> b) -> f a -> f b
-        fmap _ (Right' b) = Right' b
-        fmap f (Left' a) = Left' $ f a
-      :}
+   :{
+   instance Functor (Either' b) where
+     fmap _ (Right' x) = Right' x
+     fmap f (Left' x) = Left' $ f x
+   :}
 
-      quickBatch $ functor (undefined :: PhhhbbtttEither String (Int, String, Int))
+   quickCheckBatchWithOutput $ functor (undefined :: Either' String (Int, String, Int))
 
-      :{
-      instance Applicative (PhhhbbtttEither b) where
-        -- pure :: a -> f a
-        pure x = Left' x
-        -- (<*>) :: f (a -> b) -> f a -> f b
-        (<*>) (Left' f) r = f <$> r
-        (<*>) (Right' x) _ = Right' x
-      :}
+   :{
+   instance Applicative (Either' b) where
+     pure = Left'
 
-      quickBatch $ applicative (undefined :: PhhhbbtttEither String (Int, String, Int))
+     (Left' f)  <*> x  = fmap f x
+     (Right' x) <*> _  = Right' x
+   :}
 
-      :{
-      instance Monad (PhhhbbtttEither b) where
-        -- return :: a -> m a
-        return = pure
-        -- (>>=) :: m a -> (a -> m b) -> m b
-        (>>=) (Left' x) f = f x
-        (>>=) (Right' x) _ = Right' x
-      :}
+   quickCheckBatchWithOutput $ applicative (undefined :: Either' String (Int, String, Int))
 
-      quickBatch $ monad (undefined :: PhhhbbtttEither String (Int, String, Int))
-      #+END_SRC
+   :{
+   instance Monad (Either' b) where
+     return = pure
 
-   3. Write an instance of ~Monad~ for the following datatype
-      #+BEGIN_SRC haskell :results silent
-      newtype Identity a = Identity a deriving (Eq, Ord, Show)
+     -- (>>=) :: Monad m => m a -> (a -> m b) -> m b
+     (Left' a) >>= f = f a
+     (Right' b) >>= _ = Right' b
+   :}
 
-      import Test.QuickCheck
-      import Test.QuickCheck.Checkers
-      import Test.QuickCheck.Classes
+   quickCheckBatchWithOutput $ monad (undefined :: Either' String (Int, String, Int))
+   #+END_SRC
 
-      :{
-      instance Arbitrary a => Arbitrary (Identity a) where
-        arbitrary = Identity <$> arbitrary
-      :}
+3. Write an instance of ~Monad~ for the following datatype
+   #+BEGIN_SRC haskell :results silent
+   newtype Identity' a = Identity' a deriving (Eq, Show)
 
-      :{
-      instance (Eq a) => EqProp (Identity a) where
-        (=-=) = eq
-      :}
+   <<quickcheck-with-output>>
 
-      :{
-      instance Functor Identity where
-        -- fmap :: (a -> b) -> f a -> f b
-        fmap f (Identity a) = Identity $ f a
-      :}
-      quickBatch $ functor (undefined :: Identity (Int, String, Int))
+   :{
+   instance Arbitrary a => Arbitrary (Identity' a) where
+     arbitrary = Identity' <$> arbitrary
+   :}
 
-      :{
-      instance Applicative Identity where
-        -- pure :: a -> f a
-        pure x = Identity x
-        -- (<*>) :: f (a -> b) -> f a -> f b
-        (<*>) (Identity f) (Identity a) = Identity $ f a
-      :}
-      quickBatch $ applicative (undefined :: Identity (Int, String, Int))
+   :{
+   instance Eq a => EqProp (Identity' a) where
+     (=-=) = eq
+   :}
 
-      :{
-      instance Monad Identity where
-        -- return :: a -> m a
-        return = pure
-        -- (>>=) :: m a -> (a -> m b) -> m b
-        (>>=) (Identity a) f = f a
-      :}
-      quickBatch $ monad (undefined :: Identity (Int, String, Int))
-      #+END_SRC
+   :{
+   instance Functor Identity' where
+     fmap f (Identity' a) = Identity' $ f a
+   :}
 
-   4. Write an instance of ~Monad~ for the following type
-      #+BEGIN_SRC haskell :results silent
-      data List a = Nil | Cons a (List a) deriving (Eq, Show)
+   quickCheckBatchWithOutput $ functor (undefined :: Identity' (Int, String, Int))
 
-      import Test.QuickCheck
-      import Test.QuickCheck.Checkers
-      import Test.QuickCheck.Classes
-      import Control.Applicative
+   :{
+   instance Applicative Identity' where
+     pure = Identity'
 
-      :{
-      instance Arbitrary a => Arbitrary (List a) where
-        arbitrary = frequency [(1, return Nil), (2, liftA2 Cons arbitrary arbitrary)]
-      :}
+     (Identity' f) <*> (Identity' x) = Identity' $ f x
+   :}
 
-      :{
-      instance Eq a => EqProp (List a) where
-        (=-=) = eq
-      :}
+   quickCheckBatchWithOutput $ applicative (undefined :: Identity' (Int, String, Int))
 
-      :{
-      instance Monoid (List a) where
-        -- mempty :: a
-        mempty = Nil
-        -- mappend :: a -> a -> a
-        mappend l Nil = l
-        mappend Nil r = r
-        mappend (Cons x l) r = Cons x (mappend l r)
-      :}
-      -- quickBatch $ monoid (undefined :: List (Int, String, Int))
+   :{
+   instance Monad Identity' where
+     return = pure
 
-      :{
-      instance Functor List where
-        -- fmap :: (a -> b) -> f a -> f b
-        fmap _ Nil = Nil
-        fmap f (Cons a l) = Cons (f a) (f <$> l)
-      :}
-      -- quickBatch $ functor (undefined :: List (Int, String, Int))
+     (>>=) (Identity' x) f = f x
+   :}
 
-      import Data.Monoid
-      :{
-      instance Applicative List where
-        -- pure :: a -> f a
-        pure x = Cons x Nil
-        -- (<*>) :: f (a -> b) -> f a -> f b
-        (<*>) Nil _ = Nil
-        (<*>) (Cons f ll) r = (f <$> r) <> (ll <*> r)
-      :}
-      -- quickBatch $ applicative (undefined :: List (Int, String, Int))
+   quickCheckBatchWithOutput $ monad (undefined :: Identity' (Int, String, Int))
+   #+END_SRC
 
-      :{
-      concat' :: List (List a) -> List a
-      concat' Nil = Nil
-      concat' (Cons x xs) = x <> (concat' xs)
-      :}
+4. Write an instance of ~Monad~ for the following type
+   #+BEGIN_SRC haskell :results silent
+   data List a = Nil | Cons a (List a) deriving (Eq, Show)
 
-      :{
-      instance Monad List where
-        -- return :: a -> m a
-        return = pure
-        -- (>>=) :: m a -> (a -> m b) -> m b
-        (>>=) Nil _ = Nil
-        (>>=) xs f = concat' (f <$> xs)
-        -- TODO: the following doesn't work and I don't know why
-        --       it keeps complaining that (xs >>= f) is of type
-        --       (List a) when expects it to be (List b) but
-        --       (xs :: List a) and (f :: (a -> List b))
-        -- (>>=) (Cons x xs) f = (f x) <> (xs >>= f)
-      :}
-      quickBatch $ monad (undefined :: List (Int, String, Int))
-      #+END_SRC
+   <<quickcheck-with-output>>
+
+   :{
+   instance Arbitrary a => Arbitrary (List a) where
+     arbitrary = oneof [pure Nil, Cons <$> arbitrary <*> arbitrary]
+   :}
+
+   :{
+   instance Eq a => EqProp (List a) where
+     (=-=) = eq
+   :}
+
+   :{
+   instance Functor List where
+     fmap _ Nil = Nil
+     fmap f (Cons a l) = Cons (f a) (fmap f l)
+   :}
+
+   quickCheckBatchWithOutput $ functor (undefined :: List (Int, String, Int))
+
+   -- identity:       pure id <*> x == x
+   -- composition:    pure (.) <*> f <*> g <*> x == f <*> (g <*> x)
+   -- homomorphism:   pure f <*> pure x = pure (f x)
+   -- commutative:    f <*> pure x == pure ($ x) <*> f
+
+   :{
+   instance Semigroup (List a) where
+     Nil         <> x   = x
+     x           <> Nil = x
+     (Cons x xs) <> ys  = Cons x (xs <> ys)
+   :}
+
+   :{
+   instance Applicative List where
+     pure x = Cons x Nil
+
+     Nil         <*> _           = Nil
+     _           <*> Nil         = Nil
+     (Cons f fs) <*> xs = (f <$> xs) <> (fs <*> xs)
+   :}
+
+   quickCheckBatchWithOutput $ applicative (undefined :: List (Int, String, Int))
+
+   :{
+   instance Monad List where
+     return = pure
+
+     (>>=) Nil         _ = Nil
+     (>>=) (Cons x xs) f = (f x) <> (xs >>= f)
+   :}
+
+   quickCheckBatchWithOutput $ monad (undefined :: List (Int, String, Int))
+   #+END_SRC
 
 ** Exercises: Using Monad and Functor
 
-   1. Write the following function using methods provided by ~Monad~
-      and ~Functor~. Using identity and function composition is fine.
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      import Control.Monad
-      :{
-      j :: Monad m => m (m a) -> m a
-      j = join
-      :}
+1. Write the following function using methods provided by ~Monad~ and
+   ~Functor~. Using identity and function composition is fine.
 
-      j [[1, 2], [], [3]] == [1,2,3]
-      j (Just (Just 1)) == Just 1
-      j Nothing == Nothing
-      #+END_SRC
+   #+BEGIN_SRC haskell
+   import Control.Monad
+   :{
+   j :: Monad m => m (m a) -> m a
+   j = join
+   :}
 
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      True
-      True
-      True
-      #+END_EXAMPLE
+   j [[1, 2], [], [3]] == [1,2,3]
+   j (Just (Just 1)) == Just 1
+   j Nothing == Nothing
+   #+END_SRC
 
-   2. Write the following function using methods provided by ~Monad~
-      and ~Functor~. Using identity and function composition is fine.
-      #+BEGIN_SRC haskell :results silent
-      :{
-      l1 :: Monad m => (a -> b) -> m a -> m b
-      l1 = (<$>)
-      :}
-      #+END_SRC
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   True
+   True
+   #+END_EXAMPLE
 
-   3. Write the following function using methods provided by ~Monad~
-      and ~Functor~. Using identity and function composition is fine
-      #+BEGIN_SRC haskell :results silent
-      import Control.Monad
-      :{
-      l2 :: Monad m => (a -> b -> c) -> m a -> m b -> m c
-      l2 = liftM2
-      :}
-      #+END_SRC
+2. Write the following function using methods provided by ~Monad~ and
+   ~Functor~. Using identity and function composition is fine.
+   #+BEGIN_SRC haskell :results silent
+   :{
+   l1 :: Monad m => (a -> b) -> m a -> m b
+   l1 = (<$>)
+   :}
+   #+END_SRC
 
-   4. Write the following function using methods provided by ~Monad~
-      and ~Functor~. Using identity and function composition is fine
-      #+BEGIN_SRC haskell :results silent
-      :{
-      a :: Monad m => m a -> m (a -> b) -> m b
-      a = flip (<*>)
-      :}
-      #+END_SRC
+3. Write the following function using methods provided by ~Monad~ and
+   ~Functor~. Using identity and function composition is fine
+   #+BEGIN_SRC haskell :results silent
+   import Control.Monad
+   :{
+   l2 :: Monad m => (a -> b -> c) -> m a -> m b -> m c
+   l2 = liftM2
+   :}
+   #+END_SRC
 
-   5. Write the following function using methods provided by ~Monad~
-      and ~Functor~. Using identity and function composition is fine
-      #+NAME: meh-definition
-      #+BEGIN_SRC haskell :results silent
-      import Control.Monad
-      :{
-      meh :: (Monad m) => [a] -> (a -> m b) -> m [b]
-      meh [] _ = return []
-      meh (x:xs) f = liftM2 (:) (f x) (meh xs f)
-      :}
-      #+END_SRC
+4. Write the following function using methods provided by ~Monad~ and
+   ~Functor~. Using identity and function composition is fine
+   #+BEGIN_SRC haskell :results silent
+   :{
+   a :: Monad m => m a -> m (a -> b) -> m b
+   a = flip (<*>)
+   :}
+   #+END_SRC
 
-   6. Write the following function using methods provided by ~Monad~
-      and ~Functor~. Using identity and function composition is fine
-      #+BEGIN_SRC haskell :results silent :noweb yes
-      <<meh-definition>>
-      :{
-      flipType :: (Monad m) => [m a] -> m [a]
-      flipType = flip meh $ id
-      :}
-      #+END_SRC
+5. Write the following function using methods provided by ~Monad~ and
+   ~Functor~. Using identity and function composition is fine
+   #+NAME: meh-function
+   #+BEGIN_SRC haskell :results silent
+   import Control.Monad
+   :{
+   meh :: (Monad m) => [a] -> (a -> m b) -> m [b]
+   meh []     _ = pure []
+   meh (x:xs) f = pure (:) <*> (f x) <*> meh xs f
+   :}
+   #+END_SRC
+
+6. Write the following function using methods provided by ~Monad~ and
+   ~Functor~. Using identity and function composition is fine
+   #+BEGIN_SRC haskell :results silent
+   <<meh-function>>
+   :{
+   flipType :: (Monad m) => [m a] -> m [a]
+   flipType = (flip meh) id
+   :}
+   #+END_SRC
