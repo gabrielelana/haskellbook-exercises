@@ -1,11 +1,14 @@
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+
 {-# LANGUAGE TypeApplications #-}
 
-module Meetup.SemigroupsAndMonoids where
+module Meetup.Semigroup where
 
-import Data.Semigroup
+import Data.List
+import Data.Monoid
 import Test.QuickCheck
-import Test.Hspec
 import Data.Ord
+import Test.Hspec
 
 -- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -52,7 +55,7 @@ instance Arbitrary Unit where
 checkUnit :: SpecWith ()
 checkUnit =
   describe "Unit" $ do
-    it "examples" $ do
+    it "examples" $
       Unit <> Unit `shouldBe` Unit
     it "semigroup associativity" $
       property (semigroupAssociativityProperty @Unit)
@@ -106,11 +109,11 @@ instance Arbitrary All' where
   arbitrary = elements [All' True, All' False]
 
 checkAll' :: SpecWith ()
-checkAll' = do
+checkAll' =
   describe "All'" $ do
     it "examples" $ do
-      (All' True) <> (All' True) `shouldBe` (All' True)
-      (All' True) <> (All' False) `shouldBe` (All' False)
+      All' True <> All' True `shouldBe` All' True
+      All' True <> All' False `shouldBe` All' False
     it "semigroup associativity" $
       property (semigroupAssociativityProperty @All')
     it "monoid left identity" $
@@ -148,10 +151,10 @@ instance Arbitrary a => Arbitrary (List a) where
     elements [Nil, Cons a l]
 
 checkList :: SpecWith ()
-checkList = do
+checkList =
   describe "List" $ do
-    it "examples" $ do
-      (Cons 1 (Cons 2 Nil)) <> (Cons 3 Nil) `shouldBe` (Cons 1 (Cons 2 (Cons 3 Nil)))
+    it "examples" $
+      Cons 1 (Cons 2 Nil) <> Cons 3 Nil `shouldBe` Cons 1 (Cons 2 (Cons 3 Nil))
     it "semigroup associativity" $
       property (semigroupAssociativityProperty @(List String))
     it "monoid left identity" $
@@ -177,10 +180,10 @@ instance Arbitrary a => Arbitrary (Maybe' a) where
     elements [Nothing', Just' a]
 
 checkMaybe' :: SpecWith ()
-checkMaybe' = do
+checkMaybe' =
   describe "Maybe'" $ do
-    it "examples" $ do
-      (Just' (Sum 1)) <> (Just' (Sum 2)) `shouldBe` (Just' (Sum 3))
+    it "examples" $
+      Just' (Sum 1) <> Just' (Sum 2) `shouldBe` Just' (Sum 3)
     it "semigroup associativity" $
       property (semigroupAssociativityProperty @(Maybe' String))
     it "monoid left identity" $
@@ -209,11 +212,11 @@ instance Arbitrary a => Arbitrary (List' a) where
     elements [End' a, Cons' a l]
 
 checkList' :: SpecWith ()
-checkList' = do
+checkList' =
   describe "List'" $ do
     it "examples" $ do
-      (End' 1) <> (End' 2) `shouldBe` (Cons' 1 (End' 2))
-      (Cons' 1 (End' 2)) <> (End' 3) `shouldBe` (Cons' 1 (Cons' 2 (End' 3)))
+      End' 1 <> End' 2 `shouldBe` Cons' 1 (End' 2)
+      Cons' 1 (End' 2) <> End' 3 `shouldBe` Cons' 1 (Cons' 2 (End' 3))
     it "semigroup associativity" $
       property (semigroupAssociativityProperty @(List' String))
 
@@ -233,10 +236,10 @@ instance Arbitrary a => Arbitrary (Down' a) where
     return $ Down' a
 
 checkDown' :: SpecWith ()
-checkDown' = do
+checkDown' =
   describe "Down'" $ do
-    it "examples" $ do
-      (Down' "Meet") <> (Down' "up") `shouldBe` (Down' "Meetup")
+    it "examples" $
+      Down' "Meet" <> Down' "up" `shouldBe` Down' "Meetup"
     it "semigroup associativity" $
       property (semigroupAssociativityProperty @(Down' String))
     it "monoid left identity" $
@@ -263,10 +266,10 @@ instance (Num a, Arbitrary a) => Arbitrary (Product' a) where
     return $ Product' a
 
 checkProduct' :: SpecWith ()
-checkProduct' = do
+checkProduct' =
   describe "Product'" $ do
-    it "examples" $ do
-      (Product' 3) <> (Product' 2) `shouldBe` (Product' 6)
+    it "examples" $
+      Product' 3 <> Product' 2 `shouldBe` Product' 6
     it "semigroup associativity" $
       property (semigroupAssociativityProperty @(Product' Int))
     it "monoid left identity" $
@@ -290,10 +293,10 @@ instance (Num a, Arbitrary a) => Arbitrary (Sum' a) where
     return $ Sum' a
 
 checkSum' :: SpecWith ()
-checkSum' = do
+checkSum' =
   describe "Sum'" $ do
-    it "examples" $ do
-      (Sum' 3) <> (Sum' 2) `shouldBe` (Sum' 5)
+    it "examples" $
+      Sum' 3 <> Sum' 2 `shouldBe` Sum' 5
     it "semigroup associativity" $
       property (semigroupAssociativityProperty @(Sum' Int))
     it "monoid left identity" $
@@ -388,7 +391,7 @@ instance Arbitrary a => Arbitrary (Last' a) where
 checkLast' :: SpecWith ()
 checkLast' = do
   describe "Last'" $ do
-    it "examples" $ do
+    it "examples" $
       (Last' (Just 1)) <> (Last' Nothing) `shouldBe` Last' (Just 1)
     it "semigroup associativity" $
       property (semigroupAssociativityProperty @(Last' String))
@@ -621,7 +624,7 @@ instance Ord a => Semigroup (Comparison' a) where
   (Comparison' f) <> (Comparison' g) = Comparison' $ f <> g
 
 instance Ord a => Monoid (Comparison' a) where
-  mempty = Comparison' $ (const . const) (mempty @Ordering)
+  mempty = Comparison' $ (const . const) mempty
 
 -- (f <> (g <> h)) == ((f <> g) <> h)
 comparisonSemigroupAP :: Ord a
@@ -941,6 +944,85 @@ checkConst' = do
       property (monoidRightIdentityProperty @(Const' String String))
 
 -- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+data Map' k v = Map' [(k, v)] deriving (Eq, Show)
+
+keysOfMap' :: Map' k v -> [k]
+keysOfMap' (Map' kvs) = map fst kvs
+
+insertInMap' :: Eq k => (k, v) -> Map' k v -> Map' k v
+insertInMap' kv (Map' []) = Map' [kv]
+insertInMap' (k1, v1) m@(Map' ((k2, v2) : kvs))
+  | k1 == k2  = m
+  | otherwise = let (Map' kvs') = insertInMap' (k1, v1) (Map' kvs)
+                in Map' ((k2, v2) : kvs')
+
+instance Eq k => Semigroup (Map' k v) where
+  (Map' []) <> m = m
+  m <> (Map' []) = m
+  m <> (Map' (kv : kvs)) = insertInMap' kv m <> Map' kvs
+
+instance Eq k => Monoid (Map' k v) where
+  mempty = Map' []
+
+instance (Arbitrary k, Arbitrary v) => Arbitrary (Map' k v) where
+  arbitrary = do
+    kvs <- listOf arbitrary
+    return $ Map' kvs
+
+checkMap' :: SpecWith ()
+checkMap' = do
+  describe "Map'" $ do
+    it "examples" $ do
+      Map' [(1, "a")] <> Map' [] `shouldBe` Map' [(1, "a")]
+      Map' [(1, "a")] <> Map' [(2, "b")] `shouldBe` Map' [(1, "a"), (2, "b")]
+      Map' [(1, "a")] <> Map' [(1, "b")] `shouldBe` Map' [(1, "a")]
+    it "semigroup associativity" $
+      property (semigroupAssociativityProperty @(Map' String String))
+    it "monoid left identity" $
+      property (monoidLeftIdentityProperty @(Map' String String))
+    it "monoid right identity" $
+      property (monoidRightIdentityProperty @(Map' String String))
+
+-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+newtype Set' v = Set' (Map' v ()) deriving (Eq)
+
+instance Eq v => Semigroup (Set' v) where
+  (Set' s1) <> (Set' s2) = Set' (s1 <> s2)
+
+instance Eq v => Monoid (Set' v) where
+  mempty = Set' mempty
+
+instance Arbitrary v => Arbitrary (Set' v) where
+  arbitrary = do
+    m <- arbitrary
+    return $ Set' m
+
+instance Show v => Show (Set' v) where
+  show (Set' m) = "Set' (" ++ keys ++ ")"
+    where keys = intercalate ", " (map show (keysOfMap' m))
+
+setOf :: Eq v => [v] -> Set' v
+-- setOf vs = Set' $ Map' $ map (flip (,) ()) vs
+setOf vs = Set' $ foldr insertInMap' mempty kvs
+  where kvs = map (flip (,) ()) (reverse vs)
+
+checkSet' :: SpecWith ()
+checkSet' = do
+  describe "Set'" $ do
+    it "examples" $ do
+      setOf ["a"] <> setOf [] `shouldBe` setOf ["a"]
+      setOf ["a"] <> setOf ["b"] `shouldBe` setOf ["a", "b"]
+      setOf ["a"] <> setOf ["a"] `shouldBe` setOf ["a"]
+    it "semigroup associativity" $
+      property (semigroupAssociativityProperty @(Set' String))
+    it "monoid left identity" $
+      property (monoidLeftIdentityProperty @(Set' String))
+    it "monoid right identity" $
+      property (monoidRightIdentityProperty @(Set' String))
+
+-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 semigroupAssociativityProperty :: (Eq a, Semigroup a) => a -> a -> a -> Bool
@@ -981,3 +1063,5 @@ check = do
     checkProxy'
     checkOp'
     checkConst'
+    checkMap'
+    checkSet'
