@@ -285,6 +285,8 @@ Use ~pure~, ~<$>~ and ~<*>~ to make the following code to typecheck
    tupled = (,) <$> y <*> z
    -- or
    -- tupled = Control.Applicative.liftA2 (,) y z
+   -- or
+   -- tupled = pure (,) <*> y <*> z
    :}
    #+END_SRC
 
@@ -316,6 +318,8 @@ Use ~pure~, ~<$>~ and ~<*>~ to make the following code to typecheck
    maxed = max' <$> x <*> y
    -- or
    -- maxed = Control.Applicative.liftA2 max' x y
+   -- or
+   -- maxed = pure max' <*> x <*> y
    :}
    #+END_SRC
 
@@ -343,6 +347,8 @@ Use ~pure~, ~<$>~ and ~<*>~ to make the following code to typecheck
    summed = sum <$> ((,) <$> x <*> y)
    -- or
    -- summed = sum <$> Control.Applicative.liftA2 (,) x y
+   -- or
+   -- summed = sum <$> (pure (,) <*> x <*> y)
    :}
    #+END_SRC
 
@@ -433,6 +439,7 @@ instance Monoid a => Applicative (Constant a) where
 
 f = Constant (Sum 1)
 g = Constant (Sum 2)
+
 f <*> g
 #+END_SRC
 
@@ -733,6 +740,8 @@ We are gonna use an help, a package written to check this laws:
 #+BEGIN_SRC haskell
 import Data.Monoid
 
+<<quickcheck-with-output>>
+
 data Bull = Fools | Twoo deriving (Eq, Show)
 
 :{
@@ -755,8 +764,6 @@ instance EqProp Bull where
   (=-=) = eq
 :}
 
-<<quickcheck-with-output>>
-
 quickCheckBatchWithOutput (monoid Twoo)
 quickCheckBatchWithOutput (monoid Fools)
 #+END_SRC
@@ -765,10 +772,10 @@ quickCheckBatchWithOutput (monoid Fools)
 #+BEGIN_EXAMPLE
 >>> monoid
 
-[left  identity] *** Failed! Falsified (after 1 test):
+[left  identity] *** Failed! Falsified (after 4 tests):
 Twoo
 
-[right identity] *** Failed! Falsified (after 2 tests):
+[right identity] *** Failed! Falsified (after 1 test):
 Twoo
 
 [associativity] +++ OK, passed 100 tests.
@@ -780,10 +787,10 @@ Twoo
 <<< monoid
 >>> monoid
 
-[left  identity] *** Failed! Falsified (after 4 tests):
+[left  identity] *** Failed! Falsified (after 2 tests):
 Twoo
 
-[right identity] *** Failed! Falsified (after 1 test):
+[right identity] *** Failed! Falsified (after 5 tests):
 Twoo
 
 [associativity] +++ OK, passed 100 tests.
@@ -823,7 +830,7 @@ three values of possibly different types ~(a, b, c)~
 
 -- We don't run it because it's gonna to generate list too big to
 -- handle, I don't know why
-quickCheckBatchWithOutput (applicative [("a", "b", 1)])
+quickCheckBatchWithOutput (applicative [("a", "b", 1 :: Int)])
 #+END_SRC
 
 Values are given only to provide types, an alternative way would be
@@ -961,7 +968,7 @@ instance Eq a => EqProp (List a) where
 :}
 #+END_SRC
 
-#+BEGIN_SRC haskell :results silent
+#+BEGIN_SRC haskell
 <<list-applicative>>
 
 :{
@@ -974,26 +981,55 @@ quickCheckBatchWithOutput (functor (Cons xs Nil))
 quickCheckBatchWithOutput (applicative (Cons xs Nil))
 #+END_SRC
 
+#+RESULTS:
+#+BEGIN_EXAMPLE
+>>> monoid
+
+[left  identity] +++ OK, passed 100 tests.
+
+[right identity] +++ OK, passed 100 tests.
+
+[associativity] +++ OK, passed 100 tests.
+
+[mappend = (<>)] +++ OK, passed 100 tests.
+
+[mconcat] +++ OK, passed 100 tests.
+
+<<< monoid
+>>> functor
+
+[identity] +++ OK, passed 100 tests.
+
+[compose] +++ OK, passed 100 tests.
+
+<<< functor
+>>> applicative
+
+[identity] +++ OK, passed 100 tests.
+
+[composition] +++ OK, passed 100 tests.
+
+[homomorphism] +++ OK, passed 100 tests.
+
+[interchange] +++ OK, passed 100 tests.
+
+[functor] +++ OK, passed 100 tests.
+
+<<< applicative
+#+END_EXAMPLE
+
 ** Exercise: ZipList Applicative
 Implement ~Applicative~ for ~ZipList~
 
-#+BEGIN_SRC haskell :results silent
+#+NAME: ziplist-applicative
+#+BEGIN_SRC haskell :eval never
 <<list-applicative>>
-
-:{
-take' :: Int -> List a -> List a
-take' 0 _ = Nil
-take' _ Nil = Nil
-take' n (Cons x xs) = (Cons x (take' (n - 1) xs))
-:}
 
 newtype ZipList' a = ZipList' (List a) deriving (Eq, Show)
 
 :{
 instance Semigroup a => Semigroup (ZipList' a) where
-  (ZipList' Nil) <> x = x
-  x <> (ZipList' Nil) = x
-  (ZipList' (Cons x xs)) <> (ZipList' (Cons y ys)) = ZipList' $ Cons (x <> y) (xs <> ys)
+  (ZipList' xs) <> (ZipList' ys) = ZipList' $ xs <> ys
 :}
 
 :{
@@ -1003,13 +1039,12 @@ instance Monoid a => Monoid (ZipList' a) where
 
 :{
 instance Functor ZipList' where
-  fmap _ (ZipList' Nil) = ZipList' Nil
-  fmap f (ZipList' (Cons x xs)) = ZipList' $ Cons (f x) (f <$> xs)
+  fmap f (ZipList' xs) = ZipList' $ f <$> xs
 :}
 
 :{
 instance Applicative ZipList' where
-  pure x = ZipList' $ Cons x Nil
+  pure x = ZipList' $ pure x
 
   _ <*> ZipList' Nil = ZipList' Nil
   ZipList' Nil <*> _ = ZipList' Nil
@@ -1019,13 +1054,9 @@ instance Applicative ZipList' where
     where (ZipList' rest) = (ZipList' fs) <*> (ZipList' xs)
 :}
 
-<<quickcheck-with-output>>
-
 :{
 instance Eq a => EqProp (ZipList' a) where
-  (=-=) xs ys = xs' `eq` ys'
-    where xs' = let (ZipList' l) = xs in take' 3000 l
-          ys' = let (ZipList' l) = ys in take' 3000 l
+  (=-=) = eq
 :}
 
 :{
@@ -1035,10 +1066,68 @@ instance Arbitrary a => Arbitrary (ZipList' a) where
   arbitrary = ZipList' <$> arbitrary
 :}
 
+-- quickCheckBatchWithOutput (monoid (ZipList' (Cons "" Nil)))
+-- quickCheckBatchWithOutput (functor (ZipList' (Cons ("", "", "") Nil)))
+-- quickCheckBatchWithOutput (applicative (ZipList' (Cons ("", "", "") Nil)))
+#+END_SRC
+
+#+BEGIN_SRC haskell
+<<ziplist-applicative>>
+
 quickCheckBatchWithOutput (monoid (ZipList' (Cons "" Nil)))
 quickCheckBatchWithOutput (functor (ZipList' (Cons ("", "", "") Nil)))
 quickCheckBatchWithOutput (applicative (ZipList' (Cons ("", "", "") Nil)))
+
+z = ZipList' (Cons (+9) (Cons (*2) (Cons (+8) Nil)))
+z' = ZipList' (Cons 1 (Cons 2 (Cons 3 Nil)))
+z <*> z' -- (Cons 10 (Cons 4 (Cons 11 Nil)))
+
+z'' = pure 1
+z <*> z'' -- (Cons 10 (Cons 2 (Cons 9 Nil)))
+
+z''' = ZipList' (Cons 1 (Cons 2 Nil))
+pure id <*> z''' -- (Cons 1 (Cons 2 Nil))
 #+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+>>> monoid
+
+[left  identity] +++ OK, passed 100 tests.
+
+[right identity] +++ OK, passed 100 tests.
+
+[associativity] +++ OK, passed 100 tests.
+
+[mappend = (<>)] +++ OK, passed 100 tests.
+
+[mconcat] +++ OK, passed 100 tests.
+
+<<< monoid
+>>> functor
+
+[identity] +++ OK, passed 100 tests.
+
+[compose] +++ OK, passed 100 tests.
+
+<<< functor
+>>> applicative
+
+[identity] +++ OK, passed 100 tests.
+
+[composition] +++ OK, passed 100 tests.
+
+[homomorphism] +++ OK, passed 100 tests.
+
+[interchange] +++ OK, passed 100 tests.
+
+[functor] +++ OK, passed 100 tests.
+
+<<< applicative
+ZipList' (Cons 10 (Cons 4 (Cons 11 Nil)))
+ZipList' (Cons 10 (Cons 2 (Cons 9 Nil)))
+ZipList' (Cons 1 (Cons 2 Nil))
+#+END_EXAMPLE
 
 Unlike ~Functor~, ~Applicative~ can have more lawful instances for datatype (FC)
 
@@ -1047,7 +1136,7 @@ Write an ~Applicative~ instance for ~Validation~. It's the same as
 ~Either~ but the applicative composition must rely on the monoidal
 composition (aka. append the errors)
 
-#+BEGIN_SRC haskell :eval silent
+#+BEGIN_SRC haskell
 import Data.Monoid
 
 data Validation e a = Failure e | Success a deriving (Eq, Show)
@@ -1085,6 +1174,23 @@ instance (Eq e, Eq a) => EqProp (Validation e a) where
 
 quickCheckBatchWithOutput (applicative (Success ("", "", "")))
 #+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+>>> applicative
+
+[identity] +++ OK, passed 100 tests.
+
+[composition] +++ OK, passed 100 tests.
+
+[homomorphism] +++ OK, passed 100 tests.
+
+[interchange] +++ OK, passed 100 tests.
+
+[functor] +++ OK, passed 100 tests.
+
+<<< applicative
+#+END_EXAMPLE
 
 * 17.09 Exercises
 ** Specializing Method Types
