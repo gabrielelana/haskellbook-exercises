@@ -346,6 +346,8 @@ Use ~pure~, ~<$>~ and ~<*>~ to make the following code to typecheck
    summed :: Maybe Integer
    summed = sum <$> ((,) <$> x <*> y)
    -- or
+   -- summed = fmap sum $ (,) <$> x <*> y
+   -- or
    -- summed = sum <$> Control.Applicative.liftA2 (,) x y
    -- or
    -- summed = sum <$> (pure (,) <*> x <*> y)
@@ -404,7 +406,7 @@ instance Functor Identity where
 
 :{
 instance Applicative Identity where
-  pure a = Identity a
+  pure = Identity
   (Identity f) <*> (Identity a) = Identity $ f a
 :}
 
@@ -433,7 +435,7 @@ instance Functor (Constant a) where
 
 :{
 instance Monoid a => Applicative (Constant a) where
-  pure b = Constant mempty
+  pure _ = Constant mempty
   (Constant a1) <*> (Constant a2) = Constant $ a1 <> a2
 :}
 
@@ -857,12 +859,12 @@ contained in the list and to obtain something like ~[x, y] <> [u, w]~
 to be equal to ~[x <> u, y <> w]~
 
 We are going to define an instance of ~Monoid~ for ~ZipList~
-#+BEGIN_SRC haskell
+#+BEGIN_SRC haskell :eval never
 <<add-current-chapter-directory-in-path()>>
+<<quickcheck-with-output>>
 
 :load ZipListMonoid
 
-<<quickcheck-with-output>>
 quickCheckBatchWithOutput (monoid (ZipList [Sum 1]))
 #+END_SRC
 
@@ -895,12 +897,13 @@ that we required and use its ~mempty~
 
 #+BEGIN_SRC haskell :eval never
 <<add-current-chapter-directory-in-path()>>
+<<quickcheck-with-output>>
+
 :load ZipListMonoid2
 
 -- mempty = pure mempty
 -- we are gonna se what pure does when we are gonna implement Applicative for ZipList
 
-<<quickcheck-with-output>>
 quickCheckBatchWithOutput (monoid (ZipList [Sum 1]))
 #+END_SRC
 
@@ -1065,10 +1068,6 @@ instance Arbitrary a => Arbitrary (ZipList' a) where
   -- fmap does exactly that :-)
   arbitrary = ZipList' <$> arbitrary
 :}
-
--- quickCheckBatchWithOutput (monoid (ZipList' (Cons "" Nil)))
--- quickCheckBatchWithOutput (functor (ZipList' (Cons ("", "", "") Nil)))
--- quickCheckBatchWithOutput (applicative (ZipList' (Cons ("", "", "") Nil)))
 #+END_SRC
 
 #+BEGIN_SRC haskell
