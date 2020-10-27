@@ -840,19 +840,27 @@ mcompose = flip (>=>)
    ~Functor~. Using identity and function composition is fine.
 
    #+BEGIN_SRC haskell
-   import Control.Monad
    :{
    j :: Monad m => m (m a) -> m a
-   j = join
+   -- j = join
+   -- j mma = mma >>= (\ma -> ma >>= (\a -> return a))
+   -- j mma = mma >>= (\ma -> ma >>= (return . id))
+   -- j mma = mma >>= ((=<<) return . id)
+   -- j mma = mma >>= (>>= return . id)
+   -- j = (>>= (>>= return . id))
+   -- j mma = mma >>= id
+   j = (>>= id)
    :}
 
    j [[1, 2], [], [3]] == [1,2,3]
    j (Just (Just 1)) == Just 1
+   j (Just Nothing) == Nothing
    j Nothing == Nothing
    #+END_SRC
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   True
    True
    True
    True
@@ -863,7 +871,8 @@ mcompose = flip (>=>)
    #+BEGIN_SRC haskell :results silent
    :{
    l1 :: Monad m => (a -> b) -> m a -> m b
-   l1 = (<$>)
+   -- l1 = (<$>)
+   l1 f = (=<<) (return . f)
    :}
    #+END_SRC
 
@@ -873,7 +882,9 @@ mcompose = flip (>=>)
    import Control.Monad
    :{
    l2 :: Monad m => (a -> b -> c) -> m a -> m b -> m c
-   l2 = liftM2
+   -- l2 = liftA2
+   -- l2 = liftM2
+   l2 f a b = f <$> a <*> b
    :}
    #+END_SRC
 
@@ -883,6 +894,8 @@ mcompose = flip (>=>)
    :{
    a :: Monad m => m a -> m (a -> b) -> m b
    a = flip (<*>)
+   -- a mf ma = ma >>= (\a -> (($) a) <$> mf)
+   -- a mf = (=<<) (\a -> ((<$>) . ($)) a mf)
    :}
    #+END_SRC
 
@@ -890,20 +903,30 @@ mcompose = flip (>=>)
    ~Functor~. Using identity and function composition is fine
    #+NAME: meh-function
    #+BEGIN_SRC haskell :results silent
-   import Control.Monad
    :{
-   meh :: (Monad m) => [a] -> (a -> m b) -> m [b]
+   meh :: Applicative m => [a] -> (a -> m b) -> m [b]
    meh []     _ = pure []
-   meh (x:xs) f = pure (:) <*> (f x) <*> meh xs f
+   meh (x:xs) f = (:) <$> (f x) <*> meh xs f
+   -- meh (x:xs) f = liftA2 (:) (f x) $ meh xs f
+   :}
+
+   :{
+   meh' :: Applicative m => [a] -> (a -> m b) -> m [b]
+   meh' (a:as) famb = do
+     x <- famb a
+     xs <- meh' as famb
+     pure $ x:xs
    :}
    #+END_SRC
 
+
 6. Write the following function using methods provided by ~Monad~ and
-   ~Functor~. Using identity and function composition is fine
+   ~Functor~. Using identity and function composition is fine, reuse
+   ~meh~
    #+BEGIN_SRC haskell :results silent
    <<meh-function>>
    :{
-   flipType :: (Monad m) => [m a] -> m [a]
+   flipType :: (Applicative m) => [m a] -> m [a]
    flipType = (flip meh) id
    :}
    #+END_SRC
