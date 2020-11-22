@@ -1,701 +1,744 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
 #+TITLE: Foldable
 
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+
 * 20.01 Foldable
-  Lists are not the only foldable thing, there's a general notion of
-  catamorphism, generalizing catamorphism for other datatypes involves
-  knowing and understanding the monoidal behaviour of those datatypes.
+Lists are not the only foldable thing, there's a general notion of
+catamorphism, generalizing catamorphism for other datatypes involves
+knowing and understanding the monoidal behaviour of those datatypes.
 
 * 20.02 The Foldable Class
-  Foldable class: "A class of data structures that can be folded to a
-  summary value".
+Foldable class: "A class of data structures that can be folded to a
+summary value".
 
-  #+BEGIN_SRC haskell :eval never
-  class Foldable (t :: * -> *) where
-    -- ...
-  #+END_SRC
+#+BEGIN_SRC haskell :eval never
+class Foldable (t :: * -> *) where
+  {-# MINIMAL foldMap | foldr #-}
+#+END_SRC
 
-  - ~t~ is a higher-kinded type. For type constructors with more than
-    one parameter (eg. ~Either~ or ~Tuple~) then one or more type
-    parameters need to be part of the structure.
+~t~ is a higher-kinded type. For type constructors with more than one
+parameter (eg. ~Either~ or ~Tuple~) then one or more type parameters
+need to be part of the structure.
 
 * 20.03 Revenge of the Monoids
-  Folding necessarily implies a binary associative operation with an
-  identity value. The first two operations defined in ~Foldable~ makes
-  it explicit.
+Folding necessarily implies a binary associative operation with an
+identity value. The first two operations defined in ~Foldable~ makes
+it explicit.
 
-  #+BEGIN_SRC haskell :eval never
-  class Foldable (t :: * -> *) where
-    fold :: Monoid m => t m -> m
-    foldMap :: Monoid m => (a -> m) -> t a -> m
-    -- ...
-  #+END_SRC
+#+BEGIN_SRC haskell :eval never
+class Foldable (t :: * -> *) where
+  fold :: Monoid m => t m -> m
+  foldMap :: Monoid m => (a -> m) -> t a -> m
+  -- ...
+#+END_SRC
 
-  - ~fold~ allows to combine elements inside a ~Foldable~ using the
-    instance of ~Monoid~ defined for those elements.
-  - ~foldMap~ maps elements inside of ~Foldable~ (~a~) to values for
-    which an instance of ~Monoid~ is defined and then use that to
-    combine them.
+- ~fold~ allows to combine elements inside a ~Foldable~ using the
+  instance of ~Monoid~ defined for those elements.
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  -- The original without exploiting monoid instances bu citing the associative operation
-  foldr (+) 0 [1..5]
+- ~foldMap~ maps elements inside of ~Foldable~ (~a~) to values for
+  which an instance of ~Monoid~ is defined and then use that to
+  combine them.
 
-  -- Using a Monoid implemented on a newtype
-  fold $ Sum <$> [1..5]
+#+BEGIN_SRC haskell
+import Data.Monoid (Sum, First)
+import Data.Foldable (fold, foldMap)
 
-  -- Using a Monoid implemented on String
-  fold ["Hello", " ", "World", "!"]
+-- The original without exploiting monoid instances but with an
+-- explicit associative operation
+foldr (+) 0 [1..5]
 
-  -- Using foldMap
-  foldMap Sum [1..5]
+-- Using a Monoid implemented on a newtype (Sum)
+fold $ Sum <$> [1..5]
 
-  foldMap All [True, False, True]
-  #+END_SRC
+-- Using a Monoid implemented on String
+fold ["Hello", " ", "World", "!"]
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  15
-  Sum {getSum = 15}
-  Hello World!
-  Sum {getSum = 15}
-  All {getAll = False}
-  #+END_EXAMPLE
+-- Using foldMap
+foldMap Sum [1..5]
+foldMap All [True, False, True]
+foldMap First [Nothing, Just 2, Nothing, Nothing, Just 5]
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+15
+Sum {getSum = 15}
+"Hello World!"
+Sum {getSum = 15}
+All {getAll = False}
+First {getFirst = Just 2}
+#+END_EXAMPLE
+
+NOTE: The following works because ~Sum~ has an instance of ~Num~ so a
+literal number can be coerced to ~Sum~
+
+#+BEGIN_SRC haskell
+:t 5
+:t 5 :: Sum Integer
+(5 :: Sum Integer)
+([1, 2, 3, 4] :: [Sum Integer])
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+5 :: Num p => p
+5 :: Sum Integer :: Sum Integer
+Sum {getSum = 5}
+[Sum {getSum = 1},Sum {getSum = 2},Sum {getSum = 3},Sum {getSum = 4}]
+#+END_EXAMPLE
 
 * 20.04 Demonstrating Foldable Instances
-  To implement ~Foldable~ we only need to implment ~fold~ or ~foldMap~
-  because both can be implemented with the other.
+To implement ~Foldable~ we only need to implment ~fold~ or ~foldMap~
+because both can be implemented with the other.
 
 ** Identity
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  import Data.Foldable
+#+BEGIN_SRC haskell
+import Data.Foldable
+import Data.Monoid
 
-  data Identity a = Identity a deriving (Eq, Show)
+data Identity a = Identity a deriving (Eq, Show)
 
-  :{
-  instance Foldable Identity where
-    -- foldr :: (a -> b -> b) -> b -> t a -> b
-    foldr f z (Identity x) = f x z
+:{
+instance Foldable Identity where
+  -- foldr :: (a -> b -> b) -> b -> t a -> b
+  foldr f z (Identity x) = f x z
 
-    -- foldl :: (b -> a -> b) -> b -> t a -> b
-    foldl f z (Identity x) = f z x
+  -- foldl :: (b -> a -> b) -> b -> t a -> b
+  foldl f z (Identity x) = f z x
 
-    -- foldMap :: Monoid m => (a -> m) -> t a -> m
-    foldMap f (Identity x) = f x
-  :}
+  -- foldMap :: Monoid m => (a -> m) -> t a -> m
+  foldMap f (Identity x) = f x
+:}
 
-  foldr (*) 1 (Identity 5)
-  foldr (*) 2 (Identity 5)
+foldr (*) 1 (Identity 5)
+foldr (*) 2 (Identity 5)
 
-  foldl (*) 1 (Identity 5)
-  foldl (*) 2 (Identity 5)
+foldl (*) 1 (Identity 5)
+foldl (*) 2 (Identity 5)
 
-  import Data.Monoid
+foldMap Sum (Identity 5)
+#+END_SRC
 
-  foldMap Sum (Identity 5)
-  #+END_SRC
+#+RESULTS:
+#+BEGIN_EXAMPLE
+5
+10
+5
+10
+Sum {getSum = 5}
+#+END_EXAMPLE
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  5
-  10
-  5
-  10
-  Sum {getSum = 5}
-  #+END_EXAMPLE
-
-  It may seem strange to think of folding one value. When we've talked
-  about catamorphisms previously, we've focused on how they can reduce
-  a bunch of values down to one summary value. In the case of this
-  Identity catamorphism, the point is less to reduce the values inside
-  the structure to one value and more to consume, or use, the value
-  inside the structure.
+It may seem strange to think of folding one value. When we've talked
+about catamorphisms previously, we've focused on how they can reduce a
+bunch of values down to one summary value. In the case of this
+Identity catamorphism, the point is less to reduce the values inside
+the structure to one value and more to consume, or use, the value
+inside the structure.
 
 ** Maybe
-   We need to find a /zero/ for the case where we have no value to
-   apply the function to.
-   #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-   import Data.Foldable
+We need to find a /zero/ for the case where we have no value to apply
+the function to.
+
+#+BEGIN_SRC haskell
+data Optional a = Some a | None deriving (Eq, Show)
+
+:{
+instance Foldable Optional where
+  foldr _ z None = z
+  foldr f z (Some x) = f x z
+
+  foldl _ z None = z
+  foldl f z (Some x) = f z x
+
+  foldMap _ None = mempty
+  foldMap f (Some x) = f x
+:}
+
+foldr (+) 1 None
+foldr (+) 1 (Some 1)
+
+foldl (+) 1 None
+foldl (+) 1 (Some 1)
+
+-- We need to specify the type because it needs a Monoid instance
+foldMap (+1) (None :: Optional (Data.Monoid.Sum Integer))
+foldMap (+1) (Some (Data.Monoid.Sum 1))
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+1
+2
+1
+2
+Sum {getSum = 0}
+Sum {getSum = 2}
+#+END_EXAMPLE
+
+* 20.05 Some Basic Derived Operations
+** toList
+Transforms a ~Foldable~ of ~a~ into a list of ~a~
+
+#+BEGIN_SRC haskell
+import Data.Foldable
+
+:t toList
+
+toList [1]
+toList [1, 2, 3]
+toList $ Just 1
+toList $ Nothing
+toList $ (1, 2)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+toList :: Foldable t => t a -> [a]
+[1]
+[1,2,3]
+[1]
+[]
+[2]
+#+END_EXAMPLE
+
+** null
+Tests whether the structure is empty
+
+#+BEGIN_SRC haskell
+import Data.Foldable
+
+:t null
+
+null []
+null [1, 2, 3]
+null $ Just 1
+null Nothing
+null (1, 2)
+null (Nothing, Nothing)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+null :: Foldable t => t a -> Bool
+True
+False
+False
+True
+False
+False
+#+END_EXAMPLE
+
+** length
+Returns how many values inhabit the ~Foldable~ structure
+
+#+BEGIN_SRC haskell
+import Data.Foldable
+
+:t length
+
+length []
+length [1, 2, 3]
+length $ Just 1
+length Nothing
+length $ Just [1, 2, 3]
+length (1, 2)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+length :: Foldable t => t a -> Int
+0
+3
+1
+0
+1
+1
+#+END_EXAMPLE
+
+** elem
+Tests whether the structure contains an element, in a ~Foldable a~
+requires ~Eq~ for ~a~
+
+#+BEGIN_SRC haskell
+import Data.Foldable
+
+:t elem
+
+elem 3 $ Just 3
+elem 3 $ Just 4
+elem 3 Nothing
+elem 3 [1, 2, 3]
+elem 3 [1, 2, 4]
+elem 3 $ Left 3
+elem 3 $ Right 3
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+elem :: (Foldable t, Eq a) => a -> t a -> Bool
+True
+False
+False
+True
+False
+False
+True
+#+END_EXAMPLE
+
+** maximum and minimum
+Returns the maximum and minimum of the elements in the structure, In a
+~Foldable a~ they require ~Ord~ for ~a~
+
+#+BEGIN_SRC haskell
+:t maximum
+:t minimum
+maximum [1, 2, 3]
+minimum [1, 2, 3]
+maximum $ Just 3
+maximum Nothing
+maximum $ Right 3
+maximum $ Left 3
+maximum (1, 2)
+maximum (2, 1)
+maximum "abcd"
+minimum "abcd"
+maximum "dcba"
+minimum "dcba"
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+maximum :: (Foldable t, Ord a) => t a -> a
+minimum :: (Foldable t, Ord a) => t a -> a
+3
+1
+3
+,*** Exception: maximum: empty structure
+3
+,*** Exception: maximum: empty structure
+2
+1
+'d'
+'a'
+'d'
+'a'
+#+END_EXAMPLE
+
+** sum and product
+Returns the sum and product of the elements in the structure, In a
+~Foldable a~ they require ~Num~ for ~a~
+
+#+BEGIN_SRC haskell
+:t sum
+:t product
+sum [1, 2, 3]
+product [1, 2, 3]
+sum $ Just 1
+sum Nothing
+product $ Just 1
+product Nothing
+sum (1, 2)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+sum :: (Foldable t, Num a) => t a -> a
+product :: (Foldable t, Num a) => t a -> a
+6
+6
+1
+0
+1
+1
+2
+#+END_EXAMPLE
+
+** Exercise: Library Functions
+Implement the following library functions with ~foldr~ or ~foldMap~
+from ~Foldable~
+
+1. Implement ~sum~
+   #+BEGIN_SRC haskell
    import Data.Monoid
 
-   data Optional a = Some a | None deriving (Eq, Show)
-
    :{
-   instance Foldable Optional where
-     -- foldr :: (a -> b -> b) -> b -> f a -> b
-     -- We can use the given zero from the signature
-     foldr _ z None = z
-     foldr f z (Some x) = f x z
-
-     -- foldl :: (b -> a -> b) -> b -> f a -> b
-     -- We can use the given zero from the signature
-     foldl _ z None = z
-     foldl f z (Some x) = f z x
-
-     -- foldMap :: Monoid m => (a -> m) -> t a -> m
-     -- Here we take the zero from the required Monoid instance
-     foldMap _ None = mempty
-     foldMap f (Some x) = f x
+   sum' :: (Foldable f, Num a) => f a -> a
+   sum' = getSum . foldMap Sum
    :}
 
-   foldr (+) 1 None
-   foldr (+) 1 (Some 1)
+   sum' [1, 2, 3]
+   sum' $ Just 1
+   sum' $ Nothing
+   #+END_SRC
 
-   foldl (+) 1 None
-   foldl (+) 1 (Some 1)
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   6
+   1
+   0
+   #+END_EXAMPLE
 
-   foldMap (+1) (None :: Optional (Sum Integer))
-   foldMap (+1) (Some (Sum 1))
+2. Implement ~product~
+   #+BEGIN_SRC haskell
+   import Data.Monoid
+
+   :{
+   product' :: (Foldable f, Num a) => f a -> a
+   product' = getProduct . foldMap Product
+   :}
+
+   product' [1, 2, 3]
+   product' $ Just 1
+   product' Nothing
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   6
+   1
+   1
+   #+END_EXAMPLE
+
+3. Implement ~elem~
+   #+BEGIN_SRC haskell
+   import Data.Foldable
+
+   :{
+   elem' :: (Foldable f, Eq a) => a -> f a -> Bool
+   elem' e = getAny . foldMap (Any . (== e))
+   :}
+
+   elem' 3 [1, 2, 3]
+   elem' 4 [1, 2, 3]
+   elem' 1 $ Just 1
+   elem' 1 $ Just 3
+   elem' 1 Nothing
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   True
+   False
+   True
+   False
+   False
+   #+END_EXAMPLE
+
+4. Implement ~minimum~
+   #+BEGIN_SRC haskell
+   import Data.Monoid
+
+   :{
+   minimum' :: (Foldable f, Ord a, Bounded a) => f a -> a
+   minimum' = foldr min maxBound
+   :}
+
+   :{
+   minimum'' :: (Foldable f, Ord a, Bounded a) => f a -> a
+   minimum'' = getMin . foldMap Min
+   :}
+
+   minimum' $ Just 1 :: Int
+   minimum' $ [1, 2, 3 :: Int]
+   minimum' $ ([] :: [Int])
+
+   minimum'' $ Just 1 :: Int
+   minimum'' $ [1, 2, 3 :: Int]
+   minimum'' $ ([] :: [Int])
    #+END_SRC
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
    1
-   2
    1
-   2
-   Sum {getSum = 0}
-   Sum {getSum = 2}
+   9223372036854775807
+   1
+   1
+   9223372036854775807
    #+END_EXAMPLE
 
-* 20.05 Some Basic Derived Operations
-  # List of useful operations on ~Foldable~
+5. Implement ~maximum~
+   #+BEGIN_SRC haskell
+   import Data.Monoid
 
-  # - ~toList :: Foldable t => t a -> [a]~
-  #   Transform a ~Foldable~ into a list
-  # - ~null :: Foldable t => t a -> Bool~
-  #   Tells if the structure is empty
-  # - ~length :: Foldable t => t a -> Int~
+   :{
+   maximum' :: (Foldable f, Ord a, Bounded a) => f a -> a
+   maximum' = foldr max minBound
+   :}
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  :t toList
+   :{
+   maximum'' :: (Foldable f, Ord a, Bounded a) => f a -> a
+   maximum'' = getMax . foldMap Max
+   :}
 
-  toList [1]
-  toList [1, 2, 3]
-  toList $ Just 1
-  toList $ Nothing
-  toList $ (1, 2)
-  #+END_SRC
+   maximum' $ Just 1 :: Int
+   maximum' $ [1, 2, 3 :: Int]
+   maximum' $ ([] :: [Int])
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  toList :: Foldable t => t a -> [a]
-  [1]
-  [1,2,3]
-  [1]
-  []
-  [2]
-  #+END_EXAMPLE
+   maximum'' $ Just 1 :: Int
+   maximum'' $ [1, 2, 3 :: Int]
+   maximum'' $ ([] :: [Int])
+   #+END_SRC
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  :t null
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   1
+   3
+   -9223372036854775808
+   1
+   3
+   -9223372036854775808
+   #+END_EXAMPLE
 
-  null []
-  null [1, 2, 3]
-  null $ Just 1
-  null $ Nothing
-  null $ (1, 2)
-  null $ (Nothing, Nothing)
-  #+END_SRC
+6. Implement ~null~
+   #+BEGIN_SRC haskell
+   import Data.Monoid
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  null :: Foldable t => t a -> Bool
-  True
-  False
-  False
-  True
-  False
-  False
-  False
-  #+END_EXAMPLE
+   :{
+   null' :: (Foldable f) => f a -> Bool
+   null' = not . getAny . foldMap (const $ Any True)
+   :}
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  :t length
+   :{
+   null'' :: (Foldable f) => f a -> Bool
+   null'' = foldr ((const . const) False) True
+   :}
 
-  length []
-  length [1, 2, 3]
-  length $ Just 1
-  length $ Nothing
-  length $ Just [1, 2, 3]
-  length $ (1, 2)
-  #+END_SRC
+   :{
+   null''' :: (Foldable f) => f a -> Bool
+   null''' = (> 0) . length
+   :}
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  length :: Foldable t => t a -> Int
-  0
-  3
-  1
-  0
-  1
-  1
-  #+END_EXAMPLE
+   null' [1, 2, 3]
+   null' []
+   null' $ Just 1
+   null' Nothing
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  :t elem
+   null'' [1, 2, 3]
+   null'' []
+   null'' $ Just 1
+   null'' Nothing
 
-  elem 3 $ Just 3
-  elem 3 $ Just 4
-  elem 3 $ Nothing
-  elem 3 $ [1, 2, 3]
-  elem 3 $ [1, 2, 4]
-  elem 3 $ Left 3
-  elem 3 $ Right 3
-  #+END_SRC
+   null''' [1, 2, 3]
+   null''' []
+   null''' $ Just 1
+   null''' Nothing
+   #+END_SRC
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  elem :: (Eq a, Foldable t) => a -> t a -> Bool
-  True
-  False
-  False
-  True
-  False
-  False
-  True
-  #+END_EXAMPLE
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   False
+   True
+   False
+   True
+   False
+   True
+   False
+   True
+   True
+   False
+   True
+   False
+   #+END_EXAMPLE
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  :t maximum
-  :t minimum
+7. Implement ~length~
+   #+BEGIN_SRC haskell
+   import Data.Monoid
+   import Data.Foldable
 
-  maximum [1, 2, 3]
-  minimum [1, 2, 3]
-  maximum $ Just 3
-  maximum $ Nothing
-  maximum $ Right 3
-  maximum $ Left 3
-  maximum $ (1, 2)
-  maximum $ (2, 1)
-  maximum $ "abcd"
-  minimum $ "abcd"
-  maximum $ "dcba"
-  minimum $ "dcba"
-  #+END_SRC
+   :{
+   length' :: (Foldable f) => f a -> Int
+   length' = getSum . foldMap (const $ Sum 1)
+   :}
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  maximum :: (Ord a, Foldable t) => t a -> a
-  minimum :: (Ord a, Foldable t) => t a -> a
-  3
-  1
-  3
-  ,*** Exception: maximum: empty structure
-  3
-  ,*** Exception: maximum: empty structure
-  2
-  1
-  'd'
-  'a'
-  'd'
-  'a'
-  #+END_EXAMPLE
+   :{
+   length'' :: (Foldable f) => f a -> Int
+   length'' = foldr (const (+ 1)) 0
+   :}
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  :t sum
-  :t product
+   length' [1, 2, 3]
+   length' []
+   length' Nothing
 
-  sum [1, 2, 3]
-  product [1, 2, 3]
-  sum $ Just 1
-  sum $ Nothing
-  product $ Just 1
-  product $ Nothing
-  sum $ (1, 2)
-  #+END_SRC
+   length'' [1, 2, 3]
+   length'' []
+   length'' Nothing
+   #+END_SRC
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  sum :: (Num a, Foldable t) => t a -> a
-  product :: (Num a, Foldable t) => t a -> a
-  6
-  6
-  1
-  0
-  1
-  1
-  2
-  #+END_EXAMPLE
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   3
+   0
+   0
+   3
+   0
+   0
+   #+END_EXAMPLE
 
-** Exercise: Library Functions
-   Implement the following library functions with ~foldr~ or ~foldMap~
-   from ~Foldable~
+8. Implement ~toList~
+   #+BEGIN_SRC haskell
+   :{
+   toList' :: (Foldable f) => f a -> [a]
+   toList' = foldMap pure
+   :}
 
-   1. Implement ~sum~
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      :{
-      sum' :: (Foldable f, Num a) => f a -> a
-      sum' = getSum . foldMap Sum
-      :}
+   :{
+   toList'' :: (Foldable f) => f a -> [a]
+   toList'' = foldMap (flip (:) [])
+   :}
 
-      sum' [1, 2, 3]
-      sum' $ Just 1
-      sum' $ Nothing
-      #+END_SRC
+   :{
+   toList''' :: (Foldable f) => f a -> [a]
+   toList''' = foldr (:) []
+   :}
 
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      6
-      1
-      0
-      #+END_EXAMPLE
+   toList' [1, 2, 3]
+   toList' $ Just 1
+   toList' Nothing
 
-   2. Implement ~product~
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      :{
-      product' :: (Foldable f, Num a) => f a -> a
-      product' = getProduct . foldMap Product
-      :}
+   toList'' [1, 2, 3]
+   toList'' $ Just 1
+   toList'' Nothing
 
-      product' [1, 2, 3]
-      product' $ Just 1
-      product' $ Nothing
-      #+END_SRC
+   toList''' [1, 2, 3]
+   toList''' $ Just 1
+   toList''' Nothing
+   #+END_SRC
 
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      6
-      1
-      1
-      #+END_EXAMPLE
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1,2,3]
+   [1]
+   []
+   [1,2,3]
+   [1]
+   []
+   [1,2,3]
+   [1]
+   []
+   #+END_EXAMPLE
 
-   3. Implement ~elem~
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      :{
-      elem' :: (Foldable f, Eq a) => a -> f a -> Bool
-      elem' e = getAny . foldMap (\x -> Any $ x == e)
-      :}
+9. Implement ~fold~ (Hint: use ~foldMap~)
+   #+BEGIN_SRC haskell
+   :{
+   fold_ :: (Foldable t, Monoid m) => t m -> m
+   fold_ = foldMap id
+   :}
 
-      elem' 3 [1, 2, 3]
-      elem' 4 [1, 2, 3]
-      elem' 1 $ Just 1
-      elem' 1 $ Just 3
-      #+END_SRC
+   fold_ ["Hello", " ", "World"]
+   #+END_SRC
 
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      True
-      False
-      True
-      False
-      #+END_EXAMPLE
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   "Hello World"
+   #+END_EXAMPLE
 
-   4. Implement ~minimum~
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      :{
-      minimum' :: (Foldable f, Ord a, Bounded a) => f a -> a
-      minimum' = foldr min maxBound
-      :}
+10. Implement ~foldMap~ (Hint: use ~foldr~)
+    #+BEGIN_SRC haskell
+    :{
+    foldMap_ :: (Foldable t, Monoid m) => (a -> m) -> t a -> m
+    foldMap_ f = foldr ((<>) . f) mempty
+    :}
 
-      import Data.Semigroup
-      :{
-      minimum'' :: (Foldable f, Ord a, Bounded a) => f a -> a
-      minimum'' = getMin . foldMap Min
-      :}
+    foldMap_ id ["a", "b", "c"]
+    #+END_SRC
 
-      (minimum' $ Just 1) :: Int
-      (minimum' $ [1, 2, 3]) :: Int
-      (minimum' $ []) :: Int
-
-      (minimum'' $ Just 1) :: Int
-      (minimum'' $ [1, 2, 3]) :: Int
-      (minimum'' $ []) :: Int
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      1
-      1
-      9223372036854775807
-      1
-      1
-      9223372036854775807
-      #+END_EXAMPLE
-
-   5. Implement ~maximum~
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      :{
-      maximum' :: (Foldable f, Ord a, Bounded a) => f a -> a
-      maximum' = foldr max minBound
-      :}
-
-      import Data.Semigroup
-      :{
-      maximum'' :: (Foldable f, Ord a, Bounded a) => f a -> a
-      maximum'' = getMax . foldMap Max
-      :}
-
-      (maximum' $ [1, 2, 3]) :: Int
-      (maximum' $ Just 1) :: Int
-      (maximum' $ Nothing) :: Int
-
-      (maximum'' $ [1, 2, 3]) :: Int
-      (maximum'' $ Just 1) :: Int
-      (maximum'' $ Nothing) :: Int
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      3
-      1
-      -9223372036854775808
-      3
-      1
-      -9223372036854775808
-      #+END_EXAMPLE
-
-   6. Implement ~null~
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      :{
-      null' :: (Foldable f) => f a -> Bool
-      null' = not . getAny . foldMap (const $ Any True)
-      :}
-
-      :{
-      null'' :: (Foldable f) => f a -> Bool
-      null'' = foldr ((const . const) False) True
-      :}
-
-      null' [1, 2, 3]
-      null' []
-      null' $ Just 1
-      null' $ Nothing
-
-      null'' [1, 2, 3]
-      null'' []
-      null'' $ Just 1
-      null'' $ Nothing
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      False
-      True
-      False
-      True
-      False
-      True
-      False
-      True
-      #+END_EXAMPLE
-
-   7. Implement ~length~
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      :{
-      length' :: (Foldable f) => f a -> Int
-      length' = getSum . foldMap (const $ Sum 1)
-      :}
-
-      :{
-      length'' :: (Foldable f) => f a -> Int
-      length'' = foldr (\_ s -> s + 1) 0
-      :}
-
-      length' [1, 2, 3]
-      length' []
-      length' Nothing
-
-      length'' [1, 2, 3]
-      length'' []
-      length'' Nothing
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      3
-      0
-      0
-      3
-      0
-      0
-      #+END_EXAMPLE
-
-   8. Implement ~toList~
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      :{
-      toList' :: (Foldable f) => f a -> [a]
-      toList' = foldMap (flip (:) [])
-      :}
-
-      :{
-      toList'' :: (Foldable f) => f a -> [a]
-      toList'' = foldr (:) []
-      :}
-
-      toList' [1, 2, 3]
-      toList' $ Just 1
-      toList' $ Nothing
-
-      toList'' [1, 2, 3]
-      toList'' $ Just 1
-      toList'' $ Nothing
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      [1,2,3]
-      [1]
-      []
-      [1,2,3]
-      [1]
-      []
-      #+END_EXAMPLE
-
-   9. Implement ~foldMap~
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      import Data.Monoid
-      :{
-      foldMap' :: (Foldable f, Monoid m) => (a -> m) -> f a -> m
-      foldMap' f = foldr (\x m -> (f x) <> m) mempty
-      :}
-
-      sum' = getSum . foldMap' Sum
-      sum' [1, 2, 3]
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      6
-      #+END_EXAMPLE
-
-   10. Implement ~fold~
-       #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-       import Data.Monoid
-
-       :{
-       fold' :: (Foldable t, Monoid m) => t m -> m
-       fold' = foldMap id
-       :}
-
-       fold' [Sum 1, Sum 2]
-       #+END_SRC
-
-       #+RESULTS:
-       #+BEGIN_EXAMPLE
-       Sum {getSum = 3}
-       #+END_EXAMPLE
+    #+RESULTS:
+    #+BEGIN_EXAMPLE
+    "abc"
+    #+END_EXAMPLE
 
 * Exercises
-  #+NAME: ghci-clean
-  #+BEGIN_SRC emacs-lisp :var content="" :results raw
-  (defun report-compiling-module-p (line)
-    (string-match-p "\\[[0-9]+ of [0-9]+\\] Compiling" line))
+** Write Foldable Instances
+1. Write ~Foldable~ instance for ~Constant~
+   #+BEGIN_SRC haskell :results silent
+   data Constant a b = Constant b
 
-  (defun report-loaded-module-p (line)
-    (string-match-p "Ok, .+ modules? loaded\\." line))
+   :{
+   instance Foldable (Constant a) where
+     foldr f z (Constant b) = f b z
+   :}
+   #+END_SRC
 
-  (defun report-eoe-p (line)
-    (string-match-p "org-babel-haskell-eoe" line))
+2. Write ~Foldable~ instance for ~Two~
+   #+BEGIN_SRC haskell :results silent
+   data Two a b = Two a b
 
-  (defun clean-line (line)
-    (->> line remove-prompt unquote))
+   :{
+   instance Foldable (Two a) where
+     foldr f z (Two _ b) = f b z
+   :}
+   #+END_SRC
 
-  (defun remove-prompt (line)
-    (let ((current-prompt (current-prompt line)))
-      (message "current prompt: %S" current-prompt)
-      (if (string-empty-p current-prompt)
-          line
-        (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
+3. Write ~Foldable~ instance for ~Three~
+   #+BEGIN_SRC haskell :results silent
+   data Three a b c = Three a b c
 
-  (defun current-prompt (line)
-    (if (string-match "\\(^[^|:>]+\\)[|>]" line)
-        (match-string 1 line)
-      ""))
+   :{
+   instance Foldable (Three a b) where
+     foldr f z (Three _ _ c) = f c z
+   :}
+   #+END_SRC
 
-  (defun unquote (line)
-    (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" line))
+4. Write ~Foldable~ instance for ~Three'~
+   #+BEGIN_SRC haskell
+   import Data.Foldable
+   import Data.Monoid
 
-  (string-join
-   (seq-map #'clean-line
-            (seq-filter
-             (lambda (line)
-               (and
-                (not (string-empty-p line))
-                (not (report-eoe-p line))
-                (not (report-compiling-module-p line))
-                (not (report-loaded-module-p line))))
-             (split-string content "\n")))
-   "\n")
-  #+END_SRC
+   data Three' a b = Three' a b b
 
-  #+NAME: add-current-chapter-directory-in-path
-  #+BEGIN_SRC emacs-lisp :output raw
-  (concat
-   ":set -i"
-   (file-name-as-directory (file-name-directory (buffer-file-name)))
-   (file-name-base (buffer-file-name)))
-  #+END_SRC
+   :{
+   instance Foldable (Three' a) where
+     foldr f z (Three' _ b1 b2) = f b1 $ f b2 z
+   :}
 
-  #+NAME: add-chapter-directory-in-path
-  #+BEGIN_SRC emacs-lisp :var chapter="" :output raw
-  (concat
-   ":set -i"
-   (file-name-as-directory (file-name-directory (buffer-file-name)))
-   chapter)
-  #+END_SRC
+   sum $ Three' undefined (Sum 1) (Sum 2)
+   #+END_SRC
 
-** Foldable Instances
-   1. Write ~Foldable~ instance for the following datatype
-      #+BEGIN_SRC haskell :results silent
-      data Constant a b = Constant b deriving (Eq, Show)
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Sum {getSum = 3}
+   #+END_EXAMPLE
 
-      :{
-      instance Foldable (Constant a) where
-        foldr f z (Constant b) = f b z
-      :}
-      #+END_SRC
+5. Write ~Foldable~ instance for ~Four'~
+   #+BEGIN_SRC haskell
+   import Data.Foldable
+   import Data.Monoid
 
-   2. Write ~Foldable~ instance for the following datatype
-      #+BEGIN_SRC haskell :results silent
-      data Two a b = Two a b deriving (Eq, Show)
+   data Four' a b = Four' a b b b
 
-      :{
-      instance Foldable (Two a) where
-        foldr f z (Two _ a) = f a z
-      :}
-      #+END_SRC
+   :{
+   instance Foldable (Four' a) where
+     foldr f z (Four' _ b1 b2 b3) = f b1 (f b2 (f b3 z))
+   :}
 
-   3. Write ~Foldable~ instance for the following datatype
-      #+BEGIN_SRC haskell :results silent
-      data Three a b c = Three a b c deriving (Eq, Show)
+   sum $ Four' undefined (Sum 1) (Sum 2) (Sum 3)
+   #+END_SRC
 
-      :{
-      instance Foldable (Three a b) where
-        foldr f z (Three _ _ a) = f a z
-      :}
-      #+END_SRC
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Sum {getSum = 6}
+   #+END_EXAMPLE
 
-   4. Write ~Foldable~ instance for the following datatype
-      #+BEGIN_SRC haskell :results silent
-      data Three' a b = Three' a b b deriving (Eq, Show)
+6. Write a filter function for ~Foldable~ types using ~foldMap~
+   function
+   #+BEGIN_SRC haskell
+   :{
+   filterF :: ( Applicative f
+              , Foldable t
+              , Monoid (f a))
+           => (a -> Bool) -> t a -> f a
+   filterF f = foldMap (\a -> if f a then pure a else mempty)
+   :}
 
-      :{
-      instance Foldable (Three' a) where
-        foldr f z (Three' _ a1 a2) = f a2 (f a1 z)
-      :}
-      #+END_SRC
+   filterF odd [1, 2, 3, 4, 5] :: [Int]
+   #+END_SRC
 
-   5. Write ~Foldable~ instance for the following datatype
-      #+BEGIN_SRC haskell :results silent
-      data Four' a b = Four' a b b b deriving (Eq, Show)
-
-      :{
-      instance Foldable (Four' a) where
-        foldr f z (Four' _ a1 a2 a3) = f a3 (f a2 (f a1 z))
-      :}
-      #+END_SRC
-
-   6. Write a filter function for ~Foldable~ types using ~foldMap~.
-      #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-      :{
-      filterF :: (Applicative f, Foldable t, Monoid (f a)) => (a -> Bool) -> t a -> f a
-      filterF f = foldMap (\x -> if f x then pure x else mempty)
-      :}
-
-      filterF odd [1, 2, 3, 4, 5] :: [Int]
-      #+END_SRC
-
-      #+RESULTS:
-      #+BEGIN_EXAMPLE
-      [1,3,5]
-      #+END_EXAMPLE
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1,3,5]
+   #+END_EXAMPLE
