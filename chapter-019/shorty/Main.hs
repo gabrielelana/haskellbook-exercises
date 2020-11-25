@@ -10,6 +10,7 @@ import Control.Monad.IO.Class ( MonadIO(liftIO) )
 import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import Network.URI (URI, parseURI)
 import Web.Scotty ( get, param, post, scotty, text, ScottyM )
+import Data.Functor ((<&>))
 
 data WriteError = RedisError R.Reply | TokenAlreadyUsed deriving (Eq, Show)
 
@@ -45,10 +46,12 @@ writeURI conn shortURI longURI = do
     Right True ->
       return $ Left TokenAlreadyUsed
     Right False ->
-      R.runRedis conn (R.set shortURI longURI) >>=
+      -- Alternative
+      -- left RedisError <$> R.runRedis conn (R.set shortURI longURI)
+      R.runRedis conn (R.set shortURI longURI) <&>
       (\case
-          Left l -> return $ Left (RedisError l)
-          Right r -> return $ Right r)
+          Left l -> Left (RedisError l)
+          Right r -> Right r)
 
 readURI :: R.Connection
        -> BC.ByteString
