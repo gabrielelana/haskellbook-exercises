@@ -1,230 +1,213 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
 #+TITLE: Traversable
 
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+
 * 21.01 Traversable
-  ~Traversable~ allows you to transform elements inside the structure
-  like a functor, producing applicative effects along the way, and
-  lift those potentially multiple instances of applicative structure
-  outside of the traversable structure.
+~Traversable~ allows you to transform elements inside the structure
+like a functor, producing applicative effects along the way, and lift
+those potentially multiple instances of applicative structure outside
+of the traversable structure.
 
 * 21.02 The Traversable Typeclass Definition
-  #+BEGIN_SRC haskell :eval never
-  class (Functor t, Foldable t) => Traversable t where
-    traverse :: Applicative f => (a -> f b) -> t a -> f (t b)
-    traverse = undefined
+#+BEGIN_SRC haskell :eval never
+class (Functor t, Foldable t) => Traversable t where
+  traverse :: Applicative f => (a -> f b) -> t a -> f (t b)
+  traverse = undefined
 
-    sequenceA :: Applicative f => t (f a) -> f (t a)
-    sequenceA = undefined
-  #+END_SRC
+  sequenceA :: Applicative f => t (f a) -> f (t a)
+  sequenceA = undefined
+#+END_SRC
 
-  Extends ~Functor~ and ~Foldable~ and use ~Applicative~. You need to
-  provide at least an implentation of ~tranverse~ or ~sequenceA~.
+Extends ~Functor~ and ~Foldable~ and use ~Applicative~. You need to
+provide at least an implementation of ~traverse~ or ~sequenceA~, both
+can be implemented in terms of in each other.
+
+#+BEGIN_SRC eval :never
+-- If you have `sequenceA` you can implement `traverse`
+traverse :: Applicative f => (a -> f b) -> t a -> f (t b)
+traverse = sequenceA . fmap f
+
+-- If you have `traverse` you can implement `sequenceA`
+sequenceA :: Applicative f => t (f a) -> f (t a)
+sequenceA = traverse id
+#+END_SRC
 
 * 21.03 SequenceA
-  the effect of sequenceA is flipping two contexts or structures.
+The effect of ~sequenceA~ is flipping two contexts or structures.
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  -- application of sum to a foldable structure ([])
-  sum [1, 2, 3]
+#+BEGIN_SRC haskell
+-- application of sum to a foldable structure ([])
+sum [1, 2, 3]
 
-  -- application of sum to a foldable structure (Maybe) inside another structure ([])
-  fmap sum [Just 1, Just 2, Just 3]
+-- application of sum to a foldable structure (Maybe) inside another
+-- structure ([]). Remember that `sum (Just 1) == 1`
+fmap sum [Just 1, Just 2, Just 3]
+fmap sum [Just 1, Nothing, Just 3]
 
-  -- application of sum to a foldable structure ([]) inside another structure (Maybe)
-  fmap sum (Just [1, 2, 3])
-  #+END_SRC
+-- application of sum to a foldable structure ([]) inside another
+-- structure (Maybe)
+fmap sum (Just [1, 2, 3])
+#+END_SRC
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  6
-  [1,2,3]
-  Just 6
-  #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+6
+[1,2,3]
+[1,0,3]
+Just 6
+#+END_EXAMPLE
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  -- createa a list of maybes
-  fmap Just [1, 2, 3]
+#+BEGIN_SRC haskell
+-- creates a list of maybes
+fmap Just [1, 2, 3]
 
-  -- from a list of maybes to a maybe of a list
-  sequenceA $ fmap Just [1, 2, 3]
+-- from a list of maybes to a maybe of a list
+sequenceA $ fmap Just [1, 2, 3]
 
-  -- what happens with Nothing?
-  sequenceA $ [Just 1, Nothing, Just 3]
+-- what happens with Nothing?
+sequenceA $ [Just 1, Nothing, Just 3]
 
-  -- apply sum after swapping the structure
-  fmap sum $ sequenceA [Just 1, Just 2, Just 3]
-  #+END_SRC
+-- apply sum after swapping the structure
+fmap sum $ sequenceA [Just 1, Just 2, Just 3]
+#+END_SRC
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  [Just 1,Just 2,Just 3]
-  Just [1,2,3]
-  Nothing
-  Just 6
-  #+END_EXAMPLE
-
-  Implementable in terms of ~traverse~
-  #+BEGIN_SRC haskell :results silent
-  :{
-  sequenceA' :: (Applicative f, Traversable t) => t (f a) -> f (t a)
-  sequenceA' = traverse id
-  :}
-  #+END_SRC
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[Just 1,Just 2,Just 3]
+Just [1,2,3]
+Nothing
+Just 6
+#+END_EXAMPLE
 
 * 21.04 Traverse
-  We are mapping a function over some values in some structure, that
-  function is also generating more structure but that structure can be
-  different.
+We are mapping a function over some values in some structure, that
+function is also generating more structure but that structure can be
+different.
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  fmap Just [1, 2, 3]
-  sequenceA $ fmap Just [1, 2, 3]
-  sequenceA $ [Just 1, Just 2, Just 3]
-  traverse Just [1, 2, 3]
-  #+END_SRC
+Compare ~traverse~ with ~fmap~ and ~=<<~ (aka flip bind) to see what
+changes.
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  [Just 1,Just 2,Just 3]
-  Just [1,2,3]
-  Just [1,2,3]
-  Just [1,2,3]
-  #+END_EXAMPLE
+#+BEGIN_SRC haskell :eval never
+fmap     :: _ => (a -> b) -> f a -> f b
 
-  Implementable in terms of ~sequenceA~
-  #+BEGIN_SRC haskell :results silent
-  :{
-  traverse :: (Applicative f, Traversable t) => (a -> f b) -> t a -> f (t b)
-  traverse f = sequenceA . fmap f
-  :}
-  #+END_SRC
+-- the given function maps `a` values to a value `b` in a structure
+-- `m`, the same structure `m` that contains the `a` values
+(=<<)    :: _ => (a -> m b) -> m a -> m b
 
-  NOTE: ~mapM~ is the specialization for monads of ~traverse~
-  ~mapM     :: (Monad m, Traversable t)       => (a -> m b) -> t a -> m (t b)~
-  ~traverse :: (Applicative f, Traversable t) => (a -> f b) -> t a -> f (t b)~
+-- the given function maps `a` values to a value `b` in a structure
+-- that is different
+traverse :: _ => (a -> f b) -> t a -> f (t b)
+#+END_SRC
 
-  NOTE: ~sequence~ is the specialization for monads of ~sequenceA~
-  ~sequence :: (Monad m, Traversable t)        => t (m a) -> m (t a)~
-  ~sequenceA :: (Applicative f, Traversable t) => t (f a) -> f (t a)~
+#+BEGIN_SRC haskell
+fmap Just [1, 2, 3]
+sequenceA $ fmap Just [1, 2, 3]
+sequenceA $ [Just 1, Just 2, Just 3]
+traverse Just [1, 2, 3]
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[Just 1,Just 2,Just 3]
+Just [1,2,3]
+Just [1,2,3]
+Just [1,2,3]
+#+END_EXAMPLE
+
+NOTE: ~mapM~ is the specialization for monads of ~traverse~
+~mapM     :: (Monad m, Functor t, Foldable t)       => (a -> m b) -> t a -> m (t b)~
+~traverse :: (Applicative f, Functor t, Foldable t) => (a -> f b) -> t a -> f (t b)~
+
+NOTE: ~sequence~ is the specialization for monads of ~sequenceA~
+~sequence :: (Monad m, Functor t, Foldable t)        => t (m a) -> m (t a)~
+~sequenceA :: (Applicative f, Functor t, Foldable t) => t (f a) -> f (t a)~
+
+QUESTION: In the book (pp. 827) seems like ~sequenceA~ is defined with
+a given constraint ~Traversable t~ where the definition of ~sequenceA~
+should be required to have an instance of ~Traversable~ on ~t~. Is
+this wrong?
 
 * 21.05 What's Traversable for?
-  Anytime you need to flip two type constructors around, or map
-  something and then flip them around, that’s probably Traversable.
+Anytime you need to flip two type constructors around, or map
+something and then flip them around, that’s probably Traversable.
 
-  #+BEGIN_SRC haskell :results replace output :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  f = undefined :: a -> Maybe b
-  xs = undefined :: [a]
-  :t map f xs
+#+BEGIN_SRC haskell
+f = undefined :: a -> Maybe b
+xs = undefined :: [a]
+:t map f xs
 
-  -- what if we want a ~Maybe [b]~
-  :t sequenceA $ map f xs
-  :t traverse f xs
-  #+END_SRC
+-- what if we want a ~Maybe [b]~
+:t sequenceA $ map f xs
+:t traverse f xs
+#+END_SRC
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  map f xs :: [Maybe b]
-  sequenceA $ map f xs :: Maybe [a]
-  traverse f xs :: Maybe [b]
-  #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+map f xs :: [Maybe b]
+sequenceA $ map f xs :: Maybe [a]
+traverse f xs :: Maybe [b]
+#+END_EXAMPLE
 
 * 21.06 Morse Code Revisited
-  How can we improve the previous implementation of ~Morse~?
+How can we improve the previous implementation of ~Morse~?
 
-  ~stringToMorse :: String -> Maybe [Morse]~ was implemented with the
-  following pattern
-  #+BEGIN_SRC haskell :eval never
-  stringToMorse :: String -> Maybe [Morse]
-  stringToMorse s = sequence $ fmap charToMorse s
-  #+END_SRC
+~stringToMorse :: String -> Maybe [Morse]~ was implemented with the
+following pattern
+#+BEGIN_SRC haskell :eval never
+stringToMorse :: String -> Maybe [Morse]
+stringToMorse s = sequence $ fmap charToMorse s
+#+END_SRC
 
-  We want to go from ~[Maybe Morse]~ to ~Maybe [Morse]~ but ~catMaybes
-  :: [Maybe a] -> [a]~ it's not ok because it will simply eliminate
-  the nothings whereas we want to end up with a ~Nothing~ if there's
-  one ~Nothing~ in the whole ~Traversable~ structure.
+We want to go from ~[Maybe Morse]~ to ~Maybe [Morse]~ but ~catMaybes
+:: [Maybe a] -> [a]~ it's not ok because it will simply eliminate the
+nothings whereas we want to end up with a ~Nothing~ if there's one
+~Nothing~ in the whole ~Traversable~ structure.
 
-  ~traverse :: (Applicative f, Traversable t) => (a -> f b) -> t a -> f (t b)~
-  is what we need
+~traverse :: (Applicative f, Traversable t) => (a -> f b) -> t a -> f (t b)~
+is what we need
 
-  #+BEGIN_SRC haskell :results replace output :noweb yes :wrap EXAMPLE :epilogue ":load" :post ghci-clean(content=*this*)
-  <<add-chapter-directory-in-path(chapter="chapter-014/morse-code/src")>>
-  :load Morse
+#+BEGIN_SRC haskell
+<<add-chapter-directory-in-path(chapter="chapter-014/morse-code/src")>>
+:load Morse
 
-  :t stringToMorse
+:t stringToMorse
 
-  :{
-  stringToMorse' :: String -> Maybe [Morse]
-  stringToMorse' = traverse charToMorse
-  :}
+:{
+stringToMorse' :: String -> Maybe [Morse]
+stringToMorse' = traverse charToMorse
+:}
 
-  stringToMorse "hello"
-  stringToMorse' "hello"
-  #+END_SRC
+stringToMorse "hello"
+stringToMorse' "hello"
+#+END_SRC
 
-  #+RESULTS:
-  #+BEGIN_EXAMPLE
-  stringToMorse :: String -> Maybe [Morse]
-  Just ["....",".",".-..",".-..","---"]
-  Just ["....",".",".-..",".-..","---"]
-  #+END_EXAMPLE
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[1 of 1] Compiling Morse            ( /home/coder/code/haskellbook-exercises/chapter-014/morse-code/src/Morse.hs, interpreted )
+Ok, one module loaded.
+stringToMorse :: String -> Maybe [Morse]
+Just ["....",".",".-..",".-..","---"]
+Just ["....",".",".-..",".-..","---"]
+#+END_EXAMPLE
 
 * 21.07 Axing Tedious Code
-  ...
+...
 
-* Exercises
-  #+NAME: ghci-clean
-  #+BEGIN_SRC emacs-lisp :var content="" :results raw
-  (defun report-compiling-module-p (line)
-    (string-match-p "\\[[0-9]+ of [0-9]+\\] Compiling" line))
+* 21.08 Do All The Things
+...
 
-  (defun report-loaded-module-p (line)
-    (string-match-p "Ok, .+ modules? loaded\\." line))
+* 21.09 Traversable Instances
+...
 
-  (defun report-eoe-p (line)
-    (string-match-p "org-babel-haskell-eoe" line))
+* 21.10 Traversable Laws
+...
 
-  (defun clean-line (line)
-    (->> line remove-prompt unquote))
+* 21.11 Quality Control
+...
 
-  (defun remove-prompt (line)
-    (let ((current-prompt (current-prompt line)))
-      (message "current prompt: %S" current-prompt)
-      (if (string-empty-p current-prompt)
-          line
-        (replace-regexp-in-string (concat "\\(?:" current-prompt "[>|] \\)+") "" line))))
-
-  (defun current-prompt (line)
-    (if (string-match "\\(^[^|:>]+\\)[|>]" line)
-        (match-string 1 line)
-      ""))
-
-  (defun unquote (line)
-    (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" line))
-
-  (string-join
-   (seq-map #'clean-line
-            (seq-filter
-             (lambda (line)
-               (and
-                (not (string-empty-p line))
-                (not (report-eoe-p line))
-                (not (report-compiling-module-p line))
-                (not (report-loaded-module-p line))))
-             (split-string content "\n")))
-   "\n")
-  #+END_SRC
-
-  #+NAME: add-current-chapter-directory-in-path
-  #+BEGIN_SRC emacs-lisp :output raw
-  (concat
-   ":set -i"
-   (file-name-as-directory (file-name-directory (buffer-file-name)))
-   (file-name-base (buffer-file-name)))
-  #+END_SRC
-
-  #+NAME: add-chapter-directory-in-path
-  #+BEGIN_SRC emacs-lisp :var chapter="" :output raw
-  (concat
-   ":set -i"
-   (file-name-as-directory (file-name-directory (buffer-file-name)))
-   chapter)
-  #+END_SRC
+* 21.12 Exercises
+...
