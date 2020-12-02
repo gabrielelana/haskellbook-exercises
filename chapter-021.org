@@ -195,10 +195,189 @@ Just ["....",".",".-..",".-..","---"]
 #+END_EXAMPLE
 
 * 21.07 Axing Tedious Code
-...
+Take the following code as example (it should only compile)
+
+#+NAME: tedious-preamble
+#+BEGIN_SRC haskell :eval never
+data Query = Query
+data SomeO = SomeO
+data OnlyO = OnlyO
+data Error = Error
+
+:{
+-- decode and object from a string
+decodeFn :: String -> Either Error SomeO
+decodeFn = undefined
+:}
+
+:{
+-- performs (IO) a query and fetches some strings
+fetchFn :: Query -> IO [String]
+fetchFn = undefined
+:}
+
+:{
+makeOnlyO :: [SomeO] -> IO [(SomeO, OnlyO)]
+makeOnlyO = undefined
+:}
+#+END_SRC
+
+#+BEGIN_SRC haskell :results silent
+<<tedious-preamble>>
+
+:{
+pipelineFn :: Query -> IO (Either Error [(SomeO, OnlyO)])
+pipelineFn query = do
+  a <- fetchFn query
+  case sequence (map decodeFn a) of
+    (Left err) -> return $ Left err
+    (Right res) -> do
+      a <- makeOnlyO res
+      return $ Right a
+:}
+#+END_SRC
+
+Can be refactored? We can notice
+- The use of ~sequence~ and ~map~ that smells like ~traverse~
+- The explicit case on the ~sequence~ result
+
+#+BEGIN_SRC haskell :results silent
+<<tedious-preamble>>
+
+:{
+pipelineFn :: Query -> IO (Either Error [(SomeO, OnlyO)])
+pipelineFn query = do
+  a <- fetchFn query
+  -- given traverse decodeFn a :: Either Error (t SomeO)
+  -- we have makeOnlyO :: [SomeO] -> IO [(SomeO, OnlyO)]
+  -- we want IO (Either Error [(SomeO, Only)])
+  -- we can fmap makeOnlyO :: Either Error (IO [(SomeO, OnlyO)])
+  -- so we need to swap Either and IO with sequenceA -> traverse
+  traverse makeOnlyO $ traverse decodeFn a
+:}
+
+-- or more like a pipeline
+
+:{
+pipelineFn' :: Query -> IO (Either Error [(SomeO, OnlyO)])
+pipelineFn' query =
+  fetchFn query >>=
+  (\a -> return $ traverse decodeFn a) >>=
+  (\b -> traverse makeOnlyO b)
+:}
+#+END_SRC
 
 * 21.08 Do All The Things
-...
+Another example, suppose that you have a means to retrieve the content
+of an URL
+
+#+NAME: get-url
+#+BEGIN_SRC haskell :results silent
+:{
+getURL :: String -> IO String
+getURL = undefined
+:}
+#+END_SRC
+
+And we want to retrieve a bunch of URLs
+
+#+NAME: urls
+#+BEGIN_SRC haskell
+:{
+urls :: [String]
+urls = undefined
+:}
+#+END_SRC
+
+We can map the ~getURL~ function on all the URLs
+
+#+BEGIN_SRC haskell :results silent
+<<get-url>>
+<<urls>>
+
+:{
+mapped :: [String] -> [IO String]
+mapped = map getURL
+:}
+#+END_SRC
+
+But we end up with a list of IO actions, it will be better to have one
+single IO action that produces a list of responses (aka ~IO [String]~)
+and that's the job of traverse
+
+#+BEGIN_SRC haskell :results silent
+<<get-url>>
+<<urls>>
+
+:{
+traversed :: [String] -> IO [String]
+traversed = traverse getURL
+:}
+#+END_SRC
+
+** Strength for understanding
+
+~Traversable~ is stronger that ~Functor~ and ~Foldable~ and, as with
+~Monad~ you can implement the ~Functor~ and ~Applicative~
+representative functions, with ~Traversable~ you can implement the
+representative functions of ~Functor~ and ~Foldable~
+
+Given ~Traversable~ implement
+~tMap :: Traversable t => (a -> b) -> t a -> t b~
+
+#+BEGIN_SRC haskell
+import Data.Functor.Identity
+-- we can use Identity
+
+traverse (Identity . (+1)) [1, 2]
+runIdentity $ traverse (Identity . (+1)) [1, 2]
+
+:{
+tMap :: Traversable t => (a -> b) -> t a -> t b
+tMap f = runIdentity . traverse (Identity . f)
+:}
+
+tMap (+1) [1, 2]
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[2,3]
+[2,3]
+[2,3]
+#+END_EXAMPLE
+
+Given ~Traversable~ implement
+~tFoldMap :: (Traversable t, Monoid m) => (a -> m) -> t a -> m~
+
+#+BEGIN_SRC haskell
+import Data.Monoid
+import Data.Functor.Constant
+
+traverse (Constant . Sum) [1, 2]
+:t traverse (Constant . Sum) [1, 2]
+getConstant $ traverse (Constant . Sum) [1, 2]
+
+-- QUESTION:
+-- why the type is (Num a => Constant (Sum a) [b])
+-- and not (Num a => Constant ([Sum a]) b)
+-- ???
+
+:{
+tFoldMap :: (Traversable t, Monoid m) => (a -> m) -> t a -> m
+tFoldMap f = getConstant . traverse (Constant . f)
+:}
+
+tFoldMap Sum [1, 2]
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Constant (Sum {getSum = 3})
+traverse (Constant . Sum) [1, 2] :: Num a => Constant (Sum a) [b]
+Sum {getSum = 3}
+Sum {getSum = 3}
+#+END_EXAMPLE
 
 * 21.09 Traversable Instances
 ...
