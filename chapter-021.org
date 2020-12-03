@@ -380,13 +380,125 @@ Sum {getSum = 3}
 #+END_EXAMPLE
 
 * 21.09 Traversable Instances
-...
+** Either
+Below an instance of ~Traversable~ for ~Either~ while remembering all
+the useful instances.
+
+#+BEGIN_SRC haskell :eval never
+data Either a b = Left a | Right b deriving (Eq, Ord, Show)
+
+instance Functor (Either a) where
+  fmap _ (Left x) = Left x
+  fmap f (Right x) = Right $ f x
+
+instance Applicative (Either a) where
+  pure = Right
+
+  Left x  <*> _ = Left x
+  Right f <*> r = fmap f r
+
+instance Foldable (Either a) where
+  foldMap _ (Left x) = Left x
+  foldMap f (Right x) = f x
+
+  foldr _ (Left _) z = z
+  foldr f (Right x) z = f x z
+
+instance Traversable (Either a) where
+  traverse _ (Left x) = pure $ Left x
+  traverse f (Right x) = Right <$> f x
+#+END_SRC
+
+** Tuple
+Below an instance of ~Traversable~ for ~Tuple~ while remembering all
+the useful instances
+
+#+BEGIN_SRC haskell :results silent
+data Tuple a b = Tuple a b deriving (Eq, Ord, Show)
+
+:{
+instance Functor (Tuple a) where
+  fmap f (Tuple a b) = Tuple a $ f b
+:}
+
+:{
+instance Monoid a => Applicative (Tuple a) where
+  pure = Tuple mempty
+
+  (Tuple al bl) <*> (Tuple ar br) = Tuple (al <> ar) (bl br)
+:}
+
+:{
+instance Foldable (Tuple a) where
+  foldMap f (Tuple _ b) = f b
+
+  foldr f z (Tuple _ b) = f b z
+:}
+
+:{
+instance Traversable (Tuple a) where
+  -- traverse :: (Functor t, Foldable t, Applicative f) => (a -> f b) -> t a -> f (t b)
+  traverse f (Tuple a b) = Tuple a <$> f b
+:}
+#+END_SRC
 
 * 21.10 Traversable Laws
-...
+The ~traverse~ function must satisfy the following laws
+
+1. Naturality
+
+   This law tells us that if function composition works on the
+   traversed function then it works also on the original function and
+   vice versa. Since the structure created by ~f~ will be kept
+   "outside" in both cases ~t~ will work with the same kind of
+   structure.
+
+   #+BEGIN_SRC haskell :eval never
+   t . traverse f = traverse (t . f)
+   #+END_SRC
+
+2. Identity
+
+   This law tells us that traversing the data constructor ~Identity~
+   over a value will produce the same result as directly applying the
+   data constructor. This means that ~Traversable~ instance cannot add
+   or inject any structure or effect.
+
+   #+BEGIN_SRC haskell :eval never
+   traverse Identity = Identity
+   #+END_SRC
+
+3. Composition
+
+   This law demonstrate how we can collapse sequential traversals into
+   a single traversal using the ~Compose~ datatype which combines
+   structure.
+
+   #+BEGIN_SRC haskell :eval never
+   traverse (Compose . fmap g . f) = Compose . fmap (traverse g) . traverse f
+   #+END_SRC
 
 * 21.11 Quality Control
-...
+The ~checker~ library can check the lawfulness of our instances
+
+#+BEGIN_SRC haskell
+<<quickcheck-with-output>>
+
+type TI = []
+
+quickCheckBatchWithOutput $ traversable (undefined :: TI (Int, Int, [Int]))
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+>>> traversable
+
+[fmap] +++ OK, passed 100 tests.
+
+[foldMap] +++ OK, passed 100 tests.
+
+<<< traversable
+#+END_EXAMPLE
 
 * 21.12 Exercises
 ...
