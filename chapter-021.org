@@ -501,4 +501,575 @@ quickCheckBatchWithOutput $ traversable (undefined :: TI (Int, Int, [Int]))
 #+END_EXAMPLE
 
 * 21.12 Exercises
-...
+
+1. Write a ~Traversable~ instance for ~Identity~
+
+   #+BEGIN_SRC haskell
+   newtype Id a = Id a deriving (Eq, Ord, Show)
+
+   :{
+   instance Functor Id where
+     fmap f (Id a) = Id $ f a
+   :}
+
+   :{
+   instance Applicative Id where
+     pure = Id
+
+     (Id f) <*> (Id a) = Id $ f a
+   :}
+
+   :{
+   instance Foldable Id where
+     foldMap f (Id a) = f a
+     foldr f z (Id a) = f a z
+   :}
+
+   :{
+   instance Traversable Id where
+     traverse f (Id a) = Id <$> f a
+   :}
+
+   :{
+   instance Arbitrary a => Arbitrary (Id a) where
+     arbitrary = Id <$> arbitrary
+   :}
+
+   :{
+   instance Eq a => EqProp (Id a) where
+     Id x =-= Id y = x `eq` y
+   :}
+
+   <<quickcheck-with-output>>
+
+   quickCheckBatchWithOutput $ traversable (undefined :: Id (Int, Int, [Int]))
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   >>> traversable
+
+   [fmap] +++ OK, passed 100 tests.
+
+   [foldMap] +++ OK, passed 100 tests.
+
+   <<< traversable
+   #+END_EXAMPLE
+
+2. Write a ~Traversable~ instance for ~Constant~
+
+   #+BEGIN_SRC haskell
+   newtype Const a b = Const a deriving (Eq, Ord, Show)
+
+   :{
+   instance Functor (Const a) where
+     fmap _ (Const a) = Const a
+   :}
+
+   :{
+   instance Monoid a => Applicative (Const a) where
+     pure _ = Const mempty
+
+     (Const al) <*> (Const ar) = Const $ al <> ar
+   :}
+
+   :{
+   instance Foldable (Const a) where
+     foldr _ z _ = z
+   :}
+
+   :{
+   instance Traversable (Const a) where
+     traverse _ (Const a) = pure $ Const a
+   :}
+
+   <<quickcheck-with-output>>
+
+   :{
+   instance Arbitrary a => Arbitrary (Const a b) where
+     arbitrary = Const <$> arbitrary
+   :}
+
+   :{
+   instance Eq a => EqProp (Const a b) where
+     (Const al) =-= (Const ar) = al `eq` ar
+   :}
+
+   quickCheckBatchWithOutput $ traversable (undefined :: Const Int (Int, Int, [Int]))
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   >>> traversable
+
+   [fmap] +++ OK, passed 100 tests.
+
+   [foldMap] +++ OK, passed 100 tests.
+
+   <<< traversable
+   #+END_EXAMPLE
+
+3. Write a ~Traversable~ instance for ~Maybe~
+
+   #+BEGIN_SRC haskell
+   data Option a = None | Some a deriving (Eq, Ord, Show)
+
+   :{
+   instance Functor Option where
+     fmap _ None     = None
+     fmap f (Some a) = Some $ f a
+   :}
+
+   :{
+   instance Applicative Option where
+     pure = Some
+
+     None <*> _     = None
+     (Some f) <*> x = f <$> x
+   :}
+
+   :{
+   instance Foldable Option where
+     foldr _ z None     = z
+     foldr f z (Some x) = f x z
+   :}
+
+   :{
+   instance Traversable Option where
+     traverse _ None     = pure None
+     traverse f (Some x) = Some <$> f x
+   :}
+
+   <<quickcheck-with-output>>
+
+   :{
+   instance Arbitrary a => Arbitrary (Option a) where
+     arbitrary = frequency [(1, return None), (1, Some <$> arbitrary)]
+   :}
+
+   :{
+   instance Eq a => EqProp (Option a) where
+     (=-=) = eq
+   :}
+
+   quickCheckBatchWithOutput $ traversable (undefined :: Option (Int, Int, [Int]))
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   >>> traversable
+
+   [fmap] +++ OK, passed 100 tests.
+
+   [foldMap] +++ OK, passed 100 tests.
+
+   <<< traversable
+   #+END_EXAMPLE
+
+4. Write a ~Traversable~ instance for ~List~
+
+   #+BEGIN_SRC haskell
+   data List a = Nil | Cons a (List a) deriving (Eq, Ord, Show)
+
+   :{
+   instance Semigroup (List a) where
+     Nil <> r = r
+     l <> Nil = l
+     (Cons a ll) <> lr = Cons a (ll <> lr)
+   :}
+
+   :{
+   instance Functor List where
+     fmap _ Nil = Nil
+     fmap f (Cons a l) = Cons (f a) (fmap f l)
+   :}
+
+   :{
+   instance Applicative List where
+     pure x = Cons x Nil
+
+     Nil            <*> _              = Nil
+     _              <*> Nil            = Nil
+     ll@(Cons f fl) <*> lr@(Cons a al) = Cons (f a) ((f <$> lr) <> (ll <*> al))
+   :}
+
+   :{
+   instance Foldable List where
+     foldr _ z Nil        = z
+     foldr f z (Cons a l) = f a (foldr f z l)
+   :}
+
+   :{
+   instance Traversable List where
+     traverse _ Nil        = pure Nil
+     traverse f (Cons a l) = Cons <$> f a <*> traverse f l
+   :}
+
+   <<quickcheck-with-output>>
+
+   :{
+   instance Arbitrary a => Arbitrary (List a) where
+     arbitrary = frequency [ (3, pure Nil)
+                           , (2, Cons <$> arbitrary <*> pure Nil)
+                           , (1, Cons <$> arbitrary <*> arbitrary)
+                           ]
+   :}
+
+   :{
+   instance Eq a => EqProp (List a) where
+     (=-=) = eq
+   :}
+
+   quickCheckBatchWithOutput $ traversable (undefined :: List (Int, Int, [Int]))
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   >>> traversable
+
+   [fmap] +++ OK, passed 100 tests.
+
+   [foldMap] +++ OK, passed 100 tests.
+
+   <<< traversable
+   #+END_EXAMPLE
+
+5. Write a ~Traversable~ instance for ~Three~
+
+   #+BEGIN_SRC haskell
+   data Three a b c = Three a b c deriving (Eq, Ord, Show)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   #+END_EXAMPLE
+
+6. Write a ~Traversable~ instance for ~Pair~
+
+   #+BEGIN_SRC haskell
+   data Pair a b = Pair a b deriving (Eq, Ord, Show)
+
+   :{
+   instance Functor (Pair a) where
+     fmap f (Pair a b) = Pair a $ f b
+   :}
+
+   :{
+   instance Monoid a => Applicative (Pair a) where
+     pure = Pair mempty
+
+     (Pair al f) <*> (Pair ar b) = Pair (al <> ar) (f b)
+   :}
+
+   :{
+   instance Foldable (Pair a) where
+     foldr f z (Pair _ b) = f b z
+   :}
+
+   :{
+   instance Traversable (Pair a) where
+     traverse f (Pair a b) = Pair a <$> f b
+   :}
+
+   <<quickcheck-with-output>>
+
+   :{
+   instance (Arbitrary a, Arbitrary b) => Arbitrary (Pair a b) where
+     arbitrary = Pair <$> arbitrary <*> arbitrary
+   :}
+
+   :{
+   instance (Eq a, Eq b) => EqProp (Pair a b) where
+     (=-=) = eq
+   :}
+
+   quickCheckBatchWithOutput $ traversable (undefined :: Pair Int (Int, Int, [Int]))
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   >>> traversable
+
+   [fmap] +++ OK, passed 100 tests.
+
+   [foldMap] +++ OK, passed 100 tests.
+
+   <<< traversable
+   #+END_EXAMPLE
+
+7. Write a ~Traversable~ instance for ~Big~
+
+   #+BEGIN_SRC haskell
+   data Big a b = Big a b b deriving (Eq, Ord, Show)
+
+   :{
+   instance Functor (Big a) where
+     fmap f (Big a b1 b2) = Big a (f b1) (f b2)
+   :}
+
+   :{
+   instance Monoid a => Applicative (Big a) where
+     pure x = Big mempty x x
+
+     (Big al f1 f2) <*> (Big ar b1 b2) = Big (al <> ar) (f1 b1) (f2 b2)
+   :}
+
+   :{
+   instance Foldable (Big a) where
+     foldr f z (Big _ b1 b2) = f b1 (f b2 z)
+   :}
+
+   :{
+   instance Traversable (Big a) where
+     traverse f (Big a b1 b2) = Big a <$> f b1 <*> f b2
+   :}
+
+   <<quickcheck-with-output>>
+
+   :{
+   instance (Arbitrary a, Arbitrary b) => Arbitrary (Big a b) where
+     arbitrary = Big <$> arbitrary <*> arbitrary <*> arbitrary
+   :}
+
+   :{
+   instance (Eq a, Eq b) => EqProp (Big a b) where
+     (=-=) = eq
+   :}
+
+   quickCheckBatchWithOutput $ traversable (undefined :: Big Int (Int, Int, [Int]))
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   >>> traversable
+
+   [fmap] +++ OK, passed 100 tests.
+
+   [foldMap] +++ OK, passed 100 tests.
+
+   <<< traversable
+   #+END_EXAMPLE
+
+8. Write a ~Traversable~ instance for ~Bigger~
+
+   #+BEGIN_SRC haskell
+   data Bigger a b = Bigger a b b b deriving (Eq, Ord, Show)
+
+   :{
+   instance Functor (Bigger a) where
+     fmap f (Bigger a b1 b2 b3) = Bigger a (f b1) (f b2) (f b3)
+   :}
+
+   :{
+   instance Monoid a => Applicative (Bigger a) where
+     pure x = Bigger mempty x x x
+
+     (Bigger al f1 f2 f3) <*> (Bigger ar b1 b2 b3) = Bigger (al <> ar) (f1 b1) (f2 b2) (f3 b3)
+   :}
+
+   :{
+   instance Foldable (Bigger a) where
+     foldr f z (Bigger _ b1 b2 b3) = f b1 (f b2 (f b3 z))
+   :}
+
+   :{
+   instance Traversable (Bigger a) where
+     traverse f (Bigger a b1 b2 b3) = Bigger a <$> f b1 <*> f b2 <*> f b3
+   :}
+
+   <<quickcheck-with-output>>
+
+   :{
+   instance (Arbitrary a, Arbitrary b) => Arbitrary (Bigger a b) where
+     arbitrary = Bigger <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+   :}
+
+   :{
+   instance (Eq a, Eq b) => EqProp (Bigger a b) where
+     (=-=) = eq
+   :}
+
+   quickCheckBatchWithOutput $ traversable (undefined :: Bigger Int (Int, Int, [Int]))
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   >>> traversable
+
+   [fmap] +++ OK, passed 100 tests.
+
+   [foldMap] +++ OK, passed 100 tests.
+
+   <<< traversable
+   #+END_EXAMPLE
+
+9. Write a ~Traversable~ instance for ~S~
+
+   #+BEGIN_SRC haskell
+   :set -XFlexibleContexts
+
+   data S n a = S (n a) a deriving (Eq, Show)
+
+   :{
+   instance Functor n => Functor (S n) where
+     fmap f (S na a) = S (f <$> na) (f a)
+   :}
+
+   :{
+   instance Applicative n => Applicative (S n) where
+     pure x = S (pure x) x
+
+     (S nf f) <*> (S na a) = S (nf <*> na) (f a)
+   :}
+
+   :{
+   instance Foldable n => Foldable (S n) where
+     -- TODO: it fails, try to check the laws manually
+     -- foldr f z (S na a) = f a (foldr f z na)
+     foldMap f (S na a) = f a <> foldMap f na
+   :}
+
+   :{
+   instance Traversable n => Traversable (S n) where
+     traverse f (S na a) = S <$> traverse f na <*> f a
+   :}
+
+   <<quickcheck-with-output>>
+
+   :{
+   instance (Arbitrary a , Arbitrary (n a)) => Arbitrary (S n a) where
+     arbitrary = S <$> arbitrary <*> arbitrary
+   :}
+
+   :{
+   instance (Eq a, Eq (n a)) => EqProp (S n a) where
+     (=-=) = eq
+   :}
+
+   import Data.Functor.Identity
+
+   quickCheckBatchWithOutput $ functor (undefined :: S Identity (Int, Int, [Int]))
+   quickCheckBatchWithOutput $ applicative (undefined :: S Identity (Int, Int, [Int]))
+   quickCheckBatchWithOutput $ traversable (undefined :: S Identity (Int, Int, [Int]))
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   >>> functor
+
+   [identity] +++ OK, passed 100 tests.
+
+   [compose] +++ OK, passed 100 tests.
+
+   <<< functor
+   >>> applicative
+
+   [identity] +++ OK, passed 100 tests.
+
+   [composition] +++ OK, passed 100 tests.
+
+   [homomorphism] +++ OK, passed 100 tests.
+
+   [interchange] +++ OK, passed 100 tests.
+
+   [functor] +++ OK, passed 100 tests.
+
+   <<< applicative
+   >>> traversable
+
+   [fmap] +++ OK, passed 100 tests.
+
+   [foldMap] *** Failed! Falsified (after 2 tests):
+   <function>
+   S (Identity 0) (-1)
+
+   <<< traversable
+   #+END_EXAMPLE
+
+10. Write a ~Traversable~ instance for ~Tree~
+
+    #+BEGIN_SRC haskell
+    data Tree a = Empty | Leaf a | Node (Tree a) (Tree a) deriving (Eq, Show)
+
+    :{
+    instance Functor Tree where
+      fmap _ Empty        = Empty
+      fmap f (Leaf a)     = Leaf $ f a
+      fmap f (Node t1 t2) = Node (fmap f t1) (fmap f t2)
+    :}
+
+    :{
+    instance Applicative Tree where
+      pure = Leaf
+
+      Empty <*> _ = Empty
+      _ <*> Empty = Empty
+      (Leaf f) <*> t = f <$> t
+      (Node t1 t2) <*> t = Node (t1 <*> t) (t2 <*> t)
+    :}
+
+    :{
+    instance Foldable Tree where
+      -- QUESTION: what if we had to implment foldr? How can I require Semigroup?
+      foldMap _ Empty = mempty
+      foldMap f (Leaf a) = f a
+      foldMap f (Node t1 t2) = foldMap f t1 <> foldMap f t2
+    :}
+
+    :{
+    instance Traversable Tree where
+      traverse _ Empty = pure Empty
+      traverse f (Leaf a) = Leaf <$> f a
+      traverse f (Node t1 t2) = Node <$> traverse f t1 <*> traverse f t2
+    :}
+
+    <<quickcheck-with-output>>
+
+    :{
+    instance Arbitrary a => Arbitrary (Tree a) where
+      arbitrary = frequency [ (3, pure Empty)
+                            , (2, Leaf <$> arbitrary)
+                            , (1, Node <$> arbitrary <*> arbitrary)
+                            ]
+    :}
+
+    :{
+    instance Eq a => EqProp (Tree a) where
+      (=-=) = eq
+    :}
+
+    quickCheckBatchWithOutput $ functor (undefined :: Tree (Int, Int, [Int]))
+    quickCheckBatchWithOutput $ applicative (undefined :: Tree (Int, Int, [Int]))
+    quickCheckBatchWithOutput $ traversable (undefined :: Tree (Int, Int, [Int]))
+    #+END_SRC
+
+    #+RESULTS:
+    #+BEGIN_EXAMPLE
+    >>> functor
+
+    [identity] +++ OK, passed 100 tests.
+
+    [compose] +++ OK, passed 100 tests.
+
+    <<< functor
+    >>> applicative
+
+    [identity] +++ OK, passed 100 tests.
+
+    [composition] +++ OK, passed 100 tests.
+
+    [homomorphism] +++ OK, passed 100 tests.
+
+    [interchange] +++ OK, passed 100 tests.
+
+    [functor] +++ OK, passed 100 tests.
+
+    <<< applicative
+    >>> traversable
+
+    [fmap] +++ OK, passed 100 tests.
+
+    [foldMap] +++ OK, passed 100 tests.
+
+    <<< traversable
+    #+END_EXAMPLE
