@@ -738,10 +738,53 @@ quickCheckBatchWithOutput $ traversable (undefined :: TI (Int, Int, [Int]))
 
    #+BEGIN_SRC haskell
    data Three a b c = Three a b c deriving (Eq, Ord, Show)
+
+   :{
+   instance Functor (Three a b) where
+     fmap f (Three a b c) = Three a b $ f c
+   :}
+
+   :{
+   instance (Monoid a, Monoid b) => Applicative (Three a b) where
+     pure x = Three mempty mempty x
+
+     (Three al bl f) <*> (Three ar br c) = Three (al <> ar) (bl <> br) (f c)
+   :}
+
+   :{
+   instance Foldable (Three a b) where
+     foldr f z (Three _ _ c) = f c z
+   :}
+
+   :{
+   instance Traversable (Three a b) where
+     traverse f (Three a b c) = Three a b <$> f c
+   :}
+
+   <<quickcheck-with-output>>
+
+   :{
+   instance (Arbitrary a, Arbitrary b, Arbitrary c) => Arbitrary (Three a b c) where
+     arbitrary = Three <$> arbitrary <*> arbitrary <*> arbitrary
+   :}
+
+   :{
+   instance (Eq a, Eq b, Eq c) => EqProp (Three a b c) where
+     (=-=) = eq
+   :}
+
+   quickCheckBatchWithOutput $ traversable (undefined :: Three Int Int (Int, Int, [Int]))
    #+END_SRC
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   >>> traversable
+
+   [fmap] +++ OK, passed 100 tests.
+
+   [foldMap] +++ OK, passed 100 tests.
+
+   <<< traversable
    #+END_EXAMPLE
 
 6. Write a ~Traversable~ instance for ~Pair~
@@ -924,9 +967,7 @@ quickCheckBatchWithOutput $ traversable (undefined :: TI (Int, Int, [Int]))
 
    :{
    instance Foldable n => Foldable (S n) where
-     -- TODO: it fails, try to check the laws manually
-     -- foldr f z (S na a) = f a (foldr f z na)
-     foldMap f (S na a) = f a <> foldMap f na
+     foldMap f (S na a) = foldMap f na <> f a
    :}
 
    :{
@@ -979,9 +1020,7 @@ quickCheckBatchWithOutput $ traversable (undefined :: TI (Int, Int, [Int]))
 
    [fmap] +++ OK, passed 100 tests.
 
-   [foldMap] *** Failed! Falsified (after 2 tests):
-   <function>
-   S (Identity 0) (-1)
+   [foldMap] +++ OK, passed 100 tests.
 
    <<< traversable
    #+END_EXAMPLE
@@ -1010,10 +1049,13 @@ quickCheckBatchWithOutput $ traversable (undefined :: TI (Int, Int, [Int]))
 
     :{
     instance Foldable Tree where
-      -- QUESTION: what if we had to implment foldr? How can I require Semigroup?
-      foldMap _ Empty = mempty
-      foldMap f (Leaf a) = f a
-      foldMap f (Node t1 t2) = foldMap f t1 <> foldMap f t2
+      -- foldMap _ Empty = mempty
+      -- foldMap f (Leaf a) = f a
+      -- foldMap f (Node t1 t2) = foldMap f t1 <> foldMap f t2
+
+      foldr _ z Empty = z
+      foldr f z (Leaf a) = f a z
+      foldr f z (Node t1 t2) = foldr f (foldr f z t2) t1
     :}
 
     :{
