@@ -1,0 +1,228 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
+#+TITLE: Reader
+
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+
+* 22.01 Reader
+When writing applications sometimes we need to pass around information
+that we need in many functions. Add an argument to every function that
+needs that data or needs to pass that data around is not convenient
+and it will make code less readable. To address this problem we use
+~Reader~.
+
+* 22.02 A New Beginning
+
+#+NAME: function-functor
+#+BEGIN_SRC haskell :results silent
+-- was only
+-- boop = (*2)
+:{
+boop :: Num a => a -> a
+boop = (*2)
+:}
+
+-- was only
+-- doop = (+10)
+:{
+doop :: Num a => a -> a
+doop = (+10)
+:}
+
+-- was
+-- bip :: Integer -> Integer
+-- bip = boop . doop
+:{
+bip :: Num a => a -> a
+bip = boop . doop
+:}
+
+:{
+bip' :: Num a => a -> a
+bip' = fmap boop doop
+:}
+#+END_SRC
+
+We already know that but a function ~((->) a)~ it's a functorial
+structure and as so we can lift other functions over it, by lifting we
+are able to let a function (~boop~ in the above example) to reach the
+result of another function (~doop~ in the above example) that is the
+functorial structure.
+
+#+NAME: function-applicative
+#+BEGIN_SRC haskell :results silent
+<<function-functor>>
+
+:{
+bbop :: Integer -> Integer
+bbop = (+) <$> boop <*> doop
+:}
+
+:{
+bbop' :: Integer -> Integer
+bbop' = Control.Applicative.liftA2 (+) boop doop
+:}
+#+END_SRC
+
+With ~Applicative~ we are able to compose those functions (applicative
+structure) so that they will be applied to the same argument in
+parallel (conceptually in parallel) and the results will be added
+together. Therefore we can operate on the result of a multiple
+function application as long as those functions take the same
+argument.
+
+#+NAME: function-monad
+#+BEGIN_SRC haskell :results silent
+<<function-applicative>>
+
+:{
+bbbop :: Integer -> Integer
+bbbop = do
+  a <- boop
+  b <- doop
+  return $ a + b
+:}
+#+END_SRC
+
+With ~Monad~ we are able to do the same as with ~Applicative~.
+
+We have seen here ~Functor~, ~Applicative~ and ~Monad~ for partially
+applied functions. In all cases the result is awaiting application to
+one argument that will allow both functions to be evaluated.
+
+This is the idea of ~Reader~. It is a way of composing functions
+together when all those functions are awaiting one input from a shared
+environment.
+
+** Short Exercise
+
+#+BEGIN_SRC haskell :results silent
+import Data.Char
+
+:{
+cap :: [Char] -> [Char]
+cap = fmap toUpper
+:}
+
+:{
+rev :: [Char] -> [Char]
+rev = reverse
+:}
+
+-- Implement the following
+-- composed :: [Char] -> [Char]
+-- composed = undefined
+:{
+composed :: [Char] -> [Char]
+composed = cap . reverse
+:}
+
+-- Implement the following
+-- fmapped :: [Char] -> [Char]
+-- fmapped = undefined
+:{
+fmapped :: [Char] -> [Char]
+fmapped = fmap cap reverse
+:}
+
+composed "Julie" == "EILUJ"
+fmapped "Chris" == "SIRHC"
+
+-- Implement the following
+-- tupled :: [Char] -> ([Char], [Char])
+-- tupled = undefined
+:{
+tupled :: [Char] -> ([Char], [Char])
+tupled = (,) <$> cap <*> rev
+:}
+
+:{
+tupled' :: [Char] -> ([Char], [Char])
+tupled' = Control.Applicative.liftA2 (,) cap rev
+:}
+
+-- Implement the same function in monadic style
+:{
+tupled'' :: [Char] -> ([Char], [Char])
+tupled'' = do
+  a <- cap
+  b <- rev
+  return (a, b)
+:}
+
+-- Implement the same function in monadic style desugared
+:{
+tupled''' :: [Char] -> ([Char], [Char])
+tupled''' = cap >>= (\a -> rev) >>= (\b -> (a, b)))
+:}
+#+END_SRC
+
+* 22.03 This is Reader
+The term ~Reader~ is referred to the ~Monad~ instance of ~Reader~.
+
+* 22.04 Breaking Down The Functor Of Functions
+The instance of ~Functor~ for ~((->) a)~ is function composition
+
+#+BEGIN_SRC haskell :eval never
+(.) :: (b -> c) -> (a -> b) -> a -> c
+-- the same as
+(.) :: (b -> c) -> (a -> b) -> (a -> c)
+
+Functor f => (<$>) :: (a -> b) -> f a -> f b
+-- same as
+Functor f => (<$>) :: (b -> c) -> f b -> f c
+-- since (f) in our case is ((->) a)
+(<$>) :: (b -> c) -> (a -> b) -> (a -> c)
+
+-- put them side by side
+(.)   :: (b -> c) -> (a -> b) -> (a -> c)
+(<$>) :: (b -> c) -> (a -> b) -> (a -> c)
+--
+#+END_SRC
+
+* 22.05 Reader?
+
+#+NAME: reader
+#+BEGIN_SRC  haskell :results silent
+newtype Reader r a = Reader { runReader :: r -> a }
+#+END_SRC
+
+The ~r~ is the type we are reading in
+The ~a~ is the type output of our function
+
+The ~Functor~ instance as expected is function composition with a
+little bit of overlay structure.
+
+#+BEGIN_SRC haskell :eval never
+:{
+instance Functor (Reader r) where
+  f <$> (Reader ra) = Reader $ \r -> f (ra r)
+:}
+#+END_SRC
+
+Which is exactly the same as
+
+#+BEGIN_SRC haskell :eval never
+:{
+instance Functor (Reader r) where
+  f <$> (Reader ra) = Reader $ f . ra
+:}
+#+END_SRC
+
+** Exercise: Ask
+
+Implement the following function
+
+#+BEGIN_SRC haskell :results silent
+<<reader>>
+
+:{
+ask :: Reader a a
+ask = Reader id
+:}
+#+END_SRC
+
+* 22.06 Functions have an Applicative, too
+...
