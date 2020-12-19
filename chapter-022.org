@@ -224,5 +224,291 @@ ask = Reader id
 :}
 #+END_SRC
 
-* 22.06 Functions have an Applicative, too
+* 22.06 The Applicative of Functions
+As we already saw, functions have an instance of ~Applicative~
+
+#+BEGIN_SRC haskell :results silent
+data Person = Person { height :: Int, weight :: Int } deriving (Eq, Show)
+
+:{
+square :: Int -> Int
+square x = x * x
+:}
+
+:{
+calculateBMI :: Person -> Rational
+calculateBMI = (/) <$> (toRational . height) <*> (toRational . square . weight)
+:}
+#+END_SRC
+
+/Reader/ is not always ~Reader~ sometimes it's the ambient
+~Applicative~ or ~Monad~ associated with the partially applied
+function (~((->) r)~)
+
+** Exercise: Reading Comprehension
+
+1. Write ~liftA2~ yourself
+
+   #+BEGIN_SRC haskell :results silent
+   :{
+   liftA2' :: Applicative f => (a -> b -> c) -> f a -> f b -> f c
+   liftA2' f fa fb = f <$> fa <*> fb
+   :}
+   #+END_SRC
+
+2. Write the following function
+
+   #+BEGIN_SRC haskell :results silent
+   <<reader>>
+
+   :{
+   asks :: (r -> a) -> Reader r a
+   asks = Reader
+   :}
+   #+END_SRC
+
+3. Implement ~Applicative~ for ~Reader~
+
+   #+NAME: reader-applicative
+   #+BEGIN_SRC haskell :results silent
+   <<reader>>
+
+   :{
+   instance Functor (Reader r) where
+     fmap f (Reader fa) = Reader $ f . fa
+   :}
+
+   :{
+   instance Applicative (Reader r) where
+     pure = Reader . const
+
+     -- f (a -> b) -> f a -> f b
+     -- (r -> a -> b) -> (r -> a) -> (r -> b)
+     -- (Reader ff) <*> (Reader fa) = Reader $ \r -> ff r (fa r)
+     (Reader ff) <*> (Reader fa) = Reader $ ff <*> fa
+   :}
+   #+END_SRC
+
+* 22.07 The Monad of Functions
+As we already saw, functions have an instance of ~Monad~
+
+#+BEGIN_SRC haskell :results silent
+:{
+sumTuple2 :: (Int, Int) -> Int
+sumTuple2 = do
+  a <- fst
+  b <- snd
+  return $ a + b
+:}
+
+:{
+sumTuple2' :: (Int, Int) -> Int
+sumTuple2' = fst >>= (\a -> snd >>= (\b -> return $ a + b))
+:}
+
+sumTuple2 (1, 3)
+sumTuple2' (1, 3)
+#+END_SRC
+
+** Exercise: Reader Monad
+
+1. Implement the ~Reader~ ~Monad~
+
+   #+NAME: reader-monad
+   #+BEGIN_SRC haskell :results silent
+   <<reader-applicative>>
+
+   :{
+   instance Monad (Reader r) where
+     -- m a -> (a -> m b) -> m b
+     -- (Reader (r -> a)) -> (a -> Reader (r -> b)) -> Reader (r -> b)
+     Reader ra >>= fb = Reader $ \r -> runReader (fb (ra r)) r
+   :}
+   #+END_SRC
+
+2. Rewrite the monadic ~getDogRM~ to use your Reader datatype
+
+   #+BEGIN_SRC haskell :results silent
+   <<reader-monad>>
+
+   newtype HumanName = HumanName String deriving (Eq, Show)
+
+   newtype DogName = DogName String deriving (Eq, Show)
+
+   newtype Address = Address String deriving (Eq, Show)
+
+   :{
+   data Person = Person { humanName :: HumanName
+                        , dogName   :: DogName
+                        , address   :: Address
+                        } deriving (Eq, Show)
+   :}
+
+   :{
+   data Dog = Dog { dogsName    :: DogName
+                  , dogsAddress :: Address
+                  } deriving (Eq, Show)
+   :}
+
+   :{
+   getDogRM :: Person -> Dog
+   getDogRM = do
+     name <- dogName
+     addy <- address
+     return $ Dog name addy
+   :}
+
+   :{
+   getDogName :: Reader Person DogName
+   getDogName = Reader dogName
+   :}
+
+   :{
+   getAddress :: Reader Person Address
+   getAddress = Reader address
+   :}
+
+   :{
+   getDogRM' :: Reader Person Dog
+   getDogRM' = do
+     name <- getDogName
+     addy <- getAddress
+     return $ Dog name addy
+   :}
+   #+END_SRC
+
+* 22.08 Reader Monad by Itself is Boring
 ...
+
+* 22.09 You Can Only Change what Comes Below
+...
+
+* 22.10 You Tend to see ReaderT not Reader in Code
+...
+
+* 22.11 Exercises
+
+#+NAME: part-1
+#+BEGIN_SRC haskell :results silent
+import Control.Applicative
+import Data.Maybe
+
+x = [1, 2, 3]
+y = [4, 5, 6]
+z = [7, 8, 9]
+#+END_SRC
+
+#+NAME: part-2
+#+BEGIN_SRC haskell :results silent
+<<part-1>>
+
+:{
+xs :: Maybe Integer
+xs = lookup 3 $ zip x y
+:}
+
+:{
+ys :: Maybe Integer
+ys = lookup 6 $ zip y z
+:}
+
+:{
+zs :: Maybe Integer
+zs = lookup 4 $ zip x y
+:}
+
+:{
+z' :: Integer -> Maybe Integer
+z' n = lookup n $ zip x z
+:}
+
+-- tuple of xs and ys
+:{
+x1 :: Maybe (Integer, Integer)
+x1 = liftA2 (,) xs ys
+:}
+
+-- tuple of ys and zs
+:{
+x2 :: Maybe (Integer, Integer)
+x2 = liftA2 (,) ys zs
+:}
+
+-- tuple of two applications of z'
+:{
+x3 :: Integer -> (Maybe Integer, Maybe Integer)
+x3 n = let x = z' n in (x, x)
+:}
+
+x1 == Just (6, 9)
+x2 == Nothing
+x3 3 == (Just 9, Just 9)
+#+END_SRC
+
+#+NAME: part-3
+#+BEGIN_SRC haskell :results silent
+<<part-2>>
+
+-- summed is uncurry with addition as the first argument
+:{
+summed :: Num a => (a, a) -> a
+summed = uncurry (+)
+:}
+
+-- lift a Boolean function over two partially applied functions
+-- use && >3 <8
+:{
+bolt :: Integer -> Bool
+bolt = liftA2 (&&) (>3) (<8)
+:}
+
+(summed <$> ((,) <$> xs <*> ys)) == (Just 15)
+fmap summed ((,) <$> xs <*> zs) == Nothing
+bolt 7 == True
+fmap bolt z == [True, False, False]
+#+END_SRC
+
+#+NAME: part-4
+#+BEGIN_SRC haskell :results silent
+<<part-3>>
+
+-- (Traversable t, Applicative f) => t (f a) -> f (t a)
+-- In this case the Traversable is a list and Applicative is ((->) r)
+-- So in the end we have a function waiting for a number (7)
+sequenceA [(>3), (<8), even] 7
+
+:{
+sequA :: Integral a => a -> [Bool]
+sequA = sequenceA [(>3), (<8), even]
+:}
+
+s' = summed <$> ((,) <$> xs <*> ys)
+#+END_SRC
+
+1. Fold the boolean conjunction operator over the list of results of
+   ~sequA~ (applied to some value)
+
+   #+BEGIN_SRC haskell :results silent
+   <<part-4>>
+
+   f = getAll . foldMap All . sequA
+
+   f 7 == False
+   f 6 == True
+   #+END_SRC
+
+2. Apply ~sequA~ to ~s'~
+
+   #+BEGIN_SRC haskell :results silent
+   <<part-4>>
+
+   sequA <$> s'
+   #+END_SRC
+
+3. Apply ~bolt~ to ~ys~
+
+   #+BEGIN_SRC haskell :results silent
+   <<part-4>>
+
+   bolt <$> ys
+   #+END_SRC
