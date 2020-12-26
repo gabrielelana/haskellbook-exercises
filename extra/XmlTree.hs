@@ -30,8 +30,8 @@ unfoldTree (Node a as) = [D a] ++ concat (unfoldTree <$> as) ++ [U]
 foldTree :: [V a] -> Tree a
 foldTree (D a : as) = fst $ foldTree' as (Node a [])
   where foldTree' :: [V a] -> Tree a -> (Tree a, [V a])
+        foldTree' [D _] _ = panic "impossible"
         foldTree' (U : as) t = (reverseNode t, as)
-        foldTree' (D _ : []) _ = panic "impossible"
         foldTree' (D a : as) (Node n ns) =
           let (t', as') = foldTree' as (Node a []) in
             foldTree' as' $ Node n (t' : ns)
