@@ -1,0 +1,265 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
+#+TITLE: State
+
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+
+* 23.1 State
+...
+
+* 23.2 What is State?
+In most imperative languages statefulness is pervasive and implicit,
+in Haskell we are not allowed to secretly change some value. All we
+can do is to take a value and return a value.
+
+The type ~State~ represents a state that may change in the course of
+code evaluation, the monadic interface is more of a convenience than a
+necessity.
+
+~State~ is appropriate when you want to express your program in terms
+of values that potentially vary with each evaluation step, which can
+be read and modified.
+
+* 23.3 Random Numbers
+In this chapter we will use an extensive example based on random
+numbers using ~System.Random~
+
+#+BEGIN_SRC haskell
+import System.Random
+
+:t mkStdGen
+:t mkStdGen 0
+:t next
+:t random
+
+sg = mkStdGen 0
+:t next sg
+:t random sg
+next sg
+random sg
+fst $ next sg
+fst $ random sg
+fst $ random sg -- same number as before!!!
+
+-- By using the returned generator it will print different numbers
+-- every time
+(n1, sg1) = (random sg) :: (Int, StdGen)
+(n2, sg2) = (random sg1) :: (Int, StdGen)
+(n3, sg3) = (random sg2) :: (Int, StdGen)
+n1
+n2
+n3
+
+-- What about a number within a range?
+:t randomR
+randomR (1, 6) sg
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+mkStdGen :: Int -> StdGen
+mkStdGen 0 :: StdGen
+next :: RandomGen g => g -> (Int, g)
+random :: (Random a, RandomGen g) => g -> (a, g)
+next sg :: (Int, StdGen)
+random sg :: Random a => (a, StdGen)
+(2147482884,40014 40692)
+(9106162675347844341,1346387765 2103410263)
+2147482884
+9106162675347844341
+9106162675347844341
+9106162675347844341
+-5782012937088350469
+3531325756418318423
+randomR :: (Random a, RandomGen g) => (a, a) -> g -> (a, g)
+(6,40014 40692)
+#+END_EXAMPLE
+
+Manually chaining the changing ~StdGen~ can get tedious... ~State~ to
+the rescue!
+
+* 23.4 The State newtype
+~State~ is defined as a newtype
+
+#+BEGIN_SRC haskell :eval never
+newtype State s a = State { runState :: s -> (a, s) }
+#+END_SRC
+
+~State~ looks a lot like ~random~
+
+#+BEGIN_SRC haskell :eval never
+random :: (Random a, RandomGen g) => g -> (a, g)
+runState :: State s a -> s -> (a, s)
+#+END_SRC
+
+* 23.5 Throw Down
+Let's roll some dice
+
+#+BEGIN_SRC haskell
+import System.Random
+
+:{
+roll3 :: (Int, Int, Int)
+roll3 = let sg = mkStdGen 0
+            (n1, sg1) = randomR (1, 6) sg
+            (n2, sg2) = randomR (1, 6) sg1
+            (n3, _) = randomR (1, 6) sg2
+        in (n1, n2, n3)
+:}
+
+-- Unfortunately they will produce the same result every time
+roll3
+roll3
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+(6,6,4)
+(6,6,4)
+#+END_EXAMPLE
+
+Use ~State~
+
+#+BEGIN_SRC haskell
+import System.Random
+import Control.Monad.Trans.State
+import Control.Monad (replicateM)
+import Control.Applicative
+
+:{
+roll :: State StdGen Int
+roll = state $ randomR (1, 6)
+:}
+
+:{
+roll3 :: State StdGen (Int, Int, Int)
+roll3 = liftA3 (,,) roll roll roll
+:}
+
+:{
+rolln :: Int -> State StdGen [Int]
+rolln n = replicateM n roll
+:}
+
+evalState roll3 (mkStdGen 1)
+evalState (rolln 10) (mkStdGen 1)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+(6,5,2)
+[6,5,2,6,5,2,3,2,5,5]
+#+END_EXAMPLE
+
+** Keep on Rolling
+In the following example we will keep rolling a single die until we
+reach or exceed a sum of 20
+
+#+BEGIN_SRC haskell
+:{
+rollsToGetTwenty :: StdGen -> Int
+rollsToGetTwenty g = go 0 0 g
+  where go sum count g
+          | sum >= 20 = count
+          | otherwise = let (n, g') = randomR (1, 6) g
+                        in go (sum + n) (count + 1) g'
+:}
+
+rollsToGetTwenty (mkStdGen 0)
+rollsToGetTwenty (mkStdGen 4)
+rollsToGetTwenty (mkStdGen 12)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+5
+6
+7
+#+END_EXAMPLE
+
+** Exercises: Roll You Own
+
+1. Refactor ~rollsToGetTwenty~ so that the limit is an argument to the function
+   #+BEGIN_SRC haskell
+   :{
+   rollsToGetN :: Int -> StdGen -> Int
+   rollsToGetN m g = go 0 0 g
+     where go sum count g
+             | sum >= m = count
+             | otherwise = let (n, g') = randomR (1, 6) g
+                           in go (sum + n) (count + 1) g'
+   :}
+
+   rollsToGetN 20 (mkStdGen 0)
+   rollsToGetN 6 (mkStdGen 0)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   5
+   1
+   #+END_EXAMPLE
+
+2. Change ~rollsToGetN~ to record the series of dice that are rolled
+   #+BEGIN_SRC haskell
+   :{
+   rollsToGetN :: Int -> StdGen -> (Int, [Int])
+   rollsToGetN m g = go [] g
+     where go dices g
+             | (sum dices) >= m = (length dices, dices)
+             | otherwise = let (n, g') = randomR (1, 6) g
+                           in go (n:dices) g'
+   :}
+
+   rollsToGetN 20 (mkStdGen 0)
+   rollsToGetN 6 (mkStdGen 0)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   (5,[5,1,4,6,6])
+   (1,[6])
+   #+END_EXAMPLE
+
+   #+BEGIN_SRC haskell
+   import Data.Functor.Identity
+   import Control.Monad.Trans.State
+   import System.Random
+
+   :{
+   roll :: State StdGen Int
+   roll = state $ randomR (1, 6)
+   :}
+
+   :{
+   foreverM :: Monad m => m a -> m [a]
+   foreverM m = do
+     a <- m
+     as <- foreverM m
+     return $ a : as
+   :}
+
+   :{
+   repeatUntilM :: Monad m => ([a] -> Bool) -> m a -> m [a]
+   repeatUntilM f m = head . filter f . scanl (flip (:)) [] <$> foreverM m
+   :}
+
+   :{
+   rollUntilSum :: Int -> StdGen -> (Int, [Int])
+   rollUntilSum n g =
+     let rolls = evalState (repeatUntilM ((>= n) . sum) roll) g
+     in (length rolls, rolls)
+   :}
+
+   rollUntilSum 20 (mkStdGen 0)
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   (5,[5,1,4,6,6])
+   #+END_EXAMPLE
+
+* 23.6 Write State for Yourself
+...
