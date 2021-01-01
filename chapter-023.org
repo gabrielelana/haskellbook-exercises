@@ -262,4 +262,309 @@ rollsToGetTwenty (mkStdGen 12)
    #+END_EXAMPLE
 
 * 23.6 Write State for Yourself
-...
+Based on the datatatype definition given above...
+
+#+NAME: state-definition
+#+BEGIN_SRC haskell :session custom-state :results silent :eval never
+newtype State s a = State { runState :: s -> (a, s) }
+#+END_SRC
+
+Implement an instance of Functor
+#+NAME: state-functor
+#+BEGIN_SRC haskell :session custom-state :eval never
+<<state-definition>>
+
+:{
+instance Functor (State s) where
+  -- fmap :: (a -> b) -> f a -> f b
+  fmap f fa = State $ \s -> let (a, s') = runState fa s
+                            in (f a, s')
+:}
+#+END_SRC
+
+#+BEGIN_SRC haskell :session custom-state
+<<state-functor>>
+
+runState (State $ \n -> (n, n)) 1
+runState ((+1) <$> (State $ \n -> (n, n))) 1
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+(1,1)
+(2,1)
+#+END_EXAMPLE
+
+Implement an instance of Applicative
+#+NAME: state-applicative
+#+BEGIN_SRC haskell :session custom-state :eval never
+<<state-functor>>
+:{
+instance Applicative (State s) where
+  -- pure :: a -> f a
+  pure = State . (,)
+
+  -- (<*>) :: f (a -> b) -> f a -> f b
+  ffb <*> fa = State $ \s -> let (a, s') = runState fa s
+                                 (fb, s'') = runState ffb s'
+                             in (fb a, s'')
+:}
+#+END_SRC
+
+#+BEGIN_SRC haskell :session custom-state
+<<state-applicative>>
+
+s1 = State $ \s -> ((+1), s)
+s2 = State $ \s -> (s, s)
+
+runState (s1 <*> s2) 1
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+(2,1)
+#+END_EXAMPLE
+
+Implement an instance of Monad
+#+NAME: state-monad
+#+BEGIN_SRC haskell :session custom-state :eval never
+<<state-applicative>>
+:{
+instance Monad (State s) where
+  return = pure
+
+  -- (>>=) :: ma -> (a -> m b) -> m b
+  ma >>= f = State $ \s -> let (a, s') = runState ma s
+                           in runState (f a) s'
+:}
+#+END_SRC
+
+#+BEGIN_SRC haskell :session custom-state
+<<state-monad>>
+
+inc = State $ \n -> (n, n + 1)
+
+runState (Control.Monad.replicateM 4 inc) 0
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+([3,2,1,0],4)
+#+END_EXAMPLE
+
+* 23.7 Get a Coding Job with One Weird Trick
+Many companies will use the FizzBuzz kata to screen candidates
+
+#+NAME: fizzbuzz
+#+BEGIN_SRC haskell :eval never
+:{
+fizzbuzz :: Int -> String
+fizzbuzz n | n `mod` 15 == 0 = "FizzBuzz"
+           | n `mod` 5 == 0  = "Fizz"
+           | n `mod` 3 == 0  = "Buzz"
+           | otherwise       = show n
+:}
+#+END_SRC
+
+#+BEGIN_SRC haskell
+<<fizzbuzz>>
+
+fizzbuzz 1
+fizzbuzz 3
+fizzbuzz 4
+fizzbuzz 5
+fizzbuzz 15
+fizzbuzz 35
+fizzbuzz 98
+fizzbuzz 100
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+1
+Buzz
+4
+Fizz
+FizzBuzz
+Fizz
+98
+Fizz
+#+END_EXAMPLE
+
+The book used ~State~ to accumulate the result of all the ~fizzbuzz~
+invocation stating that is useless to do that... indeed it's useless
+but you can store as a state of the computation the current number of
+the sequence, incrementing it at every step and emitting the
+~fizzbuzz~ output as a result of the computation.
+
+I think this is a better way to implement it.
+
+#+BEGIN_SRC haskell
+<<fizzbuzz>>
+
+import Control.Monad.Trans.State
+import Control.Monad
+
+:{
+fizzbuzzS :: State Int String
+fizzbuzzS = state $ \n -> (fizzbuzz n, n + 1)
+:}
+
+evalState (replicateM 10 fizzbuzzS) 1
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+["1","2","Buzz","4","Fizz","Buzz","7","8","Buzz","Fizz"]
+#+END_EXAMPLE
+
+** FizzBuzz Differently
+Can you implement FizzBuzz in another way so that it doesn't need to
+reverse the results list?
+
+#+BEGIN_SRC haskell
+<<fizzbuzz>>
+
+:{
+fizzbuzzFromTo :: Int -> Int -> [String]
+fizzbuzzFromTo n m | n > m     = []
+                   | otherwise = fizzbuzz n : fizzbuzzFromTo (n + 1) m
+:}
+
+-- You can create also an infinite list
+
+:{
+fizzbuzzFrom :: Int -> [String]
+fizzbuzzFrom n = fizzbuzz n : fizzbuzzFrom (n + 1)
+:}
+
+-- Then another way to implement fizzbuzzFromTo will be
+
+:{
+fizzbuzzFromTo' :: Int -> Int -> [String]
+fizzbuzzFromTo' n m = take (max 0 (m - n + 1)) $ fizzbuzzFrom n
+:}
+
+fizzbuzzFromTo 1 10
+take 10 $ fizzbuzzFrom 1
+fizzbuzzFromTo' 1 10
+fizzbuzzFromTo' 10 10
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+["1","2","Buzz","4","Fizz","Buzz","7","8","Buzz","Fizz"]
+["1","2","Buzz","4","Fizz","Buzz","7","8","Buzz","Fizz"]
+["1","2","Buzz","4","Fizz","Buzz","7","8","Buzz","Fizz"]
+["Fizz"]
+[]
+#+END_EXAMPLE
+
+* 23.8 Chapter Exercises
+Write the following functions. You'll want to use your own ~State~
+type for which you've defined ~Functor~, ~Applicative~ and ~Monad~
+instances.
+
+1. Construct a ~State~ where the state is also the value you return
+   #+NAME: state-get
+   #+BEGIN_SRC haskell
+   :{
+   get :: State s s
+   get = State $ \s -> (s, s)
+   :}
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   <<state-monad>>
+   <<state-get>>
+
+   runState get "curryIsAmaze"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   ("curryIsAmaze","curryIsAmaze")
+   #+END_EXAMPLE
+
+2. Construct a ~State~ where the resulting state is the argument
+   provided, and the value defaults to unit
+   #+NAME: state-put
+   #+BEGIN_SRC haskell
+   :{
+   put :: s -> State s ()
+   put s = State $ const ((), s)
+   :}
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   <<state-monad>>
+   <<state-put>>
+
+   runState (put "blah") "woot"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   ((),"blah")
+   #+END_EXAMPLE
+
+3. Run the ~State~ with ~s~ and get the state that results
+   #+BEGIN_SRC haskell
+   <<state-monad>>
+   <<state-put>>
+
+   :{
+   exec :: State s a -> s -> s
+   exec s = snd . runState s
+   :}
+
+   exec (put "wilma") "daphne"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   wilma
+   #+END_EXAMPLE
+
+4. Run the ~State~ with s and get the value that results
+   #+BEGIN_SRC haskell
+   <<state-monad>>
+   <<state-get>>
+
+   :{
+   eval :: State s a -> s -> a
+   eval s = fst . runState s
+   :}
+
+   eval get "wilma"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   wilma
+   #+END_EXAMPLE
+
+5. Run a function that applies a function to create a new ~State~
+   #+BEGIN_SRC haskell :noweb-ref "state-get"
+   <<state-monad>>
+   <<state-get>>
+   <<state-put>>
+
+   :{
+   modify :: (s -> s) -> State s ()
+   modify f = get >>= (put . f)
+   :}
+
+   f = modify (+1)
+
+   runState f 0
+   runState (f >> f) 0
+   runState (f >> f >> f) 0
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   ((),1)
+   ((),2)
+   ((),3)
+   #+END_EXAMPLE
