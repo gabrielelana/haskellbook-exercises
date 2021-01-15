@@ -1,0 +1,169 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
+#+TITLE: Parser Combinators
+
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+
+* 24.1 Parser Combinators
+Given a serialized input in the form of sequence of bytes and return a
+structured data type, normally a tree (AST: Abstract Syntax Tree).
+
+* 24.2 A Few More Words of Introduction
+This chapter will not proceed, like the others, bottom up because it
+will be too much for a topic so big but the focus will be on enabling
+the use of preexisting Haskell's libraries.
+
+* 24.3 Understating the Parsing Process
+A /Parser Combinator/ is an higher-order function that takes parsers
+and returns a parser that is a combination of some sorts of the
+parsers taken as input.
+
+Parsers "consumes" the input text by "reading" one character at time.
+
+The "effect" of parsers is our case is to "consume" input.
+
+The "state" of the parser is the remaining input and the partial
+result.
+
+#+NAME: parser-prelude
+#+BEGIN_SRC haskell :eval never
+import Text.Trifecta
+import Text.Parser.Combinators
+
+:{
+testParse :: Show a => String -> Parser a -> IO ()
+testParse s p = print $ parseString p mempty s
+:}
+#+END_SRC
+
+#+BEGIN_SRC haskell
+<<parser-prelude>>
+
+:{
+stop :: Parser a
+stop = unexpected "stop"
+:}
+
+:{
+one :: Parser Char
+one = char '1'
+:}
+
+:{
+oneTwo :: Parser Char
+oneTwo = char '1' >> char '2'
+:}
+
+-- one >> stop
+
+-- We are discarding the result of ~one~ but the effect of consuming
+-- input remainins as expected from the monadic operator ~>>~
+
+testParse "123" one
+testParse "123" $ one >> stop
+testParse "123" $ oneTwo >> stop
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Success '1'
+Failure (ErrInfo {_errDoc = (interactive):1:2: error: unexpected stop
+1 | 123<EOF>
+  |  ^       , _errDeltas = [Columns 1 1]})
+Failure (ErrInfo {_errDoc = (interactive):1:3: error: unexpected stop
+1 | 123<EOF>
+  |   ^      , _errDeltas = [Columns 2 2]})
+#+END_EXAMPLE
+
+** Exercises: Parsing Practice
+
+1. There's a combinator that expect an input stream to be finished at
+   a particular point ~eof~ in ~Text.Parser.Combinators~, can you make
+   ~one~ and ~oneTwo~ parsers fail because they don't exhaust the
+   input stream?
+
+   #+BEGIN_SRC haskell
+   <<parser-prelude>>
+
+   :{
+   one :: Parser Char
+   one = char '1'
+   :}
+
+   :{
+   oneTwo :: Parser Char
+   oneTwo = char '1' >> char '2'
+   :}
+
+   testParse "123" one
+   testParse "123" oneTwo
+   testParse "123" $ one >> eof
+   testParse "123" $ oneTwo >> eof
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Success '1'
+   Success '2'
+   Failure (ErrInfo {_errDoc = (interactive):1:2: error: expected: end of input
+   1 | 123<EOF>
+     |  ^       , _errDeltas = [Columns 1 1]})
+   Failure (ErrInfo {_errDoc = (interactive):1:3: error: expected: end of input
+   1 | 123<EOF>
+     |   ^      , _errDeltas = [Columns 2 2]})
+   #+END_EXAMPLE
+
+2. Use ~string~ to make a ~Parser~ that parses "1", "12" and "123"
+
+   #+BEGIN_SRC haskell
+   <<parser-prelude>>
+
+   :{
+   stop :: Parser a
+   stop = unexpected "stop"
+   :}
+
+   :{
+   p123 :: Parser String
+   p123 = choice [string "123", string "12", string "1"]
+   :}
+
+   testParse "1" p123
+   testParse "12" p123
+   testParse "123" p123
+
+   testParse "1" $ p123 >> stop
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Success "1"
+   Success "12"
+   Success "123"
+   Failure (ErrInfo {_errDoc = (interactive):1:2: error: unexpected stop
+   1 | 1<EOF>
+     |  ^     , _errDeltas = [Columns 1 1]})
+   #+END_EXAMPLE
+
+3. Try writing a parser that behaves like ~string~ using ~char~
+
+   #+BEGIN_SRC haskell
+   <<parser-prelude>>
+
+   :{
+   string' :: String -> Parser String
+   string' = traverse char
+   :}
+
+   testParse "123" $ string "123"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Success "123"
+   #+END_EXAMPLE
+
+* 24.4 Parsing Fractions
+...
