@@ -166,4 +166,155 @@ Failure (ErrInfo {_errDoc = (interactive):1:3: error: unexpected stop
    #+END_EXAMPLE
 
 * 24.4 Parsing Fractions
+#+NAME: parse-fraction
+#+BEGIN_SRC haskell
+<<parser-prelude>>
+
+import Data.Ratio ((%))
+import Text.Trifecta
+
+:{
+parseFraction :: Parser Rational
+parseFraction = do
+  numerator <- decimal
+  char '/'
+  denominator <- decimal
+  if denominator == 0
+  then fail "denominator cannot be zero"
+  else return (numerator % denominator)
+:}
+#+END_SRC
+
+#+BEGIN_SRC haskell
+<<parse-fraction>>
+
+testParse "1/2" parseFraction
+testParse "2/1" parseFraction
+testParse "1/0" parseFraction
+testParse "10" parseFraction
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Success (1 % 2)
+Success (2 % 1)
+Failure (ErrInfo {_errDoc = (interactive):1:4: error: denominator cannot be zero, expected: digit
+1 | 1/0<EOF>
+  |    ^     , _errDeltas = [Columns 3 3]})
+Failure (ErrInfo {_errDoc = (interactive):1:3: error: unexpected EOF, expected: "/", digit
+1 | 10<EOF>
+  |   ^     , _errDeltas = [Columns 2 2]})
+#+END_EXAMPLE
+
+First time that we see and use ~fail~
+
+#+BEGIN_SRC haskell
+-- What is this sorcery?
+:t fail
+:i fail
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+fail :: MonadFail m => String -> m a
+class Monad m => MonadFail (m :: * -> *) where
+  fail :: String -> m a
+  	-- Defined in ‘Control.Monad.Fail’
+#+END_EXAMPLE
+
+** Exercise: Unit of Success
+Write a parser ~onlyInteger~ that will parse a number, returns that
+number and asserts that the input stops there (NOTE: ~integer >> eof~
+works but the result is going to be, in case of success, always of
+type ~()~, you must fix this)
+
+#+BEGIN_SRC haskell
+<<parser-prelude>>
+
+:{
+onlyInteger :: Parser Integer
+onlyInteger = integer <* eof
+:}
+
+testParse "123" onlyInteger
+testParse "123abc" onlyInteger
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Success 123
+Failure (ErrInfo {_errDoc = (interactive):1:4: error: expected: digit, end of input
+1 | 123abc<EOF>
+  |    ^        , _errDeltas = [Columns 3 3]})
+#+END_EXAMPLE
+
+* 24.5 Haskell's parsing ecosystem
+...
+
+* 24.6 Alternative
+#+BEGIN_SRC haskell
+import Control.Applicative
+
+:i Alternative
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+class Applicative f => Alternative (f :: * -> *) where
+  empty :: f a
+  (<|>) :: f a -> f a -> f a
+  some :: f a -> f [a]
+  many :: f a -> f [a]
+  {-# MINIMAL empty, (<|>) #-}
+  	-- Defined in ‘GHC.Base’
+instance Alternative ZipList -- Defined in ‘Control.Applicative’
+instance GHC.Base.MonadPlus m => Alternative (WrappedMonad m)
+  -- Defined in ‘Control.Applicative’
+instance (Control.Arrow.ArrowZero a, Control.Arrow.ArrowPlus a) =>
+         Alternative (WrappedArrow a b)
+  -- Defined in ‘Control.Applicative’
+instance Alternative Result -- Defined in ‘Text.Trifecta.Result’
+instance Alternative m => Alternative (Unspaced m)
+  -- Defined in ‘Text.Parser.Token’
+instance Alternative m => Alternative (Unlined m)
+  -- Defined in ‘Text.Parser.Token’
+instance Alternative m => Alternative (Unhighlighted m)
+  -- Defined in ‘Text.Parser.Token’
+instance Alternative Parser -- Defined in ‘Text.Trifecta.Parser’
+instance [safe] Control.Monad.Trans.Error.Error e =>
+                Alternative (Either e)
+  -- Defined in ‘Control.Monad.Trans.Error’
+instance Alternative [] -- Defined in ‘GHC.Base’
+instance Alternative Maybe -- Defined in ‘GHC.Base’
+instance Alternative IO -- Defined in ‘GHC.Base’
+#+END_EXAMPLE
+
+** Exercise: Try ~try~
+Make a parser, using the existing ~parseFraction~ plus a new
+~parseDecimal~ that can parse either decimals or fractions.
+
+#+BEGIN_SRC haskell
+<<parse-fraction>>
+
+:{
+parseDecimal :: Parser Integer
+parseDecimal = decimal
+:}
+
+:{
+parseNumber :: Parser (Either Rational Integer)
+parseNumber = (Left <$> try parseFraction) <|> (Right <$> parseDecimal)
+:}
+
+testParse "1/10" parseNumber
+testParse "10" parseNumber
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Success (Left (1 % 10))
+Success (Right 10)
+#+END_EXAMPLE
+
+* 24.7 Parsing Configuration Files
 ...
