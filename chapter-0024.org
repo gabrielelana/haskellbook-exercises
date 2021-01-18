@@ -477,4 +477,65 @@ Success (Config (fromList [(Header "bar",fromList [("baz","biz")]),(Header "foo"
 #+END_EXAMPLE
 
 * 24.8 Character and token parsers
+Tokenization is about ignoring noise in the finer grained parser so
+that the higher level parsers can be simpler. In parser combinators
+~token~ can also be found as ~lex~ that stands for /lexeme/ aka "basic
+lexical unit of a language".
+
+#+BEGIN_SRC haskell
+<<parser-prelude>>
+
+testParse "aaa" $ char 'a'
+testParse "aaa" $ some (char 'a')
+testParse "a a a" $ some (char 'a')
+testParse "a a a" $ some (token $ char 'a')
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Success 'a'
+Success "aaa"
+Success "a"
+Success "aaa"
+#+END_EXAMPLE
+
+* 24.9 Polymorphic parsers
+By defining parsers using ~TokenParsing~ from
+~Text.Parser.Combinators~ we can use then multiple libraries to run
+the parser (ex. /Trifecta/, /Attoparsec/, ...)
+
+** Backtracking
+Alternative do not backtrack, with this you can have errors that are
+hard to debug
+
+#+BEGIN_SRC haskell
+<<parser-prelude>>
+
+p = (char '1' >> char '2') <|> (char '1' >> char '3')
+p' = try (char '1' >> char '2') <|> (char '1' >> char '3')
+
+q = try (char '1' >> char '2' >> char '3') <|> char '3'
+q' = try (char '3') <|> (char '1' >> char '2' >> char '3')
+
+testParse "13" p -- fails but intuitively it shouldn't have
+testParse "13" p' -- you must use try
+testParse "124" q -- even then thouhg the error can be deceiving
+testParse "124" q' -- when possible you should take care of "precedence"
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Failure (ErrInfo {_errDoc = (interactive):1:2: error: expected: "2"
+1 | 13<EOF>
+  |  ^      , _errDeltas = [Columns 1 1]})
+Success '3'
+Failure (ErrInfo {_errDoc = (interactive):1:1: error: expected: "3"
+1 | 124<EOF>
+  | ^        , _errDeltas = [Columns 0 0]})
+Failure (ErrInfo {_errDoc = (interactive):1:3: error: expected: "3"
+1 | 124<EOF>
+  |   ^      , _errDeltas = [Columns 2 2]})
+#+END_EXAMPLE
+
+* 24.10 Marshalling from an AST to a datatype
 ...
