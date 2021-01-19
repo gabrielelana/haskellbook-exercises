@@ -538,4 +538,119 @@ Failure (ErrInfo {_errDoc = (interactive):1:3: error: expected: "3"
 #+END_EXAMPLE
 
 * 24.10 Marshalling from an AST to a datatype
+With statically typed languages when you have text that represent
+information for you program you need to *parse* the text accordingly
+to its /structure/ into a generic data structure related to the format
+(ex. ~Data.Aeson.Value~) and then *unmarshal* it to a data specific
+and /meaningful/ data structure for you program.
+
+#+BEGIN_SRC example
+Text -----> Structure ----------> Meaning
+     parse            unmarshall
+                       (toJSON)
+
+Meaning --------> Structure ---------> Text
+        marshall            serialize
+       (fromJSON)
+#+END_SRC
+
+#+BEGIN_SRC haskell
+:set -XOverloadedStrings
+:set -XQuasiQuotes
+
+import Control.Applicative
+import Data.Aeson
+import Text.RawString.QQ
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as LBS
+
+:{
+exampleJSON :: LBS.ByteString
+exampleJSON = [r|
+{ "section": {"host": "wikipedia.org"},
+  "what": {"red": "pretty"}
+}
+|]
+:}
+
+:t encode
+:t decode
+
+-- It will result into ~Nothing~ because type inference cannot
+-- inference any type and the only thing to do is to give back
+-- the default ~Nothing~
+decode exampleJSON
+:t decode exampleJSON
+
+-- ~Value~ is the generic data structure for representing JSON
+-- for Aeson
+decode exampleJSON :: Maybe Value
+
+-- We will create a specific data structure to represent the
+-- information encoded in JSON
+:{
+data Data = Data { section :: Host
+                 , what :: Color
+                 } deriving (Eq, Show)
+:}
+
+newtype Host = Host String deriving (Eq, Show)
+
+type Annotation = String
+
+:{
+data Color = Red Annotation
+           | Blue Annotation
+           | Yellow Annotation
+           deriving (Eq, Show)
+:}
+
+-- Cannot decode/unmarshall without an instance of ~FromJSON~
+-- typeclass for the specified type ~Data~
+decode exampleJSON :: Maybe Data
+
+:{
+instance FromJSON Color where
+  parseJSON (Object v) =  (Red <$> v .: "red")
+                     <|> (Blue <$> v .: "blue")
+                     <|> (Yellow <$> v .: "yellow")
+  parseJSON _ = fail "exepcted an object for Color"
+:}
+
+:{
+instance FromJSON Data where
+  parseJSON (Object v) =
+    Data <$> v .: "section"
+         <*> v .: "what"
+  parseJSON _ = fail "expected an object for Data"
+:}
+
+:{
+instance FromJSON Host where
+  parseJSON (Object v) =
+    Host <$> v .: "host"
+  parseJSON _ = fail "exepcted an object for Host"
+:}
+
+decode exampleJSON :: Maybe Data
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+encode :: ToJSON a => a -> LBS.ByteString
+decode :: FromJSON a => LBS.ByteString -> Maybe a
+Nothing
+decode exampleJSON :: FromJSON a => Maybe a
+Just (Object (fromList [("what",Object (fromList [("red",String "pretty")])),("section",Object (fromList [("host",String "wikipedia.org")]))]))
+<interactive>:608:1: error:
+    • No instance for (FromJSON Data) arising from a use of ‘decode’
+      There are instances for similar types:
+        instance [safe] FromJSON Ghci71.Data
+          -- Defined at <interactive>:542:10
+    • In the expression: decode exampleJSON :: Maybe Data
+      In an equation for ‘it’: it = decode exampleJSON :: Maybe Data
+Just (Data {section = Host "wikipedia.org", what = Red "pretty"})
+#+END_EXAMPLE
+
+* 24.11 Chapter Exercises
 ...
