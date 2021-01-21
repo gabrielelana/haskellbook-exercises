@@ -653,4 +653,90 @@ Just (Data {section = Host "wikipedia.org", what = Red "pretty"})
 #+END_EXAMPLE
 
 * 24.11 Chapter Exercises
-...
+1. Write a parser for semantic versions as defined by http://semver.org
+   Write an instance of ~Ord~ for the ~SemVer~ type conforming with specifications
+
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load SemVer
+
+   parse "2.1.1"
+   parse "1.0.0-x.7.z.92"
+   parse "1.0.0-gamma+002"
+   parse "1.0.0-beta+oof.sha.41af286"
+
+   parse "2.1.1" > parse "2.1.0"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1 of 1] Compiling SemVer           ( /home/coder/code/haskellbook-exercises/chapter-024/SemVer.hs, interpreted )
+   Ok, one module loaded.
+   Just (Version {major = 2, minor = 1, patch = 1, release = [], build = []})
+   Just (Version {major = 1, minor = 0, patch = 0, release = ["x","7","z","92"], build = []})
+   Just (Version {major = 1, minor = 0, patch = 0, release = ["gamma"], build = ["002"]})
+   Just (Version {major = 1, minor = 0, patch = 0, release = ["beta"], build = ["oof","sha","41af286"]})
+   True
+   #+END_EXAMPLE
+
+2. Write a parser for positive integer values
+
+   #+BEGIN_SRC haskell
+   <<parser-prelude>>
+
+   :{
+   positiveNumber :: Parser Integer
+   positiveNumber = read <$> p <* somethingElse
+     where p = string "0" <|> some (oneOf "123456789") <?> "integer"
+           somethingElse = notFollowedBy p <?> "no leading zeros allowed"
+   :}
+
+   testParse "123" positiveNumber
+   testParse "123abc" positiveNumber
+   testParse "abc" positiveNumber
+   testParse "001" positiveNumber
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Success 123
+   Success 123
+   Failure (ErrInfo {_errDoc = (interactive):1:1: error: expected: integer
+   1 | abc<EOF>
+     | ^        , _errDeltas = [Columns 0 0]})
+   Failure (ErrInfo {_errDoc = (interactive):1:2: error: expected: no leading zeros allowed
+   1 | 001<EOF>
+     |  ^       , _errDeltas = [Columns 1 1]})
+   #+END_EXAMPLE
+
+3. Extend the parser before to handle negative and positive numbers.
+   #+BEGIN_SRC haskell
+   <<parser-prelude>>
+
+   :{
+   positiveNumber :: Parser Integer
+   positiveNumber = read <$> p <* somethingElse
+     where p = string "0" <|> some (oneOf "123456789") <?> "integer"
+           somethingElse = notFollowedBy p <?> "no leading zeros allowed"
+   :}
+
+   :{
+   signedNumber :: Parser Integer
+   signedNumber = do
+     char '-'
+     n <- positiveNumber
+     return (-n)
+   :}
+
+   testParse "-123" signedNumber
+   testParse "-123abc" signedNumber
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Success (-123)
+   Success (-123)
+   #+END_EXAMPLE
+
+4. Write a parser for US/Canada phone numbers with varying formats.
+   ...
