@@ -78,6 +78,13 @@ quickCheckBatchWithOutput (batchName, tests) = do
  chapter)
 #+END_SRC
 
+#+NAME: current-directory
+#+BEGIN_SRC emacs-lisp
+(concat
+ (file-name-as-directory (file-name-directory (buffer-file-name)))
+ (file-name-base (buffer-file-name)))
+#+END_SRC
+
 #+NAME: head
 #+BEGIN_SRC sh :var n="1" :var content="" :results raw
 echo "$content" | head -n$n

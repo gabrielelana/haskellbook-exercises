@@ -739,4 +739,238 @@ Just (Data {section = Host "wikipedia.org", what = Red "pretty"})
    #+END_EXAMPLE
 
 4. Write a parser for US/Canada phone numbers with varying formats.
-   ...
+   #+BEGIN_SRC haskell
+   <<parser-prelude>>
+
+   :{
+   data PhoneNumber = PhoneNumber { planArea :: Int
+                                  , exchange :: Int
+                                  , lineNumber :: Int
+                                  } deriving (Eq, Show)
+   :}
+
+   :{
+   suffixP :: Parser String
+   suffixP = symbol "-" <|> some space
+   :}
+
+   :{
+   internationalPrefixP :: Parser Int
+   internationalPrefixP = do
+     _ <- optional $ char '+'
+     n <- read <$> string "1"
+     _ <- suffixP
+     return n
+   :}
+
+   :{
+   planAreaP :: Parser Int
+   planAreaP = read <$> (p <* optional suffixP) <?> "plan area"
+     where p = (char '(' *> number <* char ')') <|> number
+           number = count 3 digit
+   :}
+
+   :{
+   exchangeP :: Parser Int
+   exchangeP = read <$> (count 3 digit <* optional suffixP) <?> "exchange"
+   :}
+
+   :{
+   lineNumberP :: Parser Int
+   lineNumberP = read <$> (count 4 digit) <?> "line number"
+   :}
+
+   :{
+   phoneNumberP :: Parser PhoneNumber
+   phoneNumberP = do
+     _ <- optional $ try internationalPrefixP
+     PhoneNumber <$> planAreaP <*> exchangeP <*> lineNumberP
+   :}
+
+   testParse "+1 " $ internationalPrefixP <* eof
+   testParse "+1-" $ internationalPrefixP <* eof
+   testParse "1-" $ internationalPrefixP <* eof
+   testParse "123" $ planAreaP <* eof
+   testParse "(123)" $ planAreaP <* eof
+   testParse "123-" $ planAreaP <* eof
+   testParse "123 " $ planAreaP <* eof
+   testParse "456" exchangeP
+   testParse "456-" exchangeP
+   testParse "456 " exchangeP
+   testParse "7890" lineNumberP
+   testParse "1234567890" phoneNumberP
+   testParse "1-1234567890" phoneNumberP
+   testParse "123-456-7890" phoneNumberP
+   testParse "(123) 456-7890" phoneNumberP
+   testParse "1-123-456-7890" phoneNumberP
+   testParse "+1 (123) 456-7890" phoneNumberP
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Success 1
+   Success 1
+   Success 1
+   Success 123
+   Success 123
+   Success 123
+   Success 123
+   Success 456
+   Success 456
+   Success 456
+   Success 7890
+   Success (PhoneNumber {planArea = 123, exchange = 456, lineNumber = 7890})
+   Success (PhoneNumber {planArea = 123, exchange = 456, lineNumber = 7890})
+   Success (PhoneNumber {planArea = 123, exchange = 456, lineNumber = 7890})
+   Success (PhoneNumber {planArea = 123, exchange = 456, lineNumber = 7890})
+   Success (PhoneNumber {planArea = 123, exchange = 456, lineNumber = 7890})
+   Success (PhoneNumber {planArea = 123, exchange = 456, lineNumber = 7890})
+   #+END_EXAMPLE
+
+5. Write a parser for an activity log format (examples below) and:
+   - tell the sum of time spent on each activity
+   - tell the average time at day spent on each activity
+
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load ActivityLog
+
+   filePath = "<<current-directory()>>/ActivityLog.example"
+   (fmap . fmap) sumActivitiesDuration $ fromFile filePath
+   (fmap . fmap) avgActivitiesDuration $ fromFile filePath
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1 of 1] Compiling ActivityLog      ( /home/coder/code/haskellbook-exercises/chapter-024/ActivityLog.hs, interpreted )
+   Ok, one module loaded.
+   Success (fromList [("Breakfast",120),("Bumped head, passed out",276),("Commute home for rest",30),("Commuting home in rover",30),("Dinner",135),("Exercising in high-grav gym",60),("Go to medbay",3),("Lunch",60),("Patch self up",5),("Programming",240),("R&R",90),("Read",495),("Sanitizing moisture collector",120),("Shower",15),("Sleep",240),("Wake up, headache",1)])
+   Success (fromList [("Breakfast",60.0),("Bumped head, passed out",138.0),("Commute home for rest",15.0),("Commuting home in rover",15.0),("Dinner",67.5),("Exercising in high-grav gym",30.0),("Go to medbay",1.5),("Lunch",30.0),("Patch self up",2.5),("Programming",120.0),("R&R",45.0),("Read",247.5),("Sanitizing moisture collector",60.0),("Shower",7.5),("Sleep",120.0),("Wake up, headache",0.5)])
+   #+END_EXAMPLE
+
+
+6. Write a parser for IPv4 addresses.
+
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load IPAddress4
+
+   parse "204.120.0.15"
+   parse "127.0.0.1"
+   parse "204.120.0.15.1"
+   parse "666.120.0.15"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1 of 1] Compiling IPAddress4       ( /home/coder/code/haskellbook-exercises/chapter-024/IPAddress4.hs, interpreted )
+   Ok, one module loaded.
+   Success 204.120.0.15
+   Success 127.0.0.1
+   Failure (ErrInfo {_errDoc = (interactive):1:15: error: IPv4 addresses must be composed of 4
+       octects, expected: ".", digit
+   1 | 204.120.0.15.1<EOF>
+     |               ^     , _errDeltas = [Columns 14 14]})
+   Failure (ErrInfo {_errDoc = (interactive):1:13: error: IPv4 octect must be between 0 and 255, expected: ".",
+       digit
+   1 | 666.120.0.15<EOF>
+     |             ^     , _errDeltas = [Columns 12 12]})
+   #+END_EXAMPLE
+
+7. Write a parser for IPv6 addresses
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load IPAddress6
+
+   parse "0:0:0:0:0:ffff:ac10:fe01"
+   parse "FE80:0000:0000:0000:0202:B3FF:FE1E:8329"
+   parse "FE80::0202:B3FF:FE1E:8329"
+   parse "2001:DB8::8:800:200C:417A"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1 of 1] Compiling IPAddress6       ( /home/coder/code/haskellbook-exercises/chapter-024/IPAddress6.hs, interpreted )
+   Ok, one module loaded.
+   Success 0:0:0:0:0:ffff:ac10:fe01
+   Success fe80:0:0:0:202:b3ff:fe1e:8329
+   Success fe80:0:0:0:202:b3ff:fe1e:8329
+   Success 2001:db8:0:0:8:800:200c:417a
+   #+END_EXAMPLE
+
+8. Remove the derived ~Show~ instances for ~IPAddress~ and
+   ~IPAddress6~ and write your own ~Show~ instance that renders the
+   addresses in their canonical format
+
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load IPAddress4
+
+   parse "204.120.0.15"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1 of 1] Compiling IPAddress4       ( /home/coder/code/haskellbook-exercises/chapter-024/IPAddress4.hs, interpreted )
+   Ok, one module loaded.
+   Success 204.120.0.15
+   #+END_EXAMPLE
+
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load IPAddress6
+
+   parse "FE80::0202:B3FF:FE1E:8329"
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1 of 1] Compiling IPAddress6       ( /home/coder/code/haskellbook-exercises/chapter-024/IPAddress6.hs, interpreted )
+   Ok, one module loaded.
+   Success 0:0:0:0:0:0:0:8329
+   #+END_EXAMPLE
+
+9. Write a function that converts between ~IPAddress4~ and ~IPAddress6~
+   #+BEGIN_SRC haskell
+   <<add-current-chapter-directory-in-path()>>
+   :load IPAddress4 IPAddress6
+   :module - IPAddress4
+   :module - IPAddress6
+   import qualified IPAddress6 as IPv6
+   import qualified IPAddress4 as IPv4
+
+   :{
+   toIPAddress6 :: IPv4.IPAddress4 -> IPv6.IPAddress6
+   toIPAddress6 a =
+     IPv6.fromComponents [0, 0, 0, 0, 0, 0xffff, toWord16 aw1 aw2, toWord16 aw3 aw4]
+     where toWord16 :: Word8 -> Word8 -> Word16
+           toWord16 w1 w2 = (fromIntegral w1 `shift` 8) .|. (fromIntegral w2)
+           [aw1, aw2, aw3, aw4] = IPv4.toComponents a
+   :}
+
+   :{
+   toIPAddress4 :: IPv6.IPAddress6 -> IPv4.IPAddress4
+   toIPAddress4 a =
+     IPv4.fromComponents [w1, w2, w3, w4]
+     where [w1, w2] = fromWord16 aw7
+           [w3, w4] = fromWord16 aw8
+           fromWord16 :: Word16 -> [Word8]
+           fromWord16 w = fromIntegral <$> [(w .&. 0xff `shiftL` 8) `shiftR` 8, w .&. 0xff]
+           [0, 0, 0, 0, 0, 0xffff, aw7, aw8] = IPv6.toComponents a
+   :}
+
+   toIPAddress6 <$> IPv4.parse "209.173.53.167" -- 0:0:0:0:0:ffff:d1ad:35a7
+   toIPAddress4 . toIPAddress6 <$> IPv4.parse "209.173.53.167" -- back to 209.173.53.167
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1 of 2] Compiling IPAddress4       ( /home/coder/code/haskellbook-exercises/chapter-024/IPAddress4.hs, interpreted )
+   [2 of 2] Compiling IPAddress6       ( /home/coder/code/haskellbook-exercises/chapter-024/IPAddress6.hs, interpreted )
+   Ok, two modules loaded.
+   Success 0:0:0:0:0:ffff:d1ad:35a7
+   Success 209.173.53.167
+   #+END_EXAMPLE
+
+10. Write a parser for the DOT language that ~Graphviz~ uses to
+    express graphs in plain text.
