@@ -1,0 +1,232 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
+#+TITLE: Composing Types
+
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+
+* 25.1 Composing Types
+Monads do not compose but it would be useful to compose them in some
+way to be able to handle different kind of side effects in the same
+context. You can do that by /stacking/ monads.
+
+A /Monad Transformer/ is a /variant/ of an ordinary type that takes an
+additional type argument that is assumed to have a /Monad/
+instance. The /transformer/ variant of a type, gives us a type that
+can bind over both bits of structure.
+
+* 25.2 Common Functions as Types
+NOTE: /Monad Tranformers/ are commonly written as newtype to reduce
+overhead since they are never sum or product type but only wrapping
+one extra layer of (monadic) structure around another type.
+
+#+BEGIN_SRC haskell
+newtype Identity a = Identity { runIdentity :: a }
+:t id
+:k Identity
+
+newtype Compose f g a = Compose { getCompose :: f (g a) }
+:t (.)
+:k Compose
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+id :: a -> a
+Identity :: * -> *
+(.) :: (b -> c) -> (a -> b) -> a -> c
+Compose :: (* -> *) -> (* -> *) -> * -> *
+#+END_EXAMPLE
+
+* 25.3 Compose Functors
+The instance of /Functor/ for /Identity/ as we say is trivial
+#+BEGIN_SRC haskell :results silent
+newtype Identity a = Identity { runIdentity :: a }
+
+:{
+instance Functor Identity where
+  fmap f (Identity a) = Identity $ f a
+:}
+#+END_SRC
+
+The fact that you can define an instance of /Functor/ for /Compose/ by
+only requiring that the two outer types have an instance of /Functor/
+is telling us that /Functor/ compose generally.
+
+/Functors/ are /closed under composition/
+#+NAME: compose-functor
+#+BEGIN_SRC haskell :results silent
+newtype Compose f g a = Compose { getCompose :: f (g a) }
+
+:{
+instance (Functor f, Functor g) => Functor (Compose f g) where
+  fmap f (Compose fga) = Compose $ (fmap . fmap) f fga
+:}
+#+END_SRC
+
+* 25.4 Compose Applicatives
+/Applicatives/ are too /closed under composition/
+
+#+NAME: compose-applicative
+#+BEGIN_SRC haskell :results silent
+<<compose-functor>>
+
+import Control.Applicative
+
+:{
+instance (Applicative f, Applicative g) => Applicative (Compose f g) where
+  pure a = Compose $ (pure . pure) a
+
+  (Compose f) <*> (Compose a) = Compose $ liftA2 (<*>) f a
+:}
+#+END_SRC
+
+* 25.5 Compose Monads
+See [[https://www.youtube.com/watch?v=eZ9FpG8May8][Why Functors and Applicatives Compose but Monads Don't (by Alejandro Serrano Mena)]]
+
+You cannot do it because in the end you will end up with the problem
+of squashing alternate layers of structure of both monads.
+
+The unsolvable problem will be
+#+BEGIN_SRC haskell :eval never
+f (g (f (g a))) -> f (g a)
+#+END_SRC
+
+We have the ability to ~join~ the structure ~f~ since it has an
+instance of /Monad/ (~join :: f (f a) -> f a~)
+
+We have the ability to ~join~ the structure ~g~ since it has an
+instance of /Monad/ (~join :: g (g a) -> g a~)
+
+But we don't know how to ~join~ ~f (g x)~
+
+How can we compose two /Monads/ to get back another /Monad/? The
+answer is /Monad Transformers/
+
+* 25.6 Exercises: Compose Instances
+1. Write the ~Compose Foldable~ instance
+   #+NAME: compose-foldable
+   #+BEGIN_SRC haskell :results silent
+   <<compose-applicative>>
+
+   :{
+   instance (Foldable f, Foldable g) => Foldable (Compose f g) where
+     foldMap f (Compose fga) = (foldMap . foldMap) f fga
+   :}
+   #+END_SRC
+
+2. Write the ~Compose Traversable~ instance
+   #+BEGIN_SRC haskell :results silent
+   <<compose-foldable>>
+
+   :{
+   instance (Traversable f, Traversable g) => Traversable (Compose f g) where
+     traverse f (Compose fga) = Compose <$> (traverse . traverse) f fga
+   :}
+   #+END_SRC
+
+** Bifunctor
+#+NAME: bifunctor
+#+BEGIN_SRC haskell :results silent
+:{
+class Bifunctor p where
+  {-# MINIMAL bimap | first, second #-}
+  bimap :: (a -> b) -> (c -> d) -> p a c -> p b d
+  bimap f g = first f . second g
+
+  first :: (a -> b) -> p a c -> p b c
+  first f = bimap f id
+
+  second :: (b -> c) -> p a b -> p a c
+  second = bimap id
+:}
+#+END_SRC
+
+1. Write ~Bifunctor~ instance for the following type.
+   #+BEGIN_SRC haskell :results silent
+   data Pair a b = Pair a b
+
+   <<bifunctor>>
+
+   :{
+   instance Bifunctor Pair where
+     bimap f g (Pair a b) = Pair (f a) (g b)
+   :}
+   #+END_SRC
+
+2. Write ~Bifunctor~ instance for the following type.
+   #+BEGIN_SRC haskell :results silent
+   data Const a b = Const a
+
+   <<bifunctor>>
+
+   :{
+   instance Bifunctor Const where
+     bimap f _ (Const a) = Const (f a)
+   :}
+   #+END_SRC
+
+3. Write ~Bifunctor~ instance for the following type.
+   #+BEGIN_SRC haskell :results silent
+   data Triple a b c = Triple a b c
+
+   <<bifunctor>>
+
+   :{
+   instance Bifunctor (Triple a) where
+     bimap f g (Triple a b c) = Triple a (f b) (g c)
+   :}
+   #+END_SRC
+
+4. Write ~Bifunctor~ instance for the following type.
+   #+BEGIN_SRC haskell :results silent
+   data Triple' a b c = Triple' a b
+
+   <<bifunctor>>
+
+   :{
+   instance Bifunctor (Triple' a) where
+     bimap f _ (Triple' a b) = Triple' a (f b)
+   :}
+   #+END_SRC
+
+5. Write ~Bifunctor~ instance for the following type.
+   #+BEGIN_SRC haskell :results silent
+   data Triple'' a b c = Triple'' a
+
+   <<bifunctor>>
+
+   :{
+   instance Bifunctor (Triple'' a) where
+     bimap _ _ (Triple'' a) = Triple'' a
+   :}
+   #+END_SRC
+
+6. Write ~Bifunctor~ instance for the following type.
+   #+BEGIN_SRC haskell :results silent
+   data Quad a b c d = Quad a b c d
+
+   <<bifunctor>>
+
+   :{
+   instance Bifunctor (Quad a b) where
+     bimap f g (Quad a b c d) = Quad a b (f c) (g d)
+   :}
+   #+END_SRC
+
+7. Write ~Bifunctor~ instance for the following type.
+   #+BEGIN_SRC haskell :results silent
+   data Result a b = Err a | Ok b
+
+   <<bifunctor>>
+
+   :{
+   instance Bifunctor Result where
+     bimap f _ (Err a) = Err $ f a
+     bimap _ g (Ok b) = Ok $ g b
+   :}
+   #+END_SRC
+
+* 25.7 Monad Transformers
+...
