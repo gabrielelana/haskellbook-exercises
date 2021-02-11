@@ -229,4 +229,79 @@ class Bifunctor p where
    #+END_SRC
 
 * 25.7 Monad Transformers
-...
+The fundamental problem with composing two monads is the general
+impossibility of *joining* two unknown monads.
+
+In order to make the ~join~ happen we need to reduce the polymorphism
+of the operation by knowing one of the two monads we are working with.
+
+The other monad remains polymorphic as a variable to our type
+constructor.
+
+An example with ~Identity~
+
+#+NAME: identity
+#+BEGIN_SRC haskell :results silent
+:{
+newtype Identity a =
+  Identity { runIdentity :: a }
+  deriving (Eq, Show)
+:}
+
+:{
+instance Functor Identity where
+  fmap f (Identity a) = Identity $ f a
+:}
+
+:{
+instance Applicative Identity where
+  pure = Identity
+
+  (Identity f) <*> (Identity a) = Identity $ f a
+:}
+
+:{
+instance Monad Identity where
+  return = pure
+
+  (Identity a) >>= f = f a
+:}
+#+End_SRC
+
+#+NAME: identityT
+#+BEGIN_SRC haskell :results silent
+:{
+newtype IdentityT m a =
+  IdentityT { runIdentityT :: m a }
+  deriving (Eq, Show)
+:}
+
+:{
+instance (Functor m) => Functor (IdentityT m) where
+  fmap f (IdentityT ma) = IdentityT $ f <$> ma
+:}
+
+:{
+instance (Applicative m) => Applicative (IdentityT m) where
+  pure a = IdentityT $ pure a
+
+  (IdentityT fma) <*> (IdentityT ma) = IdentityT $ fma <*> ma
+:}
+
+:{
+instance (Monad m) => Monad (IdentityT m) where
+  return = pure
+
+  (IdentityT ma) >>= f = IdentityT $ ma >>= runIdentityT . f
+  --                     [3]                [2]           [1]
+:}
+#+END_SRC
+
+1. The ~f~ is of type ~a -> IdentityT m b~ where ~a~ is the type
+   contained in the internal monad ~m~
+2. For ~f~ to work with the internal monad ~m~ (~ma >>= f~) we need to
+   drop the ~IdentityT~ from the result, therefore we use
+   ~runIdentityT :: IdentityT m a -> m a~
+3. Here we will have the canonical result from ~ma >>= f~ which is of
+   type ~m b~, now we miss the external monadic structure ~IdentityT~
+   that we need as external wrapper
