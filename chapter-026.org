@@ -10,6 +10,11 @@
 ...
 
 * 26.02 MaybeT
+Note that we need to define ~Functor~ and ~Applicative~ instances for
+~MaybeT~ but we don't need to do anything specific with ~Maybe~ aka
+all ~Functor~ and ~Applicative~ instances of transformers will look
+the same (XXX: is this true?).
+
 #+NAME: MaybeT
 #+BEGIN_SRC haskell :results silent
 import Control.Applicative
@@ -27,18 +32,6 @@ instance Applicative m => Applicative (MaybeT m) where
 
   (MaybeT mf) <*> (MaybeT ma) = MaybeT $ liftA2 (<*>) mf ma
 :}
-#+END_SRC
-
-Note that we need to define ~Functor~ and ~Applicative~ instances for
-~MaybeT~ but we don't need to do anything specific with ~Maybe~ aka
-all ~Functor~ and ~Applicative~ instances of transformers will look
-the same (XXX: is this true?).
-
-Is with the ~Monad~ instance that things change.
-
-#+NAME: MaybeT
-#+BEGIN_SRC haskell :results silent
-<<MaybeT>>
 
 :{
 instance Monad m => Monad (MaybeT m) where
@@ -184,5 +177,255 @@ instance Monad m => Monad (StateT s m) where
 :}
 #+END_SRC
 
-* 26.6 Types You Probably Don't Want To Use
+* 26.6 Types You Probably Don't Want to Use
+...
+
+* 26.7 An Ordinary Type from a Transformer
+If you have a transformer variant of a type and want to use it as a
+non transformative then you need a structure ~Monad m => m~ that
+doesn't do anything... ~Identity~
+
+* 26.8 Lexically Inner is Structurally Outer
+In the following transformative types
+
+#+BEGIN_SRC haskell :results silent
+newtype EitherT e m a = EitherT { runEitherT :: m (Either e a) }
+newtype MaybeT m a = MaybeT { runMaybeT :: m (Maybe a) }
+newtype ReaderT r m a = ReaderT { runReaderT :: r -> m a }
+#+END_SRC
+
+The structure ~m~ is lexically internal to the type but the structure
+is applied externally, around our value.
+
+The structure ~m~ is only wrapped around to things we can /have/ not
+to something we /need/ (look at ~ReaderT~)
+
+When an Haskeller say /base monad/ they usually mean what is
+structurally outermost.
+
+#+BEGIN_SRC haskell
+<<MaybeT>>
+<<EitherT>>
+<<ReaderT>>
+
+:{
+embedded :: MaybeT
+            (EitherT String
+                     (ReaderT () IO))
+            Int
+embedded = return 1
+:}
+
+:{
+maybeUnwrap :: EitherT String
+                       (ReaderT () IO)
+                       (Maybe Int)
+maybeUnwrap = runMaybeT embedded
+:}
+
+:{
+eitherUnwrap :: ReaderT ()
+                        IO
+                        (Either String (Maybe Int))
+eitherUnwrap = runEitherT maybeUnwrap
+:}
+
+:{
+readerUnwrap :: () -> IO (Either String (Maybe Int))
+readerUnwrap = runReaderT eitherUnwrap
+:}
+
+readerUnwrap ()
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Right (Just 1)
+#+END_EXAMPLE
+
+
+** Exercise
+#+BEGIN_SRC haskell :results silent
+<<MaybeT>>
+<<EitherT>>
+<<ReaderT>>
+
+:{
+embedded :: MaybeT
+            (EitherT String
+                     (ReaderT () IO))
+            Int
+embedded = MaybeT $ EitherT $ ReaderT $ const $ return $ Right $ Just 1
+:}
+#+END_SRC
+
+* 26.9 MonadTrans
+We already know how to lift a function to work with some
+structure. Here we want to lift a function to reach some structurally
+outermost position of a monad transformer stack.
+
+** The Typeclass that Lifts
+There's a typeclass ~MonadTrans~ with a method ~lift~ that lifts
+actions in some ~Monad~ over a transformer type.
+
+#+BEGIN_SRC haskell
+import Control.Monad.Trans.Class
+
+:i MonadTrans
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+class MonadTrans (t :: (* -> *) -> * -> *) where
+  lift :: Monad m => m a -> t m a
+  {-# MINIMAL lift #-}
+  	-- Defined in ‘Control.Monad.Trans.Class’
+#+END_EXAMPLE
+
+** Motivating MonadTrans
+TODO: scotty example
+
+** MonadTrans Instances
+#+NAME: IdentityT
+#+BEGIN_SRC haskell :results silent
+newtype IdentityT m a = IdentityT { runIdentityT :: m a }
+
+:{
+instance Functor m => Functor (IdentityT m) where
+  fmap f (IdentityT ma) = IdentityT $ fmap f ma
+:}
+
+:{
+instance Applicative m => Applicative (IdentityT m) where
+  pure = IdentityT . pure
+
+  (IdentityT fmf) <*> (IdentityT fma) = IdentityT $ fmf <*> fma
+:}
+
+:{
+instance Monad m => Monad (IdentityT m) where
+  return = pure
+
+  (IdentityT ma) >>= f = IdentityT $ ma >>= (runIdentityT . f)
+:}
+#+END_SRC
+
+#+BEGIN_SRC haskell :results silent
+<<IdentityT>>
+
+import Control.Monad.Trans.Class
+
+:{
+instance MonadTrans IdentityT where
+  lift = IdentityT
+:}
+#+END_SRC
+
+#+BEGIN_SRC haskell :results silent
+<<MaybeT>>
+
+import Control.Monad.Trans.Class
+import Control.Monad
+
+:{
+instance MonadTrans MaybeT where
+  lift = MaybeT . liftM Just
+:}
+#+END_SRC
+
+#+BEGIN_SRC haskell :results silent
+<<ReaderT>>
+
+import Control.Monad.Trans.Class
+
+:{
+instance MonadTrans (ReaderT r) where
+  lift = ReaderT . const
+:}
+#+END_SRC
+
+** Exercises: Lift More
+
+1. Define ~MonadTrans~ instance of ~EitherT~
+   #+BEGIN_SRC haskell :results silent
+   <<EitherT>>
+
+   import Control.Monad.Trans.Class
+   import Control.Monad
+
+   :{
+   instance MonadTrans (EitherT e) where
+     lift = EitherT . (liftM Right)
+   :}
+   #+END_SRC
+
+2. Define ~MonadTrans~ instance of ~StateT~
+   #+BEGIN_SRC haskell :results silent
+   <<StateT>>
+
+   :set -XTupleSections
+
+   import Control.Monad.Trans.Class
+   import Control.Monad
+
+   :{
+   instance MonadTrans (StateT s) where
+     lift ma = StateT $ \s -> liftM (,s) $ ma
+   :}
+   #+END_SRC
+
+** Prolific Lifting is the Failure Mode
+...
+
+** Wrap it, Smack it, Pre-Lift it
+Do not expose the full stack of your monads, only expose what's
+useful, wrap everything in a ~newtype~ and implement all the
+instances.
+
+#+BEGIN_SRC haskell
+import Web.Scotty
+import Data.Text.Lazy
+
+:i ActionM
+
+import Web.Scotty.Internal.Types
+
+:i ActionT
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+type ActionM = Web.Scotty.Internal.Types.ActionT Text IO :: * -> *
+  	-- Defined in ‘Web.Scotty’
+type role ActionT nominal representational nominal
+newtype ActionT e (m :: * -> *) a
+  = ActionT {runAM :: Control.Monad.Trans.Except.ExceptT
+                        (ActionError e)
+                        (Control.Monad.Trans.Reader.ReaderT
+                           ActionEnv
+                           (Control.Monad.Trans.State.Strict.StateT ScottyResponse m))
+                        a}
+  	-- Defined in ‘Web.Scotty.Internal.Types’
+instance (Monad m, ScottyError e) => Alternative (ActionT e m)
+  -- Defined in ‘Web.Scotty.Internal.Types’
+instance Monad m => Applicative (ActionT e m)
+  -- Defined in ‘Web.Scotty.Internal.Types’
+instance Functor m => Functor (ActionT e m)
+  -- Defined in ‘Web.Scotty.Internal.Types’
+instance (Monad m, ScottyError e) => Monad (ActionT e m)
+  -- Defined in ‘Web.Scotty.Internal.Types’
+instance (Monad m, ScottyError e) => MonadPlus (ActionT e m)
+  -- Defined in ‘Web.Scotty.Internal.Types’
+instance (Monad m, ScottyError e, Monoid a) =>
+         Monoid (ActionT e m a)
+  -- Defined in ‘Web.Scotty.Internal.Types’
+instance (Monad m, Semigroup a) => Semigroup (ActionT e m a)
+  -- Defined in ‘Web.Scotty.Internal.Types’
+instance (Monad m, ScottyError e) => MonadFail (ActionT e m)
+  -- Defined in ‘Web.Scotty.Internal.Types’
+instance MonadTrans (ActionT e)
+  -- Defined in ‘Web.Scotty.Internal.Types’
+#+END_EXAMPLE
+
+* 26.10 MonadIO
 ...
