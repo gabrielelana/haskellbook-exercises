@@ -321,6 +321,7 @@ instance MonadTrans IdentityT where
 :}
 #+END_SRC
 
+#+NAME: MaybeTR
 #+BEGIN_SRC haskell :results silent
 <<MaybeT>>
 
@@ -333,6 +334,7 @@ instance MonadTrans MaybeT where
 :}
 #+END_SRC
 
+#+NAME: ReaderTR
 #+BEGIN_SRC haskell :results silent
 <<ReaderT>>
 
@@ -347,6 +349,7 @@ instance MonadTrans (ReaderT r) where
 ** Exercises: Lift More
 
 1. Define ~MonadTrans~ instance of ~EitherT~
+   #+NAME: EitherTR
    #+BEGIN_SRC haskell :results silent
    <<EitherT>>
 
@@ -360,6 +363,7 @@ instance MonadTrans (ReaderT r) where
    #+END_SRC
 
 2. Define ~MonadTrans~ instance of ~StateT~
+   #+NAME: StateTR
    #+BEGIN_SRC haskell :results silent
    <<StateT>>
 
@@ -428,4 +432,280 @@ instance MonadTrans (ActionT e)
 #+END_EXAMPLE
 
 * 26.10 MonadIO
+Rather than lifting through one layer at a time, ~MonadIO~ is intended
+to keep lifting until it is lifted over all structure embedded in the
+outermost ~IO~ type.
+
+#+BEGIN_SRC haskell
+import Control.Monad.IO.Class
+
+:i MonadIO
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+class Monad m => MonadIO (m :: * -> *) where
+  liftIO :: IO a -> m a
+  {-# MINIMAL liftIO #-}
+  	-- Defined in ‘Control.Monad.IO.Class’
+instance [safe] MonadIO IO -- Defined in ‘Control.Monad.IO.Class’
+instance (MonadIO m, ScottyError e) => MonadIO (ActionT e m)
+  -- Defined in ‘Web.Scotty.Internal.Types’
+#+END_EXAMPLE
+
+Instance of ~IdentityT~
+#+BEGIN_SRC haskell :results silent
+<<IdentityT>>
+
+import Control.Monad.IO.Class
+
+:{
+instance (MonadIO m) => MonadIO (IdentityT m) where
+  liftIO = IdentityT . liftIO
+:}
+#+END_SRC
+
+#+BEGIN_SRC haskell :results silent
+<<EitherTR>>
+
+import Control.Monad.IO.Class
+
+:{
+instance (MonadIO m) => MonadIO (EitherT e m) where
+  liftIO = lift . liftIO
+:}
+#+END_SRC
+
+1. Define ~LiftIO~ instance of ~MaybeT~
+   #+BEGIN_SRC haskell :results silent
+   <<MaybeTR>>
+
+   import Control.Monad.IO.Class
+
+   :{
+   instance (MonadIO m) => MonadIO (MaybeT m) where
+     liftIO = lift . liftIO
+   :}
+   #+END_SRC
+
+2. Define ~LiftIO~ instance of ~ReaderT~
+   #+BEGIN_SRC haskell :results silent
+   <<ReaderTR>>
+
+   import Control.Monad.IO.Class
+
+   :{
+   instance (MonadIO m) => MonadIO (ReaderT r m) where
+     liftIO = lift . liftIO
+   :}
+   #+END_SRC
+
+3. Define ~LiftIO~ instance of ~StateT~
+   #+BEGIN_SRC haskell :results silent
+   <<StateTR>>
+
+   import Control.Monad.IO.Class
+
+   :{
+   instance (MonadIO m) => MonadIO (StateT s m) where
+     liftIO = lift . liftIO
+   :}
+   #+END_SRC
+
+* 26.11 Monad Transformers in Use
+...
+
+* 26.12 Monads do not Commute
+
+XXX: Why ~x~ doesn't compile?
+#+BEGIN_SRC haskell
+<<ReaderT>>
+<<MaybeT>>
+
+import Data.Functor.Identity
+
+type Reader r a = ReaderT r Identity a
+
+:{
+x :: MaybeT (Reader Int) Int
+x = undefined
+:}
+
+:{
+y :: ReaderT Int Maybe Int
+y = undefined
+:}
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+<interactive>:1822:6: error:
+    • The type synonym ‘Reader’ should have 2 arguments, but has been given 1
+    • In the type signature: x :: MaybeT (Reader Int) Int
+#+END_EXAMPLE
+
+* 26.13 Transform if you Want To
+...
+
+* 26.14 Chapter Exercises
+1. Implement ~rDec~
+   #+BEGIN_SRC haskell
+   import Control.Monad.Trans.Reader
+   import Data.Functor.Identity
+
+   :{
+   rDec :: Num a => Reader a a
+   rDec = ReaderT $ \a -> Identity $ a - 1
+   :}
+
+   runReader rDec 1
+
+   fmap (runReader rDec) [1..10]
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   0
+   [0,1,2,3,4,5,6,7,8,9]
+   #+END_EXAMPLE
+
+2. Make ~rDec~ point free
+   #+BEGIN_SRC haskell
+   import Control.Monad.Trans.Reader
+   import Data.Functor.Identity
+
+   :{
+   rDec :: Num a => Reader a a
+   rDec = ReaderT $ (-) 1 <$> Identity
+   :}
+
+   runReader rDec 1
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   0
+   #+END_EXAMPLE
+
+3. Implement ~rShow~ which is ~show~ but in ~Reader~
+   #+BEGIN_SRC haskell
+   :{
+   rShow :: Show a => ReaderT a Identity String
+   rShow = ReaderT $ \r -> Identity $ show r
+   :}
+
+   runReaderT rShow 1
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   1
+   #+END_EXAMPLE
+
+4. Make ~rShow~ point free
+   #+BEGIN_SRC haskell
+   :{
+   rShow :: Show a => ReaderT a Identity String
+   rShow = ReaderT $ Identity <$> show
+   :}
+
+   runReaderT rShow 1
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Identity "1"
+   #+END_EXAMPLE
+
+5. Implement ~rPrintAndInt~ will first print the input with a
+   greeting, then return the input incremented by one
+   #+BEGIN_SRC haskell
+   :{
+   rPrintAndInc :: (Num a, Show a) => ReaderT a IO a
+   rPrintAndInc = ReaderT $ \a -> putStrLn ("Hi: " <> show a) >> (return $ a + 1)
+   :}
+
+   runReaderT rPrintAndInc 1
+   traverse (runReaderT rPrintAndInc) [1..10]
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Hi: 1
+   2
+   Hi: 1
+   Hi: 2
+   Hi: 3
+   Hi: 4
+   Hi: 5
+   Hi: 6
+   Hi: 7
+   Hi: 8
+   Hi: 9
+   Hi: 10
+   [2,3,4,5,6,7,8,9,10,11]
+   #+END_EXAMPLE
+
+6. Implement ~sPrintIntAccum~ first print the input with a greeting,
+   then puts the incremented input as the new state and returns the
+   original as a String.
+
+   #+BEGIN_SRC haskell
+   import Control.Monad.Trans.State
+
+   :{
+   sPrintIntAccum :: (Num a, Show a) => StateT a IO String
+   sPrintIntAccum = StateT $
+                    \a -> let s = show a in
+                            putStrLn ("Hi: " <> s) >> return (s, a + 1)
+   :}
+
+   runStateT sPrintIntAccum 10
+
+   mapM (runStateT sPrintIntAccum) [1..5]
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   Hi: 10
+   ("10",11)
+   Hi: 1
+   Hi: 2
+   Hi: 3
+   Hi: 4
+   Hi: 5
+   [("1",2),("2",3),("3",4),("4",5),("5",6)]
+   #+END_EXAMPLE
+
+** Fix the Code
+#+BEGIN_SRC haskell :results silent
+import Control.Monad.Trans.Maybe
+import Control.Monad
+
+:{
+isValid :: String -> Bool
+isValid v = '!' `elem` v
+:}
+
+:{
+maybeExcite :: MaybeT IO String
+maybeExcite = do
+  v <- liftIO getLine
+  guard $ isValid v
+  return v
+:}
+
+:{
+doExcite :: IO ()
+doExcite = do
+  putStrLn "say something excite!"
+  excite <- runMaybeT maybeExcite
+
+  case excite of
+    Nothing -> putStrLn "MOAR EXCITE"
+    Just e -> putStrLn $ "Good " ++ e
+:}
+#+END_SRC
+
+** Hit Counter
 ...
