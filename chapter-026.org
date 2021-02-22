@@ -708,4 +708,7 @@ doExcite = do
 #+END_SRC
 
 ** Hit Counter
+[[file:chapter-026/Counter.hs::{-# LANGUAGE OverloadedStrings #-}][See implementation]]
+
+** Morra
 ...
