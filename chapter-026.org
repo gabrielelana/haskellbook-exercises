@@ -73,6 +73,7 @@ instance Applicative m => Applicative (EitherT e m) where
   pure = EitherT . pure . pure
 
   (EitherT mf) <*> (EitherT ma) = EitherT $ liftA2 (<*>) mf ma
+  -- (EitherT mf) <*> (EitherT ma) = EitherT $ (<*>) <$> mf <*> ma
 :}
 
 -- 3. Write the Monad instance for EitherT
@@ -90,8 +91,10 @@ instance Monad m => Monad (EitherT e m) where
 -- 4. Write the swapEitherT helper function for EitherT
 :{
 swapEitherT :: (Functor m) => EitherT e m a -> EitherT a m e
-swapEitherT (EitherT ma) = EitherT $ ma <&> \case Left e -> Right e
-                                                  Right a -> Left a
+swapEitherT (EitherT ma) = EitherT $ swapEither <$> ma
+-- without swapEither
+-- swapEitherT (EitherT ma) = EitherT $ ma <&> \case Left e -> Right e
+--                                                   Right a -> Left a
 :}
 
 -- 5. Write the transformer variant of either catamorphism
@@ -539,7 +542,7 @@ y = undefined
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
-<interactive>:1822:6: error:
+<interactive>:644:6: error:
     • The type synonym ‘Reader’ should have 2 arguments, but has been given 1
     • In the type signature: x :: MaybeT (Reader Int) Int
 #+END_EXAMPLE
@@ -595,10 +598,12 @@ y = undefined
    :}
 
    runReaderT rShow 1
+   runIdentity $ runReaderT rShow 1
    #+END_SRC
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   Identity "1"
    1
    #+END_EXAMPLE
 
@@ -606,6 +611,7 @@ y = undefined
    #+BEGIN_SRC haskell
    :{
    rShow :: Show a => ReaderT a Identity String
+   -- rShow = show <$> ask
    rShow = ReaderT $ Identity <$> show
    :}
 
@@ -614,6 +620,19 @@ y = undefined
 
    #+RESULTS:
    #+BEGIN_EXAMPLE
+   <interactive>:786:9: error:
+       • Couldn't match type ‘Control.Monad.Trans.Reader.ReaderT () m0’
+                        with ‘ReaderT a Identity’
+         NB: ‘ReaderT’ is defined at <interactive>:653:1-58
+             ‘Control.Monad.Trans.Reader.ReaderT’
+               is defined in ‘Control.Monad.Trans.Reader’
+                   in package ‘transformers-0.5.6.2’
+         Expected type: ReaderT a Identity String
+           Actual type: Control.Monad.Trans.Reader.ReaderT () m0 String
+       • In the expression: show <$> ask
+         In an equation for ‘rShow’: rShow = show <$> ask
+       • Relevant bindings include
+           rShow :: ReaderT a Identity String (bound at <interactive>:786:1)
    Identity "1"
    #+END_EXAMPLE
 
@@ -711,4 +730,4 @@ doExcite = do
 [[file:chapter-026/Counter.hs::{-# LANGUAGE OverloadedStrings #-}][See implementation]]
 
 ** Morra
-...
+[[file:chapter-026/Morra.hs::module Morra where][See implementation]]

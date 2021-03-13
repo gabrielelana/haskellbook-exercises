@@ -8,7 +8,9 @@ import Data.IORef
 import qualified Data.Map as M
 import qualified Data.Text.Lazy as T
 import System.Environment (getArgs)
-import Control.Monad.Trans (lift)
+import Control.Monad.Trans (lift, MonadIO (liftIO))
+import Data.Maybe (fromMaybe)
+import Web.Scotty.Internal.Types (ActionT(ActionT))
 
 data Config = Config { counts :: IORef (M.Map Text Integer)
                      , prefix :: Text
@@ -19,9 +21,7 @@ type Scotty = ScottyT Text (ReaderT Config IO)
 type Handler = ActionT Text (ReaderT Config IO)
 
 hit :: Text -> M.Map Text Integer -> (M.Map Text Integer, Integer)
-hit k m = let v = case M.lookup k m of
-                    (Just v) -> v
-                    Nothing -> 0
+hit k m = let v = fromMaybe 0 $ M.lookup k m
           in (M.insert k (v + 1) m, v + 1)
 
 app :: Scotty ()
