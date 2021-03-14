@@ -1,0 +1,853 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
+#+TITLE: Non Strictness
+
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+
+* 27.01 Laziness
+Haskell has /Non-Strict/ not /Lazy/ evaluation, but the difference is
+not relevant.
+
+When the evaluation process begins a /Thunk/ is created for every
+expression, it will be reduced if needed, otherwise it will get
+removed by the garbage collector.
+
+When a /Thunk/ gets reduced, the value can be shared between
+expressions. This is the laziness of Haskell: don't do more work than
+needed.
+
+* 27.02 Observational Bottom Theory
+/Non-Strictness/ is defined by the ability to evaluate expressions
+that have Bottom in them, as long as the bottom itself is never
+forced.
+
+The following will only work in /Non-Strict/ languages.
+
+#+BEGIN_SRC haskell
+fst (1, undefined)
+snd (undefined, 2)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+1
+2
+#+END_EXAMPLE
+
+/Bottom/ can be used also to understand how /Non-Strictness/ work.
+
+* 27.03 Outside In, Inside Out
+/Strict/ languages evaluate /Inside-In/. /Non-Strict/ languages
+(like Haskell) evaluate /Outside-In/.
+
+In Haskell also we evaluate expressions when we need them rather than
+when they are first referred to or constructed.
+
+We can refer to values before we've don the work to create them. This
+pattern applies to /Data Structures/ and /Lambdas/ alike.
+
+#+BEGIN_SRC haskell
+foldr const undefined [1, undefined]
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+1
+#+END_EXAMPLE
+
+* 27.04 What Does The Other Way Look Like?
+In /Strict/ languages you cannot bind a computation to a name without
+having already done all the work to construct it.
+
+* 27.05 Can We Make Haskell Strict?
+
+A /Non-Strict/ example of evaluation, will never blow until the input
+from ~STDIN~ is ~"hi"~
+
+#+BEGIN_SRC haskell :results silent
+-- ???: is there a way to inject something in STDIN so that
+--      the next call to `readLn` will read it?
+:{
+askFor :: IO ()
+askFor = do
+  let x :: Int
+      x = undefined
+  s <- getLine
+  case s of
+    "hi" -> print x
+    _    -> print "hello"
+:}
+#+END_SRC
+
+We can use ~seq~ for force evaluation of something (first parameter
+~a~) while returning something else (second parameter ~b~)
+
+#+BEGIN_SRC haskell
+:t seq
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+seq :: a -> b -> b
+#+END_EXAMPLE
+
+The following will blow after the read from ~STDIN~ no matter the
+value of the string read from the ~STDIN~
+
+#+BEGIN_SRC haskell :results silent
+:{
+askFor :: IO ()
+askFor = do
+  let x :: Int
+      x = undefined
+  s <- getLine
+  case x `seq` s of
+    "hi" -> print x
+    _    -> print "hello"
+:}
+#+END_SRC
+
+But it's not like what would have with a strict language, because in a
+strict language we would not get to arrive to the ~getLine~. The best
+we can do with ~seq~ is to move it as close as possible, the following
+will blow before asking for input.
+
+#+BEGIN_SRC haskell :results silent
+:{
+askFor :: IO ()
+askFor = do
+  let x :: Int
+      x = undefined
+  s <- x `seq` getLine
+  case s of
+    "hi" -> print x
+    _    -> print "hello"
+:}
+#+END_SRC
+
+** Exercises: Evaluate
+Expand the following expressions in as much detail as possible. Then,
+work outside-in to see what the expressions evaluate to
+
+1. Expand and evaluate
+   #+BEGIN_EXAMPLE
+   const 1 undefined
+   (\a -> (\b -> a)) 1 undefined
+   (\b -> 1) undefined
+   1
+   #+END_EXAMPLE
+
+2. Expand and evaluate
+   #+BEGIN_EXAMPLE
+   const undefined 1
+   (\a -> (\b -> a)) undefined 1
+   (\b -> undefined) 1
+   -- !!
+   #+END_EXAMPLE
+
+3. Expand and evaluate
+   #+BEGIN_EXAMPLE
+   flip const undefined 1
+   (\f -> (\a -> (\b -> f b a))) (\a -> (\b -> a)) undefined 1
+   (\a -> (\b -> (\a' -> (\b' -> a')) b a))) undefined 1
+   (\b -> (\a' -> (\b' -> a')) b undefined)) 1
+   (\a' -> (\b' -> a')) 1 undefined
+   (\b' -> 1) 1
+   1
+   #+END_EXAMPLE
+
+4. Expand and evaluate
+   #+BEGIN_EXAMPLE
+   flip const 1 undefined
+   (\f -> (\a -> (\b -> f b a))) (\a -> (\b -> a)) 1 undefined
+   (\a -> (\b -> (\a' -> (\b' -> a')) b a))) 1 undefined
+   (\b -> (\a' -> (\b' -> a')) b 1)) undefined
+   (\a' -> (\b' -> a')) undefined 1
+   (\b' -> undefined) 1
+   -- !!
+   #+END_EXAMPLE
+
+5. Expand and evaluate
+   #+BEGIN_EXAMPLE
+   const undefined undefined
+   (\a -> (\b -> a)) undefined undefined
+   (\b -> undefined) undefined
+   -- !!
+   #+END_EXAMPLE
+
+6. Expand and evaluate
+   #+BEGIN_EXAMPLE
+   foldr const 'z' ['a'..'e']
+   (\f -> (\b -> (\x:xs -> f x (foldr f b xs)))) (\a -> (\b -> a)) 'z' ['a'..'e']
+   -- f => (\a' -> (\b' -> a'))
+   (\b -> (\x:xs -> (\a' -> (\b' -> a')) x (foldr (\a' -> (\b' -> a')) b xs))) 'z' ['a'..'e']
+   -- b => 'z'
+   (\x:xs -> (\a' -> (\b' -> a')) x (foldr (\a' -> (\b' -> a')) 'z' xs)) ['a'..'e']
+   -- x => 'a'
+   -- xs => ['b'..'e']
+   (\a' -> (\b' -> a')) 'a' (foldr (\a' -> (\b' -> a')) 'z' ['b'..'e'])
+   -- a' => 'a'
+   (\b' -> 'a') (foldr (\a' -> (\b' -> a')) 'z' ['b'..'e'])
+   -- b' => ...
+   'a'
+   #+END_EXAMPLE
+
+7. Expand and evaluate
+   #+BEGIN_EXAMPLE
+   foldr (flip const) 'z' ['a'..'e']
+   -- foldr => (\f -> (\b -> (\x:xs -> f x (foldr f b xs))))
+   -- flip const => (\a -> (\b -> b))
+   (\f -> (\b -> (\x:xs -> f x (foldr f b xs)))) (\a -> (\b -> b)) 'z' ['a'..'e']
+   -- f => (\a' -> (\b' -> b'))
+   (\b -> (\x:xs -> (\a' -> (\b' -> b')) x (foldr (\a' -> (\b' -> b')) b xs))) 'z' ['a'..'e']
+   -- b => 'z'
+   (\x:xs -> (\a' -> (\b' -> b')) x (foldr (\a' -> (\b' -> b')) 'z' xs)) ['a'..'e']
+   -- x => 'a'
+   -- xs => ['b'..'e']
+   (\a' -> (\b' -> b')) 'a' (foldr (\a' -> (\b' -> b')) 'z' ['b'..'e'])
+   -- a' => 'a'
+   (\b' -> b') (foldr (\a' -> (\b' -> b')) 'z' ['b'..'e'])
+   -- b' => (foldr (\a' -> (\b' -> b')) 'z' ['b'..'e'])
+   foldr (\a' -> (\b' -> b')) 'z' ['b'..'e']
+   *****************************************************************************
+   foldr (\a' -> (\b' -> b')) 'z' ['b'..'e']
+   (\f -> (\b -> (\x:xs -> f x (foldr f b xs)))) (\a' -> (\b' -> b')) 'z' ['b'..'e']
+   -- f => (\a' -> (\b' -> b'))
+   (\b -> (\x:xs -> (\a' -> (\b' -> b')) x (foldr (\a' -> (\b' -> b')) b xs))) 'z' ['b'..'e']
+   -- b => 'z'
+   (\x:xs -> (\a' -> (\b' -> b')) x (foldr (\a' -> (\b' -> b')) 'z' xs)) ['b'..'e']
+   -- x => 'b'
+   -- xs => ['c'..'e']
+   (\a' -> (\b' -> b')) 'b' (foldr (\a' -> (\b' -> b')) 'z' ['c'..'e'])
+   -- a' => 'b'
+   (\b' -> b') (foldr (\a' -> (\b' -> b')) 'z' ['c'..'e'])
+   -- b' => (foldr (\a' -> (\b' -> b')) 'z' ['c'..'e'])
+   foldr (\a' -> (\b' -> b')) 'z' ['c'..'e']
+   *****************************************************************************
+   foldr (\a' -> (\b' -> b')) 'z' ['c'..'e']
+   (\f -> (\b -> (\x:xs -> f x (foldr f b xs)))) (\a' -> (\b' -> b')) 'z' ['c'..'e']
+   -- f => (\a' -> (\b' -> b'))
+   (\b -> (\x:xs -> (\a' -> (\b' -> b')) x (foldr (\a' -> (\b' -> b')) b xs))) 'z' ['c'..'e']
+   -- b => 'z'
+   (\x:xs -> (\a' -> (\b' -> b')) x (foldr (\a' -> (\b' -> b')) 'z' xs)) ['c'..'e']
+   -- x => 'c'
+   -- xs => ['d', 'e']
+   (\a' -> (\b' -> b')) 'c' (foldr (\a' -> (\b' -> b')) 'z' ['d', 'e'])
+   -- a' => 'c'
+   (\b' -> b') (foldr (\a' -> (\b' -> b')) 'z' ['d', 'e'])
+   -- b' => (foldr (\a' -> (\b' -> b')) 'z' ['d', 'e'])
+   foldr (\a' -> (\b' -> b')) 'z' ['d', 'e']
+   *****************************************************************************
+   foldr (\a' -> (\b' -> b')) 'z' ['d', 'e']
+   (\f -> (\b -> (\x:xs -> f x (foldr f b xs)))) (\a' -> (\b' -> b')) 'z' ['d', 'e']
+   -- f => (\a' -> (\b' -> b'))
+   (\b -> (\x:xs -> (\a' -> (\b' -> b')) x (foldr (\a' -> (\b' -> b')) b xs))) 'z' ['d', 'e']
+   -- b => 'z'
+   (\x:xs -> (\a' -> (\b' -> b')) x (foldr (\a' -> (\b' -> b')) 'z' xs)) ['d', 'e']
+   -- x => 'd'
+   -- xs => ['e']
+   (\a' -> (\b' -> b')) 'd' (foldr (\a' -> (\b' -> b')) 'z' ['e'])
+   -- a' => 'd'
+   (\b' -> b') (foldr (\a' -> (\b' -> b')) 'z' ['e'])
+   -- b' => (foldr (\a' -> (\b' -> b')) 'z' ['e'])
+   foldr (\a' -> (\b' -> b')) 'z' ['e']
+   *****************************************************************************
+   foldr (\a' -> (\b' -> b')) 'z' ['e']
+   (\f -> (\b -> (\x:xs -> f x (foldr f b xs)))) (\a' -> (\b' -> b')) 'z' ['e']
+   -- f => (\a' -> (\b' -> b'))
+   (\b -> (\x:xs -> (\a' -> (\b' -> b')) x (foldr (\a' -> (\b' -> b')) b xs))) 'z' ['e']
+   -- b => 'z'
+   (\x:xs -> (\a' -> (\b' -> b')) x (foldr (\a' -> (\b' -> b')) 'z' xs)) ['e']
+   -- x => 'e'
+   -- xs => []
+   (\a' -> (\b' -> b')) 'e' (foldr (\a' -> (\b' -> b')) 'z' [])
+   -- a' => 'e'
+   (\b' -> b') (foldr (\a' -> (\b' -> b')) 'z' [])
+   -- b' => (foldr (\a' -> (\b' -> b')) 'z' [])
+   foldr (\a' -> (\b' -> b')) 'z' []
+   *****************************************************************************
+   foldr (\a' -> (\b' -> b')) 'z' []
+   (\b -> b)
+   -- b => 'z'
+   'z'
+   #+END_EXAMPLE
+
+* 27.6 Call by Name, Call by Value, Call by Need
+1. /Call by Value/
+   Argument expressions are evaluated *before* entering a function.
+   Traditionally called /Strict/.
+   /Inside-Out/ evaluation.
+
+2. /Call by Name/
+   Expressions can be arguments to a function without having been evaluated.
+   Included in /Non-Strict/ evaluation.
+   /Outside-In/ evaluation.
+
+3. /Call by Need/
+   Like /Call by Name/ but expressions are only evaluated *once*.
+   Traditionally /Non-Strict/.
+   /Outside-In/ evaluation.
+
+* 27.7 Non-Strict Evaluation Changes What We Can Do
+...
+
+* 27.8 Thunk Life
+A /Thunk/ is used to reference suspended evaluation of an expression.
+
+#+BEGIN_SRC haskell
+:set -XMonomorphismRestriction
+
+-- opportunistic strictness since it constant
+x = [1, 2, 3]
+:sprint x
+
+-- WHNF
+y = [1, 2, id 3]
+:sprint y
+
+-- the outermost expression is the `++` function
+z = x ++ y
+:sprint z
+
+-- non constant
+k = [1..10]
+:sprint k
+
+length $ take 3 k
+:sprint k
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+x = [1,2,3]
+y = [1,2,_]
+z = _
+k = _
+3
+k = 1 : 2 : 3 : _
+#+END_EXAMPLE
+
+* 27.9 Sharing is Caring
+When a computation is named the result of evaluating that computation
+can be shared between all references of that name.
+
+#+BEGIN_SRC haskell
+import Debug.Trace
+
+a = trace "eval a" 1
+b = trace "eval b" 2
+
+a + b
+a * b
+id a
+id b
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+eval b
+eval a
+3
+2
+1
+2
+#+END_EXAMPLE
+
+Having an explicitly named argument is going to make the difference
+
+#+BEGIN_SRC haskell
+import Debug.Trace
+
+:{
+f :: a -> Int
+f = trace "evaluate f" const 1
+:}
+
+:{
+g :: a -> Int
+g a = trace "evaluate g" const 1 a
+:}
+
+-- will evaluate f only once
+f 'a'
+f 'a'
+f 'b'
+
+-- will evaluate g twice
+g 'a'
+g 'a'
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+evaluate f
+1
+1
+1
+evaluate g
+1
+evaluate g
+1
+#+END_EXAMPLE
+
+Type constraints prevent opportunistic strictness
+
+Polymorphic expressions cannot be shared!
+
+#+BEGIN_SRC haskell
+:unset -XMonomorphismRestriction
+
+-- (Num a) constraint prevents evaluation
+x = [1, 2, 3]
+:t x
+:sprint x
+
+y = [1, 2, 3 :: Int]
+:t y
+:sprint y
+
+k' = Just (trace "eval k'" 1)
+:t k'
+:sprint k'
+-- will get evaluated twice
+(+1) <$> k'
+(+1) <$> k'
+:sprint k'
+
+k'' = Just (trace "eval k''" 1 :: Int)
+:t k''
+:sprint k''
+-- will get evaluated once
+(+1) <$> k''
+(+1) <$> k''
+:sprint k''
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+x :: Num a => [a]
+x = _
+y :: [Int]
+y = [1,2,3]
+k' :: Num a => Maybe a
+k' = _
+Just eval k'
+2
+Just eval k'
+2
+k' = _
+k'' :: Maybe Int
+k'' = Just _
+Just eval k''
+2
+Just 2
+k'' = Just 1
+#+END_EXAMPLE
+
+We can *prevent sharing* by wrapping values in lambdas.
+
+#+BEGIN_SRC haskell
+f x = x + x
+f (trace "eval" 2)
+
+f' x = x () + x ()
+f' (\_ -> trace "eval" 2)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+eval
+4
+eval
+eval
+4
+#+END_EXAMPLE
+
+We can *force sharing* by giving expressions a name.
+
+#+BEGIN_SRC haskell
+f x = x () + x ()
+f (\_ -> trace "eval" 2)
+
+f' x = let x' = x () in x' + x'
+f' (\_ -> trace "eval" 2)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+eval
+eval
+4
+eval
+4
+#+END_EXAMPLE
+
+* 27.10 Refutable and Irrefutable Patterns
+In pattern matching, a /Refutable Pattern/ is a pattern that can fail,
+an /Irrefutable Pattern/ is a pattern that will never fail to match.
+
+Refutability is a property of a single pattern not of the whole
+expression / function.
+
+/Lazy Patterns/, patterns prefixed with ~(~)~, are /Irrefutable
+Patterns/.
+
+#+BEGIN_SRC haskell
+:{
+strictPattern :: (a, b) -> String
+strictPattern (a, b) = const "Hello" a
+:}
+
+:{
+lazyPattern :: (a, b) -> String
+lazyPattern ~(a, b) = const "Hello" a
+:}
+
+strictPattern (1, 2)
+strictPattern undefined -- will blow
+
+lazyPattern (1, 2)
+lazyPattern undefined
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Hello
+"*** Exception: Prelude.undefined
+CallStack (from HasCallStack):
+  error, called at libraries/base/GHC/Err.hs:80:14 in base:GHC.Err
+  undefined, called at <interactive>:603:15 in interactive:Ghci234
+Hello
+Hello
+#+END_EXAMPLE
+
+* 27.11 Bang Patterns
+
+#+BEGIN_SRC haskell
+:set -XBangPatterns
+
+:{
+f :: Int -> String
+f x = const "hello" x
+:}
+
+f undefined -- it's fine
+
+:{
+g :: Int -> String
+g !x = const "hello" x
+:}
+
+g undefined -- will blow
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+hello
+"*** Exception: Prelude.undefined
+CallStack (from HasCallStack):
+  error, called at libraries/base/GHC/Err.hs:80:14 in base:GHC.Err
+  undefined, called at <interactive>:646:3 in interactive:Ghci245
+#+END_EXAMPLE
+
+It works also in data definitions
+
+#+BEGIN_SRC haskell
+:set -XBangPatterns
+
+data LazyCoordinates = CoordinatesL Int Int deriving (Eq, Show)
+
+data StrictCoordinates = CoordinatesS Int !Int deriving (Eq, Show)
+
+:{
+isOnXL :: LazyCoordinates -> Bool
+isOnXL (CoordinatesL x _) = x == 0
+:}
+
+isOnXL $ CoordinatesL 0 undefined -- It will be fine
+
+:{
+isOnXS :: StrictCoordinates -> Bool
+isOnXS (CoordinatesS x _) = x == 0
+:}
+
+isOnXS $ CoordinatesS 0 undefined -- It will blow
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+True
+,*** Exception: Prelude.undefined
+CallStack (from HasCallStack):
+  error, called at libraries/base/GHC/Err.hs:80:14 in base:GHC.Err
+  undefined, called at <interactive>:745:25 in interactive:Ghci280
+#+END_EXAMPLE
+
+In some cases it's cheaper to evaluate something immediately than
+construct a thunk and evaluate it later.
+
+If a value it's both small and cheap to conjure then you may as well
+make it strict.
+
+A good rule to follow is "*lazy* on the spine, *strict* on the
+leaves".
+
+* 27.12 Strict and StrictData
+
+You can use ~LANGUAGE Strict~ and ~LANGUAGE StrictData~ extension to
+put strictness all around the module
+
+#+BEGIN_SRC haskell
+willNotForceEval a b = a
+
+willNotForceEval 1 undefined -- will not blow
+
+:set -XStrict
+
+willForceEval a b = a
+
+willForceEval 1 undefined -- will blow
+
+:unset -XStrict
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+1
+,*** Exception: Prelude.undefined
+CallStack (from HasCallStack):
+  error, called at libraries/base/GHC/Err.hs:80:14 in base:GHC.Err
+  undefined, called at <interactive>:778:17 in interactive:Ghci291
+#+END_EXAMPLE
+
+* 27.13 Adding Strictness
+...
+
+* 27.14 Chapter Exercises
+** Strict List
+
+The following is the lazy version, try mess around with /Bang
+Patterns/ and see what happens
+
+#+BEGIN_SRC haskell
+data List a = Nil | Cons a (List a) deriving (Show)
+
+:{
+take' :: Int -> List a -> List a
+take' n _ | n <= 0 = Nil
+take' _ Nil        = Nil
+take' n (Cons a l) = Cons a $ take' (n - 1) l
+:}
+
+:{
+map' :: (a -> b) -> List a -> List b
+map' _ Nil        = Nil
+map' f (Cons a l) = Cons (f a) $ map' f l
+:}
+
+import Debug.Trace
+
+:{
+repeat' :: a -> List a
+repeat' a = let as = Cons a as in as
+:}
+
+main = print $ take' 5 $ map' (+1) $ repeat' 1
+main
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Cons 2 (Cons 2 (Cons 2 (Cons 2 (Cons 2 Nil))))
+#+END_EXAMPLE
+
+
+** What Will ~sprint~ Output?
+
+1. what will ~sprint~ output?
+   #+BEGIN_SRC haskell
+   x = 1
+   :sprint x
+   -- because we have an implicit class constraint (Num a) on ~1~
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   x = _
+   #+END_EXAMPLE
+
+2. what will ~sprint~ output?
+   #+BEGIN_SRC haskell
+   x = ['1']
+   :sprint x
+   -- speculative optimization because everything is known literally
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   x = "1"
+   #+END_EXAMPLE
+
+3. what will ~sprint~ output?
+   #+BEGIN_SRC haskell
+   x = [1]
+   -- prediction: x = _
+   :sprint x
+   -- because we have an implicit class constraint Num a
+   :t x
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   x = _
+   x :: Num a => [a]
+   #+END_EXAMPLE
+
+4. what will ~sprint~ output?
+   #+BEGIN_SRC haskell
+   x = 1 :: Int
+   -- prediction: x = 1
+   :sprint x
+   -- because we monorphized the litteral ~1~ and everything is known
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   x = 1
+   #+END_EXAMPLE
+
+5. what will ~sprint~ output?
+   #+BEGIN_SRC haskell
+   f = \x -> x
+   x = f 1
+   -- prediction: x = _
+   :sprint x
+   -- the ~f~ will not be resolved in WHNF
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   x = _
+   #+END_EXAMPLE
+
+6. what will ~sprint~ output?
+   #+BEGIN_SRC haskell
+   :{
+   f :: Int -> Int
+   f = \x -> x
+   :}
+   x = f 1
+   -- prediction: x = _
+   :sprint x
+   -- the ~f~ will not be resolved in WHNF
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   x = _
+   #+END_EXAMPLE
+
+** Will Printing this Expression Result in Bottom?
+
+1. will printing this expression result in bottom?
+   #+BEGIN_SRC haskell :results silent
+   snd (undefined, 1)
+   #+END_SRC
+
+   NO: ~snd~ will not touch the first element of the tuple.
+
+2. will printing this expression result in bottom?
+   #+BEGIN_SRC haskell :results silent
+   x = undefined
+   let y = x `seq` 1 in snd (x, y)
+   #+END_SRC
+
+   YES: because ~seq~ will force the evaluation of ~x~ which is bottom.
+
+3. will printing this expression result in bottom?
+   #+BEGIN_SRC haskell :results silent
+   length $ [1..5] ++ undefined
+   #+END_SRC
+
+   YES: because ~++~ requires a list structure on the right
+
+4. will printing this expression result in bottom?
+   #+BEGIN_SRC haskell :results silent
+   length $ [1..5] ++ [undefined]
+   #+END_SRC
+
+   NO: because all the functions involved only cares about the spine
+   of the data structure
+
+5. will printing this expression result in bottom?
+   #+BEGIN_SRC haskell :results silent
+   const 1 undefined
+   #+END_SRC
+
+   NO: ~const~ only care about the first argument
+
+6. will printing this expression result in bottom?
+   #+BEGIN_SRC haskell :results silent
+   const 1 (undefined `seq` 1)
+   #+END_SRC
+
+   NO: same reason as the one before
+
+7. will printing this expression result in bottom?
+   #+BEGIN_SRC haskell :results silent
+   const undefined 1
+   #+END_SRC
+
+   YES: but only because in a REPL we always print the result
+   otherwise (e.g. if we were to assign the result to a variable) will
+   not blow
+
+** Make the Expression Bottom
+Using only bang patterns or `seq` make the code bottom out when
+executed
+
+1. make the expression bottom
+   #+BEGIN_SRC haskell :results silent
+   x = undefined
+   y = "blah"
+
+   :{
+   main = do
+     print (snd (x, y))
+   :}
+
+   main
+   #+END_SRC
+
+   With ~seq~
+
+   #+BEGIN_SRC haskell :results silent
+   x = undefined
+   y = "blah"
+
+   :{
+   main = do
+     print $ x `seq` (snd (x, y))
+   :}
+
+   main
+   #+END_SRC
+
+   With /Bang Pattern/
+
+   #+BEGIN_SRC haskell :results silent
+   :set -XBangPatterns
+
+   x = undefined
+   y = "blah"
+
+   :{
+   main = do
+     print $ case (x, y) of
+               (!_, y) -> y
+   :}
+
+   main
+   #+END_SRC
