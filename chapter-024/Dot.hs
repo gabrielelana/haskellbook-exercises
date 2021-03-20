@@ -36,19 +36,14 @@ import Prelude hiding (lex)
 import Control.Monad ( forM_, void )
 import Data.Char ( toUpper, toLower )
 import Data.Text (Text)
-import Text.Parsec (ParseError, parse, eof, manyTill, anyToken, satisfy, many, (<|>), try, newline, sepBy1, sepBy, option)
+import Text.Parsec (ParseError, runParser, eof, manyTill, anyToken, satisfy, many, (<|>), try, newline, sepBy1, sepBy, option, Parsec, getState, updateState)
 import Text.Parsec.Char (anyChar, space, upper, char, letter, oneOf, string, digit)
 import Text.Parsec.Combinator (many1)
-import Text.Parsec.String (Parser)
-import Text.RawString.QQ ()
-import qualified Data.Text as T
 import Test.Hspec ( shouldSatisfy, it, describe, hspec )
 import Data.Either ( isRight )
 import Data.Functor ( ($>) )
-import Text.Parser.Combinators ( skipOptional, between, optional )
+import Text.Parser.Combinators ( skipOptional, between, optional, some )
 import Text.Parser.Char (notChar, noneOf)
-import Text.Parse (some)
-import Text.Parser.Token (angles)
 
 -- | A graph identifier.
 --
@@ -119,8 +114,13 @@ instance Semigroup Dot where
 instance Monoid Dot where
   mempty = DotEmpty
 
-runParser :: Parser a -> String -> Either ParseError a
-runParser p = parse (whitespaces *> p <* eof) ""
+type Parser = Parsec String Int
+
+parse :: String -> Either ParseError DotGraph
+parse = parse' dot
+
+parse' :: Parser a -> String -> Either ParseError a
+parse' p = runParser (whitespaces *> p <* eof) 0 ""
 
 whitespaces :: Parser ()
 whitespaces = void $ many $ oneOf " \n\t"
@@ -142,9 +142,9 @@ dot = do
   ot comments
   ot $ keyword "strict"
   t <- graphType
-  n <- identifier <* ot comments
+  n <- graphId <* ot comments
   (Subgraph _ d) <- dotGraph
-  return $ Graph t (GraphName n) d
+  return $ Graph t n d
     where graphType :: Parser GraphType
           graphType = (keyword "digraph" $> DirectedGraph) <|>
                       (keyword "graph" $> UndirectedGraph)
@@ -159,12 +159,11 @@ dotStatement = try dotDeclaration <|>
                try dotLocalAttribute <|>
                dotNode
 
--- TODO: support GraphId / GraphCounter
 dotGraph :: Parser Dot
 dotGraph = do
   ot $ keyword "subgraph"
-  n <- option "?" identifier
-  Subgraph (GraphName n) <$> (lex "{" *> (mconcat <$> dotStatementList) <* lex "}")
+  n <- graphId <* ot comments
+  Subgraph n <$> (lex "{" *> (mconcat <$> dotStatementList) <* lex "}")
 
 dotEdge :: Parser Dot
 dotEdge = do
@@ -198,8 +197,31 @@ dotAttribute = (,) <$> identifier <* lex "=" <*> identifier
 
 -- TODO: support NodeCounter nodes
 nodeId :: Parser NodeId
-nodeId = NodeName <$> identifier <* ot port
+nodeId = nodeName -- <|> nodeCounter
+
+nodeName :: Parser NodeId
+nodeName = NodeName <$> identifier <* ot port
   where port = string ":" <* identifier `sepBy` string ":"
+
+nodeCounter :: Parser NodeId
+nodeCounter = do
+  i <- getState
+  updateState (+1)
+  return $ NodeCounter i
+
+graphId :: Parser GraphId
+graphId = graphName <|> graphCounter
+
+graphName :: Parser GraphId
+graphName = GraphName <$> identifier <* ot port
+  where port = string ":" <* identifier `sepBy` string ":"
+
+graphCounter :: Parser GraphId
+graphCounter = do
+  i <- getState
+  updateState (+1)
+  return $ GraphCounter i
+
 
 identifier :: Parser String
 identifier = (  alphabeticIdentifier
@@ -258,7 +280,7 @@ check = hspec $
                  , "er"
                  , "fdpclust"
                  , "fsm"
-                 -- , "gd_1994_2007" anonymous graph
+                 , "gd_1994_2007" -- anonymous graph
                  , "helloworld"
                  , "kennedyanc"
                  , "lion_share"
@@ -281,4 +303,4 @@ check = hspec $
     forM_ examples $ \name ->
       it ("should parse `" <> name <> "` example") $ do
         content <- readFile $ "./testcases/" <> name <> ".gv"
-        runParser dot content `shouldSatisfy` isRight
+        parse content `shouldSatisfy` isRight
