@@ -50,6 +50,7 @@ minorP = read <$> numericIdentifierP <* char '.'
 patchP :: Parser Integer
 patchP = read <$> numericIdentifierP
 
+-- CHALLENGE: can you do it without backtracking?
 releaseP :: Parser [String]
 releaseP = option [] (char '-' *> identifierP `sepBy` char '.')
   where identifierP = try numericIdentifierP <|> alphanumericIdentifierP
@@ -60,12 +61,12 @@ buildP = option [] (char '+' *> identifierP `sepBy` char '.')
 
 semverP :: Parser Version
 semverP = Version
-  <$> majorP
-  <*> minorP
-  <*> patchP
-  <*> releaseP
-  <*> buildP
-  <* eof
+          <$> majorP
+          <*> minorP
+          <*> patchP
+          <*> releaseP
+          <*> buildP
+          <* eof
 
 parse :: String -> Maybe Version
 parse = maybeSuccess . parseString semverP mempty
