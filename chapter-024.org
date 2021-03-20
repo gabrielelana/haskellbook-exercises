@@ -972,4 +972,5 @@ Just (Data {section = Host "wikipedia.org", what = Red "pretty"})
 
 10. Write a parser for the DOT language that ~Graphviz~ uses to
     express graphs in plain text.
-    ...
+
+    [[file:chapter-024/Dot.hs::-- Grammar: https://graphviz.org/doc/info/lang.html][Look Here]]
