@@ -1,0 +1,194 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
+#+TITLE: IO
+
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+
+* 29.01 IO
+An effectful function is one that has an observable impact on the
+environment in which is evaluated, other than computing and returning
+a result.
+
+Such effects require the code to be evaluated in a particular order
+(you want to be able to control in a deterministic way the observable
+behaviour of such code. E.g. if I write ~print 1; print 2; print 3~ I
+expect the numbers to be printed in that order).
+
+Haskell evaluation strategy of pure code will always return the same
+result no mater the order of evaluation, with effectful computation
+that can be a problem.
+
+* 29.02 Where IO Explanation Go Astray
+NOTE: ~IO~ is not only a ~Monad~ is a datatype that has a ~Monad~
+instance.
+
+~IO~ is popularly explained as a kind of ~State~ because...
+
+#+BEGIN_SRC haskell :eval never
+newtype State s a = State { runState :: s -> (a, s) }
+newtype IO a      = IO    (State# RealWorld -> (# State# RealWorld, a #))
+#+END_SRC
+
+It looks like ~State~ but don't interact with it like you do with
+~State~, you don't get, set or modify anything from/to/in it.
+
+The ~RealWorld~ state is a *signaling* mechanism to tell GHC
+- What order you ~IO~ action are in
+- What a unique ~IO~ action is (avoid sharing)
+
+NOTE: ~RealWorld~ is a magical /lifted/ /primitive/ that exists only
+at compile time and has no representation and it holds no memory.
+
+Therefore ~State# RealWorld~ is not a state in the general sense.
+
+* 29.03 The Reason We Need This Type
+~IO~ exists so that we can:
+- Give order to operations (aka disable reordering of operations).
+- Disable some of the default sharing behaviour.
+
+~IO~ actions are nested lambdas and that's how you guarantee order in
+a lambda calculus.
+
+???: The ordering should be guaranteed by the ~Monad~ instance of
+~IO~, so the lambdas cited above are the second arguments of ~>>=~ not
+the function in the data type
+
+#+BEGIN_SRC haskell
+import Debug.Trace (trace)
+
+-- It's ordered without IO
+(trace "1" $ Just 1) >> (trace "2" $ Just 2)
+
+-- It's not ordered in IO
+(putStrLn "1") *> (putStrLn "2") *> (putStrLn "3")
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+1
+2
+Just 2
+1
+2
+3
+#+END_EXAMPLE
+
+* 29.04 Sharing
+~IO~ turns off some of the default sharing.
+
+~IO~ it's a value but it's a value that's a description of how you can
+get a value, it's the recipe not the cake.
+
+#+BEGIN_SRC haskell
+import Control.Concurrent
+
+:{
+maybeShared :: IO (MVar Int)
+maybeShared = newEmptyMVar
+:}
+
+:{
+main :: IO ()
+main = do
+  v <- maybeShared
+  putMVar v 0
+  v' <- maybeShared -- This is a brand new MVar
+  zero <- takeMVar v' -- Should use `v` instead of `v'`
+  print zero
+:}
+
+main
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+,*** Exception: thread blocked indefinitely in an MVar operation
+#+END_EXAMPLE
+
+* 29.05 IO Doesn't Disable Sharing for Everything
+It disables sharing of terminal values it reduces to.
+
+It doesn't disable sharing of values that are not dependent on IO.
+
+#+BEGIN_SRC haskell
+import Debug.Trace (trace)
+
+:{
+foo :: IO String
+foo = return $ trace "producing foo" "foo"
+
+-- If I write it like this producing gets evaluated not when
+-- the string is needed but before
+
+-- foo = trace "producing foo" $ return "foo"
+:}
+
+:{
+foo' :: IO String
+foo' = trace "redirecting to foo" foo
+:}
+
+:{
+bar :: IO String
+bar = return $ trace "producing bar" "bar"
+:}
+
+:{
+main :: IO ()
+main = do
+  f <- foo' -- redirecting
+  putStrLn f -- producing
+  putStrLn f -- the value will be shared
+
+  b <- bar
+  putStrLn b -- producing
+  putStrLn b -- the value will be shared
+
+  f' <- foo' -- nothing, the IO action is shared
+  b' <- bar -- nothing, the IO action is shared
+
+  f'' <- foo' -- nothing, the IO action is shared
+  b'' <- bar -- nothing, the IO action is shared
+  putStrLn f'' -- nothing, the IO action is shared
+  putStrLn b'' -- nothing, the IO action is shared
+
+  putStrLn ""
+:}
+
+main
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+redirecting to foo
+producing foo
+foo
+foo
+producing bar
+bar
+bar
+foo
+bar
+#+END_EXAMPLE
+
+* 29.06 Purity is Losing Meaning
+/Purity/ as in /Pure Lambda Calculus/ -> Haskell is not /Pure/ in that
+sense
+
+/Purity/ as in /Referentially Transparent/ -> Haskell is /Pure/
+because in Haskell you create the recipe for effects (which will be
+the result of function that are still referentially transparent) that
+will be executed by the main sometime in the future.
+
+* 29.07 IO: Functor, Applicative and Monad
+... Nothing to be noted, only a repetition of the meaning of
+~Functor~, ~Applicative~ and ~Monad~ for ~IO~ which is the same as for
+other data types.
+
+* 29.08 Well, Then, How do We MVar?
+... Already solved in the comments of the example above.
+
+* 29.09 Chapter Exercises
+...
