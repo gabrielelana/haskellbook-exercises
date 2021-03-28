@@ -1,0 +1,863 @@
+# -*- eval: (org-babel-lob-ingest "./ob-haskell-common.org"); -*-
+
+#+TITLE: Basic Libraries
+
+#+PROPERTY: header-args:haskell :results replace output
+#+PROPERTY: header-args:haskell+ :noweb yes
+#+PROPERTY: header-args:haskell+ :wrap EXAMPLE
+
+* 28.01 Basic Libraries and Data Structures
+In this chapter we will
+
+- Demonstrate how to measure usage of time and space in you programs.
+- Offer guidelines on when WHNF or NF is appropriate when
+  benchmarking.
+- Define /Constant Applicative Forms/ and /Argument Saturation/.
+- Show when to use different data structures.
+
+* 28.02 Benchmarking with Criterion
+#+BEGIN_SRC haskell
+import Criterion.Main
+
+:{
+infixl 9 !?
+(!?) :: [a] -> Int -> Maybe a
+(!?) xs n | n < 0 = Nothing
+(!?) [] _         = Nothing
+(!?) (x:_) 0      = Just x
+(!?) (x:xs) n     = xs !? (n - 1)
+:}
+
+:{
+exampleList :: [Int]
+exampleList = [1..9999]
+:}
+
+:{
+main :: IO ()
+main = defaultMain
+  [ bench "index list" $ whnf (exampleList !!) 9998
+  , bench "index list maybe" $ whnf (exampleList !?) 9998
+  ]
+:}
+
+main
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+benchmarking index list
+time                 20.68 μs   (20.39 μs .. 21.04 μs)
+                     0.999 R²   (0.998 R² .. 0.999 R²)
+mean                 20.58 μs   (20.41 μs .. 20.75 μs)
+std dev              555.0 ns   (451.5 ns .. 685.8 ns)
+variance introduced by outliers: 28% (moderately inflated)
+
+benchmarking index list maybe
+time                 2.267 ms   (2.244 ms .. 2.300 ms)
+                     0.998 R²   (0.996 R² .. 1.000 R²)
+mean                 2.291 ms   (2.277 ms .. 2.311 ms)
+std dev              58.71 μs   (44.82 μs .. 85.62 μs)
+variance introduced by outliers: 12% (moderately inflated)
+#+END_EXAMPLE
+
+NOTE: ~whnf~ and ~nf~ need a parameter (~(exampleList !?) :: a -> b~)
+is because /Criterion/ need to re-run the code many times therefore he
+need to avoid the result to be shared (see previous chapter).
+
+#+BEGIN_SRC haskell
+import Criterion.Main
+
+:t whnf
+:t nf
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+whnf :: (a -> b) -> a -> Benchmarkable
+nf :: Control.DeepSeq.NFData b => (a -> b) -> a -> Benchmarkable
+#+END_EXAMPLE
+
+Looking at the standard library we can see what's the optimized
+solution.
+
+#+BEGIN_SRC haskell
+import Criterion.Main
+
+:{
+infixl 9 !?
+{-# INLINABLE (!?) #-}
+(!?) :: [a] -> Int -> Maybe a
+(!?) xs n
+  | n < 0     = Nothing
+  | otherwise =
+      foldr (\x r k -> case k of
+                         0 -> Just x
+                         _ -> r (k - 1))
+            (const Nothing)
+            xs n
+:}
+
+:{
+exampleList :: [Int]
+exampleList = [1..9999]
+:}
+
+:{
+main :: IO ()
+main = defaultMain
+  [ bench "index list" $ whnf (exampleList !!) 9998
+  , bench "index list maybe" $ whnf (exampleList !?) 9998
+  ]
+:}
+
+main
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+benchmarking index list
+time                 20.62 μs   (20.46 μs .. 20.80 μs)
+                     0.999 R²   (0.998 R² .. 1.000 R²)
+mean                 20.65 μs   (20.47 μs .. 20.92 μs)
+std dev              744.2 ns   (525.3 ns .. 1.069 μs)
+variance introduced by outliers: 41% (moderately inflated)
+
+benchmarking index list maybe
+time                 1.522 ms   (1.507 ms .. 1.537 ms)
+                     0.999 R²   (0.998 R² .. 0.999 R²)
+mean                 1.531 ms   (1.518 ms .. 1.559 ms)
+std dev              60.44 μs   (36.95 μs .. 98.59 μs)
+variance introduced by outliers: 26% (moderately inflated)
+#+END_EXAMPLE
+
+Better, not super because we didn't compile the code with optimization
+flags.
+
+** WHNF Vs NF
+Should use ~whnf~ if computing till the first data constructor is
+enough for what you want to benchmark, use ~nf~ otherwise
+
+In this case to benchmark ~fmap~ we need to use ~nf~ because the first
+data constructor we encounter is the data constructor of the list
+~(:)~ therefore the ~whnf~ will stop at the first element of the list
+as the below benchmark shows.
+
+#+BEGIN_SRC haskell
+import Criterion.Main
+
+:{
+exampleList :: [Int]
+exampleList = [1..9999]
+:}
+
+:{
+main :: IO ()
+main = defaultMain
+  [ bench "whnf" $ whnf (fmap (+1)) exampleList
+  , bench "nf"   $ nf   (fmap (+1)) exampleList
+  ]
+:}
+
+main
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+benchmarking whnf
+time                 13.07 ns   (12.86 ns .. 13.34 ns)
+                     0.997 R²   (0.996 R² .. 0.998 R²)
+mean                 13.20 ns   (13.00 ns .. 13.53 ns)
+std dev              819.4 ps   (613.7 ps .. 1.111 ns)
+variance introduced by outliers: 81% (severely inflated)
+
+benchmarking nf
+time                 703.9 μs   (697.8 μs .. 709.9 μs)
+                     0.999 R²   (0.998 R² .. 0.999 R²)
+mean                 709.4 μs   (703.2 μs .. 719.6 μs)
+std dev              28.01 μs   (17.61 μs .. 45.76 μs)
+variance introduced by outliers: 31% (moderately inflated)
+#+END_EXAMPLE
+
+* 28.03 Profiling Your Programs
+
+To profile time usage
+#+BEGIN_EXAMPLE
+$ stack ghc -- -prof -fprof-auto -rtsopts -O2 example.hs
+$ ./example +RTS -P
+$ cat example.prof
+#+END_EXAMPLE
+
+To profile heap usage
+#+BEGIN_EXAMPLE
+$ stack ghc -prof -fprof-auto -rtsopts -O2 example.hs
+$ ./example +RTS -hc -p
+$ hp2ps example.hp
+#+END_EXAMPLE
+
+* 28.04 Constant Applicative Forms
+/Constant Applicative Forms/ are expressions that have no free
+variables and are held in memory to be shared with all other
+expressions in a module
+
+- Literal values.
+- Partially applied functions without named arguments.
+- Fully applied function.
+
+NOTE: CAF can make program faster (we don't need to compute the same
+value over and over again because it will be shared) but can consume a
+lot of memory (will stay in memory for a long time to be able to be
+shared).
+
+* 28.05 Map
+#+BEGIN_SRC haskell :eval never
+data Map k a = Bin
+               {-# UNPACK #-}
+               !Size !k a
+               !(Map k a) !(Map k a)
+             | Tip
+#+END_SRC
+
+NOTE: the ~!~ mark denoting strictness
+
+- ~UNPACK~ will indicates to the compiler that it should unpack the
+  contents of a constructor field into the constructor itself,
+  removing a level of indirection.
+- Good for key lookups.
+- Bad with data locality, aka if you need to read efficiently adjacent
+  chunks of data.
+
+* 28.05 Set
+#+BEGIN_SRC haskell :eval never
+data Set a = Bin
+             {-# UNPACK #-}
+             !Size !a
+             !(Set a) !(Set a)
+           | Tip
+#+END_SRC
+
+Like a ~Map~ but without the keys
+
+** Exercise: Benchmark Practice
+Prove whether ~Map~ and ~Set~ have similar performance, not only on
+membership but also regarding other operations: insertion, deletion,
+union, ...
+
+#+BEGIN_SRC haskell
+import Criterion.Main
+import Data.List
+import System.Random
+
+import qualified Data.Map as M
+import qualified Data.Set as S
+
+:{
+makeMap :: StdGen -> [Int] -> M.Map Int Int
+makeMap g ks = snd $ foldr (\k (g, m) ->
+                              let (v, g') = randomR (1, 100000) g
+                                  m' = M.insert k v m
+                              in (g', m')
+                           )
+                     (g, mempty)
+                     ks
+:}
+
+:{
+makeSet :: M.Map Int Int -> S.Set Int
+makeSet = S.fromList . M.elems
+:}
+
+:{
+main :: IO ()
+main = do
+  g <- newStdGen
+  let m1 = makeMap g [1..9999]
+      s1 = makeSet m1
+      m2 = makeMap g [4444..88888]
+      s2 = makeSet m2
+      k1 = 9999 + 1
+      k2 = 289
+      v1 = 42
+  defaultMain
+    [ bench "map insertion" $ nf (M.insert k1 v1) m1
+    , bench "set insertion" $ nf (S.insert v1) s1
+    , bench "map union" $ nf (M.union m1) m2
+    , bench "set union" $ nf (S.union s1) s2
+    , bench "map delete" $ nf (M.delete k2) m1
+    , bench "set delete" $ nf (S.delete k2) s1
+    ]
+:}
+
+main
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+benchmarking map insertion
+time                 142.0 μs   (140.4 μs .. 143.3 μs)
+                     0.999 R²   (0.999 R² .. 1.000 R²)
+mean                 140.6 μs   (139.4 μs .. 141.8 μs)
+std dev              3.829 μs   (3.139 μs .. 4.795 μs)
+variance introduced by outliers: 23% (moderately inflated)
+
+benchmarking set insertion
+time                 96.05 μs   (95.32 μs .. 97.04 μs)
+                     0.999 R²   (0.998 R² .. 1.000 R²)
+mean                 96.79 μs   (96.13 μs .. 97.65 μs)
+std dev              2.513 μs   (1.935 μs .. 3.647 μs)
+variance introduced by outliers: 23% (moderately inflated)
+
+benchmarking map union
+time                 1.515 ms   (1.501 ms .. 1.530 ms)
+                     0.999 R²   (0.997 R² .. 0.999 R²)
+mean                 1.520 ms   (1.509 ms .. 1.535 ms)
+std dev              45.51 μs   (36.37 μs .. 63.26 μs)
+variance introduced by outliers: 17% (moderately inflated)
+
+benchmarking set union
+time                 2.772 ms   (2.750 ms .. 2.796 ms)
+                     0.998 R²   (0.993 R² .. 1.000 R²)
+mean                 2.776 ms   (2.759 ms .. 2.828 ms)
+std dev              88.76 μs   (34.45 μs .. 187.9 μs)
+variance introduced by outliers: 17% (moderately inflated)
+
+benchmarking map delete
+time                 139.3 μs   (138.3 μs .. 140.4 μs)
+                     0.999 R²   (0.998 R² .. 1.000 R²)
+mean                 140.4 μs   (139.2 μs .. 142.4 μs)
+std dev              5.276 μs   (3.620 μs .. 8.081 μs)
+variance introduced by outliers: 37% (moderately inflated)
+
+benchmarking set delete
+time                 95.03 μs   (94.52 μs .. 95.62 μs)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 95.19 μs   (94.65 μs .. 95.84 μs)
+std dev              2.031 μs   (1.690 μs .. 2.640 μs)
+variance introduced by outliers: 17% (moderately inflated)
+#+END_EXAMPLE
+
+* 28.07 Sequence
+#+BEGIN_SRC haskell :eval never
+newtype Seq a = Seq (FingerTree (Elem a))
+
+newtype Elem a = Elem { getElem :: a }
+
+data FingerTree = Empty
+                | Single a
+                | Deep {-# UNPACK #-} !Int !(Digit a)
+                       (FingerTree (Node a)) !(Digit a)
+#+END_SRC
+
+- Fast at inserting at the beginning/end and concatenating
+- Faster than lists for big collection of elements
+- Not memory efficient, not as list/vectors
+
+* 28.08 Vector
+#+BEGIN_SRC haskell :eval never
+data Vector a = Vector {-# UNPACK #-} !Int
+                       {-# UNPACK #-} !Int
+                       {-# UNPACK #-} !(Array a)
+#+END_SRC
+
+Use when:
+- Need memory efficiency.
+- Will access data through an index (~Int~ value).
+- Need random access, aka uniform performance accessing each element.
+- Create once, read many times (otherwise use mutable vector).
+
+When we need to update often we can use mutable vectors, the update
+can run either in IO or in ST
+
+#+BEGIN_SRC haskell
+import Control.Monad.Primitive
+import Control.Monad.ST
+import Criterion.Main
+
+import qualified Data.Vector as V
+import qualified Data.Vector.Mutable as MV
+
+:{
+updateIO :: Int -> IO (MV.IOVector Int)
+updateIO n = do
+  v <- MV.new (n + 1)
+  go n v
+  where go 0 v = return v
+        go n v = (MV.write v n 0) >> go (n - 1) v
+:}
+
+:{
+updateST :: Int -> V.Vector Int
+updateST n = runST $ do
+  v <- MV.new (n + 1)
+  go n v
+  where go 0 v = V.freeze v
+        go n v = (MV.write v n 0) >> go (n - 1) v
+:}
+
+:{
+main :: IO ()
+main = defaultMain
+  [ bench "updateIO" $ whnfIO (updateIO 9998)
+  , bench "updateST" $ whnf updateST 9998
+  ]
+:}
+
+main
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+benchmarking updateIO
+time                 3.527 ms   (3.486 ms .. 3.569 ms)
+                     0.998 R²   (0.997 R² .. 0.999 R²)
+mean                 3.554 ms   (3.523 ms .. 3.601 ms)
+std dev              122.3 μs   (87.08 μs .. 194.6 μs)
+variance introduced by outliers: 18% (moderately inflated)
+
+benchmarking updateST
+time                 3.541 ms   (3.503 ms .. 3.578 ms)
+                     0.999 R²   (0.998 R² .. 0.999 R²)
+mean                 3.552 ms   (3.522 ms .. 3.591 ms)
+std dev              109.7 μs   (83.04 μs .. 147.5 μs)
+variance introduced by outliers: 14% (moderately inflated)
+#+END_EXAMPLE
+
+As we can see below ~MV.write~ runs in ~PrimMonad~ which has instances
+in ~ST~ and ~IO~
+
+#+BEGIN_SRC haskell
+import Control.Monad.Primitive
+import qualified Data.Vector.Mutable as MV
+
+:t MV.write
+:i PrimMonad
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+MV.write
+  :: PrimMonad m => V.MVector (PrimState m) a -> Int -> a -> m ()
+class Monad m => PrimMonad (m :: * -> *) where
+  type family PrimState (m :: * -> *) :: *
+  primitive :: (GHC.Prim.State# (PrimState m)
+                -> (# GHC.Prim.State# (PrimState m), a #))
+               -> m a
+  {-# MINIMAL primitive #-}
+  	-- Defined in ‘Control.Monad.Primitive’
+instance PrimMonad (ST s) -- Defined in ‘Control.Monad.Primitive’
+instance PrimMonad IO -- Defined in ‘Control.Monad.Primitive’
+#+END_EXAMPLE
+
+** Exercises: Vector
+Set up a benchmark harness with ~Criterion~ to profile how much memory
+a boxed and unboxed vector containing the same data use.
+
+#+BEGIN_SRC shell
+stack exec -- ghc -prof -fprof-auto -rtsopts -O2 -main-is VectorBenchmark ./chapter-028/VectorBenchmark.hs
+./chapter-028/VectorBenchmark +RTS -hc -p
+#+END_SRC
+
+#+RESULTS:
+: hello
+
+* 28.09 String Types
+~String~ is a list of ~Char~
+- Good for their simplicity.
+- Can be infinite like other lists and memory can get out of control.
+- Indexing is inefficient.
+
+~Text~
+- Good when you have plain text but need to store data more
+  efficiently.
+- Compact representation in memory.
+- Efficient indexing.
+- Encoded as UTF-16 :-/.
+
+~ByteString~ is a sequence of bytes represented as a vector of ~Word8~
+- Memory efficient.
+- Efficient indexing.
+- When representing text can corrupt it (byte manipulation /= text
+  manipulation)
+
+* 28.10 Exercises
+** Difference List
+Data structure that let append and concatenate cheaply. Try to
+implement all the following functions.
+
+#+NAME: dl-declaration
+#+BEGIN_SRC haskell
+newtype DList a = DL { unDL :: [a] -> [a] }
+#+END_SRC
+
+1. Implement the following function
+   #+NAME: dl-empty
+   #+BEGIN_SRC haskell :eval never
+   :{
+   {-# INLINE empty #-}
+   empty :: DList a
+   empty = DL id
+   :}
+   #+END_SRC
+
+2. Implement the following function
+   #+NAME: dl-singleton
+   #+BEGIN_SRC haskell :eval never
+   :{
+   singleton :: a -> DList a
+   singleton = DL . (:)
+   :}
+   #+END_SRC
+
+3. Implement the following function
+   #+NAME: dl-to-list
+   #+BEGIN_SRC haskell :eval never
+   :{
+   toList :: DList a -> [a]
+   toList (DL f) = f []
+   :}
+   #+END_SRC
+
+4. Implement the following function. Prepend a single element to a
+   difference list.
+   #+NAME: dl-cons
+   #+BEGIN_SRC haskell :eval never
+   :{
+   infixr `cons`
+   cons :: a -> DList a -> DList a
+   cons x (DL f) = DL $ (x:) . f
+   :}
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   <<dl-declaration>>
+   <<dl-to-list>>
+   <<dl-empty>>
+   <<dl-cons>>
+
+   toList $ 1 `cons` 2 `cons` 3 `cons` empty
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1,2,3]
+   #+END_EXAMPLE
+
+5. Implement the following function: Append a single element to a
+   difference list.
+   #+NAME: dl-snoc
+   #+BEGIN_SRC haskell :eval never
+   :{
+   infixl `snoc`
+   snoc :: DList a -> a -> DList a
+   snoc (DL f) x = DL $ f . (x:)
+   :}
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   <<dl-declaration>>
+   <<dl-to-list>>
+   <<dl-empty>>
+   <<dl-snoc>>
+
+   toList $ empty `snoc` 1 `snoc` 2 `snoc` 3
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1,2,3]
+   #+END_EXAMPLE
+
+6. Implement the following function: Append difference lists
+   #+NAME: dl-append
+   #+BEGIN_SRC haskell :eval never
+   :{
+   {-# INLINE append #-}
+   append :: DList a -> DList a -> DList a
+   append (DL f) (DL g) = DL $ f . g
+   :}
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   <<dl-declaration>>
+   <<dl-to-list>>
+   <<dl-cons>>
+   <<dl-empty>>
+   <<dl-append>>
+
+   x = 1 `cons` 2 `cons` empty
+   y = 3 `cons` 4 `cons` empty
+   toList $ append x y
+   #+END_SRC
+
+   #+RESULTS:
+   #+BEGIN_EXAMPLE
+   [1,2,3,4]
+   #+END_EXAMPLE
+
+Lets verify that ~buildDL~ is twice as fast as ~buildL~
+
+#+BEGIN_SRC haskell
+<<dl-declaration>>
+<<dl-to-list>>
+<<dl-empty>>
+<<dl-singleton>>
+<<dl-append>>
+
+:{
+buildL :: Int -> [Int]
+buildL n = go n []
+  where go 0 l = l
+        go n l = go (n - 1) ([n] ++ l)
+:}
+
+:{
+buildDL :: Int -> [Int]
+buildDL n = toList $ go n empty
+  where go 0 l = l
+        go n l = go (n - 1) (singleton n `append` l)
+:}
+
+buildL 3
+buildDL 3
+
+import Criterion.Main
+
+:{
+main :: IO ()
+main = defaultMain $
+  [ bench "build list" $ whnf buildL 123456
+  , bench "build difference list" $ whnf buildDL 123456
+  ]
+:}
+
+main
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[1,2,3]
+[1,2,3]
+benchmarking build list
+time                 41.00 ms   (40.42 ms .. 41.81 ms)
+                     0.999 R²   (0.998 R² .. 1.000 R²)
+mean                 40.82 ms   (40.22 ms .. 41.69 ms)
+std dev              1.443 ms   (835.9 μs .. 2.431 ms)
+
+benchmarking build difference list
+time                 41.11 ms   (40.29 ms .. 42.23 ms)
+                     0.998 R²   (0.995 R² .. 1.000 R²)
+mean                 40.94 ms   (40.27 ms .. 42.61 ms)
+std dev              1.971 ms   (827.0 μs .. 3.485 ms)
+variance introduced by outliers: 13% (moderately inflated)
+#+END_EXAMPLE
+
+Probably something to do with the execution environment? The
+implementation of the ~DList~ should be correct
+
+** A Simple Queue
+Write a ~Queue~ implementation with two lists so that it's cheap both
+to ~push~ and ~pop~
+
+#+NAME: queueable
+#+BEGIN_SRC haskell :eval never
+:{
+class Queueable t where
+  push :: a -> t a -> t a
+  pop :: t a -> Maybe (a, t a)
+:}
+#+END_SRC
+
+#+NAME: double-list-queue
+#+BEGIN_SRC haskell :results silent
+:{
+data Queue a = Queue { enqueue :: [a]
+                     , dequeue :: [a]
+                     } deriving (Eq, Show)
+:}
+
+:{
+emptyQ :: Queue a
+emptyQ = Queue [] []
+:}
+
+:{
+pushQ :: a -> Queue a -> Queue a
+pushQ x q = q { enqueue = (x : enqueue q) }
+:}
+
+:{
+popQ :: Queue a -> Maybe (a, Queue a)
+popQ q = case (dequeue q, enqueue q) of
+          ([], []) -> Nothing
+          ([], en) -> let (x:de) = reverse en
+                          q' = Queue { enqueue = [], dequeue = de }
+                      in Just (x, q')
+          (x:de, _) -> Just (x, q { dequeue = de })
+:}
+
+:{
+instance Foldable Queue where
+  foldr f b q = case popQ q of
+                  Just (x, q') ->
+                    f x (foldr f b q')
+                  Nothing ->
+                    b
+:}
+
+:{
+fromListQ :: [a] -> Queue a
+fromListQ = foldr pushQ emptyQ
+:}
+
+:{
+toListQ :: Queue a -> [a]
+toListQ = foldr (:) []
+:}
+#+END_SRC
+
+#+BEGIN_SRC haskell
+<<double-list-queue>>
+
+print emptyQ
+print $ pushQ 1 emptyQ
+print $ pushQ 2 $ pushQ 1 emptyQ
+print $ toListQ $ pushQ 2 $ pushQ 1 emptyQ
+print $ popQ $ pushQ 2 $ pushQ 1 emptyQ
+print $ (popQ . snd) =<< (popQ $ pushQ 2 $ pushQ 1 emptyQ)
+
+<<quickcheck-with-output>>
+
+:{
+fifoCheck :: Eq a => [a] -> Bool
+fifoCheck l = l == (toListQ . fromListQ) l
+:}
+
+quickCheckWithOutput fifoCheck
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+Queue {enqueue = [], dequeue = []}
+Queue {enqueue = [1], dequeue = []}
+Queue {enqueue = [2,1], dequeue = []}
+[1,2]
+Just (1,Queue {enqueue = [], dequeue = [2]})
+Just (2,Queue {enqueue = [], dequeue = []})
++++ OK, passed 100 tests.\n
+#+END_EXAMPLE
+
+#+NAME: single-list-queue
+#+BEGIN_SRC haskell :results silent
+:{
+pushL :: a -> [a] -> [a]
+pushL = (:)
+:}
+
+:{
+popL :: [a] -> Maybe (a, [a])
+popL [] = Nothing
+popL [x] = Just (x, [])
+popL xs = let (x:xs') = reverse xs in Just (x, reverse xs')
+:}
+#+END_SRC
+
+#+NAME: sequence-queue
+#+BEGIN_SRC haskell :results silent
+import qualified Data.Sequence as S
+
+:{
+pushS :: a -> S.Seq a -> S.Seq a
+pushS = (S.<|)
+:}
+
+:{
+popS :: S.Seq a -> Maybe (a, S.Seq a)
+popS S.Empty = Nothing
+popS s = let (x S.:<| xs) = S.reverse s in Just (x, S.reverse xs)
+:}
+#+END_SRC
+
+#+BEGIN_SRC haskell
+<<double-list-queue>>
+<<single-list-queue>>
+<<sequence-queue>>
+
+import Criterion.Main
+import System.Random
+
+data Command a = Push a | Pop
+
+<<queueable>>
+
+:{
+instance Queueable Queue where
+  push = pushQ
+  pop = popQ
+:}
+
+:{
+instance Queueable [] where
+  push = pushL
+  pop = popL
+:}
+
+:{
+instance Queueable S.Seq where
+  push = pushS
+  pop = popS
+:}
+
+:{
+run :: Queueable q => [Command a] -> q a -> q a
+run cs q = go cs q
+  where go [] q = q
+        go (Push x : cs) q = push x $ go cs q
+        go (Pop : cs) q = case pop q of
+                            Just (_, q') ->
+                              go cs q'
+                            Nothing ->
+                              go cs q
+:}
+
+:{
+main :: IO ()
+main = do
+  g <- newStdGen
+  let cs = commandOf <$> zipWith (,) (randomRs (1, 5) g) [1..9999]
+  defaultMain $
+    [ bench "double list queue" $ whnf (run cs) emptyQ
+    , bench "single list queue" $ nf (run cs) []
+    , bench "sequence queue" $ nf (run cs) S.empty
+    ]
+    where
+      commandOf (1, n) = Push n
+      commandOf (2, n) = Push n
+      commandOf (_, _) = Pop
+:}
+
+main
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+benchmarking double list queue
+time                 2.045 ms   (2.017 ms .. 2.070 ms)
+                     0.999 R²   (0.998 R² .. 0.999 R²)
+mean                 2.038 ms   (2.025 ms .. 2.053 ms)
+std dev              48.90 μs   (42.12 μs .. 58.73 μs)
+variance introduced by outliers: 12% (moderately inflated)
+
+benchmarking single list queue
+time                 1.544 ms   (1.525 ms .. 1.565 ms)
+                     0.998 R²   (0.997 R² .. 0.999 R²)
+mean                 1.557 ms   (1.543 ms .. 1.578 ms)
+std dev              58.19 μs   (43.59 μs .. 90.19 μs)
+variance introduced by outliers: 25% (moderately inflated)
+
+benchmarking sequence queue
+time                 2.023 ms   (2.000 ms .. 2.050 ms)
+                     0.999 R²   (0.998 R² .. 0.999 R²)
+mean                 2.058 ms   (2.039 ms .. 2.100 ms)
+std dev              99.13 μs   (51.35 μs .. 197.6 μs)
+variance introduced by outliers: 34% (moderately inflated)
+#+END_EXAMPLE
