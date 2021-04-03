@@ -452,13 +452,25 @@ instance PrimMonad IO -- Defined in ‘Control.Monad.Primitive’
 Set up a benchmark harness with ~Criterion~ to profile how much memory
 a boxed and unboxed vector containing the same data use.
 
-#+BEGIN_SRC shell
-stack exec -- ghc -prof -fprof-auto -rtsopts -O2 -main-is VectorBenchmark ./chapter-028/VectorBenchmark.hs
-./chapter-028/VectorBenchmark +RTS -hc -p
+#+BEGIN_SRC shell :dir ./chapter-028/ :results raw :wrap EXAMPLE
+stack exec --profile -- ghc -prof -fprof-auto -rtsopts -O2 -main-is BoxedVector BoxedVector.hs > /dev/null && \
+./BoxedVector +RTS -hc -p > /dev/null && \
+echo -en "BoxedVector: " && \
+head -100 BoxedVector.prof | grep 'total alloc' | sed 's/^\s\([^(]\+\).*/\1/g' && \
+rm -rf BoxedVector BoxedVector.{hi,hp,o,prof}
+
+stack exec --profile -- ghc -prof -fprof-auto -rtsopts -O2 -main-is UnboxedVector UnboxedVector.hs > /dev/null && \
+./UnboxedVector +RTS -hc -p > /dev/null && \
+echo -en "UnboxedVector: " && \
+head -100 UnboxedVector.prof | grep 'total alloc' | sed 's/^\s\([^(]\+\).*/\1/g' && \
+rm -rf UnboxedVector UnboxedVector.{hi,hp,o,prof}
 #+END_SRC
 
 #+RESULTS:
-: hello
+#+BEGIN_EXAMPLE
+BoxedVector: total alloc = 13,769,923,448 bytes
+UnboxedVector: total alloc = 17,091,696,152 bytes
+#+END_EXAMPLE
 
 * 28.09 String Types
 ~String~ is a list of ~Char~
