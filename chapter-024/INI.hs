@@ -1,4 +1,4 @@
-module DataINI where
+module INI where
 
 import Text.Trifecta
 import Text.Parser.Combinators

@@ -326,11 +326,11 @@ host=wikipedia.org
 alias=claw
 #+END_SRC
 
-Look [[file:chapter-024/DataINI.hs::module DataINI where][here]] for the parser implementation
+Look [[file:chapter-024/INI.hs::module DataINI where][here]] for the parser implementation
 
 #+BEGIN_SRC haskell
 <<add-current-chapter-directory-in-path()>>
-:l DataINI
+:l INI
 
 <<parser-prelude>>
 testParse "[hello]" parseHeader
@@ -338,14 +338,14 @@ testParse "[hello]" parseHeader
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
-[1 of 1] Compiling DataINI          ( /home/coder/code/haskellbook-exercises/chapter-024/DataINI.hs, interpreted )
+[1 of 1] Compiling INI              ( /home/coder/code/haskellbook-exercises/chapter-024/INI.hs, interpreted )
 Ok, one module loaded.
 Success (Header "hello")
 #+END_EXAMPLE
 
 #+BEGIN_SRC haskell
 <<add-current-chapter-directory-in-path()>>
-:l DataINI
+:l INI
 
 <<parser-prelude>>
 testParse "foo=bar" parseAssignment
@@ -353,14 +353,14 @@ testParse "foo=bar" parseAssignment
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
-[1 of 1] Compiling DataINI          ( /home/coder/code/haskellbook-exercises/chapter-024/DataINI.hs, interpreted )
+[1 of 1] Compiling INI              ( /home/coder/code/haskellbook-exercises/chapter-024/INI.hs, interpreted )
 Ok, one module loaded.
 Success ("foo","bar")
 #+END_EXAMPLE
 
 #+BEGIN_SRC haskell
 <<add-current-chapter-directory-in-path()>>
-:l DataINI
+:l INI
 
 <<parser-prelude>>
 testParse ";ignore" skipComment
@@ -374,7 +374,7 @@ testParse ";ignore\n\n[foo]\nbar=baz\n\nbiz=fooz" parseSection
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
-[1 of 1] Compiling DataINI          ( /home/coder/code/haskellbook-exercises/chapter-024/DataINI.hs, interpreted )
+[1 of 1] Compiling INI              ( /home/coder/code/haskellbook-exercises/chapter-024/INI.hs, interpreted )
 Ok, one module loaded.
 Success ()
 Success ()
@@ -389,14 +389,14 @@ The final tests
 
 #+BEGIN_SRC haskell
 <<add-current-chapter-directory-in-path()>>
-:l DataINI
+:l INI
 
 parse ";ignore\n\n[foo]\nfor=foz\n\n#ignore\n[bar]\nbaz=biz"
 #+END_SRC
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
-[1 of 1] Compiling DataINI          ( /home/coder/code/haskellbook-exercises/chapter-024/DataINI.hs, interpreted )
+[1 of 1] Compiling INI              ( /home/coder/code/haskellbook-exercises/chapter-024/INI.hs, interpreted )
 Ok, one module loaded.
 Success (Config (fromList [(Header "bar",fromList [("baz","biz")]),(Header "foo",fromList [("for","foz")])]))
 #+END_EXAMPLE
