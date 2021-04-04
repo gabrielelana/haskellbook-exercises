@@ -326,110 +326,43 @@ host=wikipedia.org
 alias=claw
 #+END_SRC
 
-#+NAME: ini-prelude
-#+BEGIN_SRC haskell :eval never
-import Text.Trifecta
-import Text.Parser.Combinators
-import qualified Data.Map as M
-
-:{
-skipEOL :: Parser ()
-skipEOL = skipMany (oneOf "\n")
-:}
-#+END_SRC
-
-#+NAME: ini-parse-header
-#+BEGIN_SRC haskell :results silent
-<<ini-prelude>>
-
-newtype Header = Header String deriving (Eq, Ord, Show)
-
-:{
-parseBetweenSquareBraket :: Parser a -> Parser a
-parseBetweenSquareBraket p = char '[' *> p <* char ']'
-:}
-
-:{
-parseHeader :: Parser Header
-parseHeader = parseBetweenSquareBraket $ Header <$> some letter
-:}
-#+END_SRC
+Look [[file:chapter-024/DataINI.hs::module DataINI where][here]] for the parser implementation
 
 #+BEGIN_SRC haskell
-<<parser-prelude>>
-<<ini-parse-header>>
+<<add-current-chapter-directory-in-path()>>
+:l DataINI
 
+<<parser-prelude>>
 testParse "[hello]" parseHeader
 #+END_SRC
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
+[1 of 1] Compiling DataINI          ( /home/coder/code/haskellbook-exercises/chapter-024/DataINI.hs, interpreted )
+Ok, one module loaded.
 Success (Header "hello")
 #+END_EXAMPLE
 
-#+NAME: ini-parse-assignments
-#+BEGIN_SRC haskell :results silent
-<<ini-prelude>>
-
-type Name = String
-type Value = String
-
-:{
-parseAssignment :: Parser (Name, Value)
-parseAssignment = do
-  name <- some letter
-  char '='
-  value <- some (noneOf "\n")
-  skipEOL
-  return (name, value)
-:}
-#+END_SRC
-
 #+BEGIN_SRC haskell
-<<parser-prelude>>
-<<ini-prelude>>
+<<add-current-chapter-directory-in-path()>>
+:l DataINI
 
+<<parser-prelude>>
 testParse "foo=bar" parseAssignment
 #+END_SRC
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
+[1 of 1] Compiling DataINI          ( /home/coder/code/haskellbook-exercises/chapter-024/DataINI.hs, interpreted )
+Ok, one module loaded.
 Success ("foo","bar")
 #+END_EXAMPLE
 
-#+NAME: ini-parse-section
-#+BEGIN_SRC haskell :results silent
-<<ini-prelude>>
-<<ini-parse-header>>
-
-type Assignments = M.Map Name Value
-
-:{
-skipComment :: Parser ()
-skipComment = skipSome (oneOf ";#") >> skipMany (noneOf "\n") >> skipEOL
-:}
-
-:{
-skipWhitespace :: Parser ()
-skipWhitespace = () <$ oneOf " \n"
-:}
-
-:{
-parseSection :: Parser (Header, Assignments)
-parseSection = do
-  many skipWhitespace
-  many skipComment
-  header <- parseHeader
-  skipEOL
-  assignments <- some parseAssignment
-  return (header, M.fromList assignments)
-:}
-#+END_SRC
-
 #+BEGIN_SRC haskell
-<<parser-prelude>>
-<<ini-parse-section>>
+<<add-current-chapter-directory-in-path()>>
+:l DataINI
 
+<<parser-prelude>>
 testParse ";ignore" skipComment
 testParse ";ignore\n" skipComment
 testParse ";ignore\n#blabla\n" (some skipComment)
@@ -441,6 +374,8 @@ testParse ";ignore\n\n[foo]\nbar=baz\n\nbiz=fooz" parseSection
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
+[1 of 1] Compiling DataINI          ( /home/coder/code/haskellbook-exercises/chapter-024/DataINI.hs, interpreted )
+Ok, one module loaded.
 Success ()
 Success ()
 Success [(),()]
@@ -450,29 +385,19 @@ Success (Header "foo",fromList [("bar","baz")])
 Success (Header "foo",fromList [("bar","baz"),("biz","fooz")])
 #+END_EXAMPLE
 
-#+NAME: ini-parse
-#+BEGIN_SRC haskell :results silent
-<<ini-parse-section>>
-
-newtype Config = Config (M.Map Header Assignments) deriving (Eq, Show)
-
-:{
-parseIni :: Parser Config
-parseIni = do
-  sections <- some parseSection
-  return $ Config (M.fromList sections)
-:}
-#+END_SRC
+The final tests
 
 #+BEGIN_SRC haskell
-<<parser-prelude>>
-<<ini-parse>>
+<<add-current-chapter-directory-in-path()>>
+:l DataINI
 
-testParse ";ignore\n\n[foo]\nfor=foz\n\n#ignore\n[bar]\nbaz=biz" parseIni
+parse ";ignore\n\n[foo]\nfor=foz\n\n#ignore\n[bar]\nbaz=biz"
 #+END_SRC
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
+[1 of 1] Compiling DataINI          ( /home/coder/code/haskellbook-exercises/chapter-024/DataINI.hs, interpreted )
+Ok, one module loaded.
 Success (Config (fromList [(Header "bar",fromList [("baz","biz")]),(Header "foo",fromList [("for","foz")])]))
 #+END_EXAMPLE
 
