@@ -38,7 +38,7 @@ caesarEncodeChar a n c
   | otherwise = c
 
 caesarDecodeChar :: Alphabet -> Int -> Char -> Char
-caesarDecodeChar a n c = caesarDecodeChar a (-n) c
+caesarDecodeChar a n c = caesarEncodeChar a (-n) c
 
 canBeEncoded :: Alphabet -> Char -> Bool
 canBeEncoded a c = elem c a
