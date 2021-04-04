@@ -51,9 +51,9 @@ Therefore ~State# RealWorld~ is not a state in the general sense.
 ~IO~ actions are nested lambdas and that's how you guarantee order in
 a lambda calculus.
 
-???: The ordering should be guaranteed by the ~Monad~ instance of
-~IO~, so the lambdas cited above are the second arguments of ~>>=~ not
-the function in the data type
+NOTE: the ordering is guaranteed by the ~Monad~ instance, but based on
+how ~IO~ is defined, the instance of ~Applicative~ also give order of
+execution.
 
 #+BEGIN_SRC haskell
 import Debug.Trace (trace)
@@ -61,7 +61,7 @@ import Debug.Trace (trace)
 -- It's ordered without IO
 (trace "1" $ Just 1) >> (trace "2" $ Just 2)
 
--- It's not ordered in IO
+-- It's ordered in IO even by only using the Applicative instance
 (putStrLn "1") *> (putStrLn "2") *> (putStrLn "3")
 #+END_SRC
 
@@ -119,8 +119,8 @@ import Debug.Trace (trace)
 foo :: IO String
 foo = return $ trace "producing foo" "foo"
 
--- If I write it like this producing gets evaluated not when
--- the string is needed but before
+-- If I write it like this producing gets evaluated not when the
+-- string is needed but before
 
 -- foo = trace "producing foo" $ return "foo"
 :}
@@ -191,4 +191,46 @@ other data types.
 ... Already solved in the comments of the example above.
 
 * 29.09 Chapter Exercises
-...
+** File I/O with Vigenère
+Reusing Vigenère cipher of chapter 11, make an executable that takes a
+key and a mode argument.
+
+If the mode is ~-d~ the executable decrypts the input from STDIN
+and writes the result on STDOUT.
+
+If the mode is ~-e~ the executable blocks on input from STDIN and
+writes the encrypted result on STDOUT.
+
+Add an optional timeout ~-t~ option.
+
+#+BEGIN_SRC shell :dir ./chapter-029 :results raw :wrap EXAMPLE
+echo 'MEET AT DOWN' | stack runghc -- -i../chapter-011 VigenereMain.hs -d
+echo 'MTTV AI SQWC' | stack runghc -- -i../chapter-011 VigenereMain.hs -e
+echo 'MTTV AI SQWC' | stack runghc -- -i../chapter-011 VigenereMain.hs -e -t 3
+
+echo 'MEET AT DOWN' \
+  | stack runghc -- -i../chapter-011 VigenereMain.hs -e \
+  | stack runghc -- -i../chapter-011 VigenereMain.hs -d
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+MTTV AI SQWC
+MEET AT DOWN
+MEET AT DOWN
+MEET AT DOWN
+#+END_EXAMPLE
+
+** Config Directories
+Reusing the INI parser in chapter 24, parse a directory of INI config
+files into a ~Map~ where the keys are the file names and the values
+are the result of the parser.
+
+#+BEGIN_SRC shell :dir ./chapter-029 :results raw :wrap EXAMPLE
+stack runghc -- -i../chapter-024 INIMain.hs ./conf
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+["./conf/aaa/foo.ini","./conf/bbb/bar.ini","./conf/bbb/ccc/baz.ini"]
+#+END_EXAMPLE
