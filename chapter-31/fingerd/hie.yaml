@@ -1,0 +1,7 @@
+cradle:
+  stack:
+    - path: "./src/Debug.hs"
+      component: "fingerd:exe:debug"
+
+    - path: "./src/Main.hs"
+      component: "fingerd:exe:fingerd"
