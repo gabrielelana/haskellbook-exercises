@@ -470,8 +470,8 @@ rm -rf UnboxedVector UnboxedVector.{hi,hp,o,prof}
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
-BoxedVector: total alloc = 13,769,923,448 bytes
-UnboxedVector: total alloc = 17,091,696,152 bytes
+BoxedVector: total alloc = 13,149,758,408 bytes
+UnboxedVector: total alloc = 15,970,497,408 bytes
 #+END_EXAMPLE
 
 * 28.09 String Types
@@ -621,14 +621,14 @@ Lets verify that ~buildDL~ is twice as fast as ~buildL~
 buildL :: Int -> [Int]
 buildL n = go n []
   where go 0 l = l
-        go n l = go (n - 1) ([n] ++ l)
+        go n l = go (n - 1) (l ++ [n])
 :}
 
 :{
 buildDL :: Int -> [Int]
 buildDL n = toList $ go n empty
   where go 0 l = l
-        go n l = go (n - 1) (singleton n `append` l)
+        go n l = go (n - 1) (l `append` singleton n)
 :}
 
 buildL 3
@@ -649,20 +649,21 @@ main
 
 #+RESULTS:
 #+BEGIN_EXAMPLE
-[1,2,3]
-[1,2,3]
+[3,2,1]
+[3,2,1]
 benchmarking build list
-time                 41.00 ms   (40.42 ms .. 41.81 ms)
-                     0.999 R²   (0.998 R² .. 1.000 R²)
-mean                 40.82 ms   (40.22 ms .. 41.69 ms)
-std dev              1.443 ms   (835.9 μs .. 2.431 ms)
+time                 103.5 ms   (93.41 ms .. 111.9 ms)
+                     0.987 R²   (0.969 R² .. 0.999 R²)
+mean                 92.67 ms   (83.23 ms .. 97.40 ms)
+std dev              10.88 ms   (4.590 ms .. 17.00 ms)
+variance introduced by outliers: 32% (moderately inflated)
 
 benchmarking build difference list
-time                 41.11 ms   (40.29 ms .. 42.23 ms)
-                     0.998 R²   (0.995 R² .. 1.000 R²)
-mean                 40.94 ms   (40.27 ms .. 42.61 ms)
-std dev              1.971 ms   (827.0 μs .. 3.485 ms)
-variance introduced by outliers: 13% (moderately inflated)
+time                 103.9 ms   (98.99 ms .. 109.1 ms)
+                     0.997 R²   (0.994 R² .. 1.000 R²)
+mean                 108.5 ms   (104.0 ms .. 112.3 ms)
+std dev              6.747 ms   (4.196 ms .. 10.56 ms)
+variance introduced by outliers: 20% (moderately inflated)
 #+END_EXAMPLE
 
 Probably something to do with the execution environment? The
@@ -784,6 +785,7 @@ pushS :: a -> S.Seq a -> S.Seq a
 pushS = (S.<|)
 :}
 
+-- Use S.last
 :{
 popS :: S.Seq a -> Maybe (a, S.Seq a)
 popS S.Empty = Nothing
