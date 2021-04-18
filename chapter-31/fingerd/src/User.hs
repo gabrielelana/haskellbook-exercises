@@ -58,12 +58,11 @@ insertUserQ = "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)"
 updateUserQ :: Query
 updateUserQ = [r|
 UPDATE users
-SET username = :username
-  , shell = :shell
+SET shell = :shell
   , homeDirectory = :homeDirectory
   , realName = :realName
   , phone = :phone
-WHERE id = :userId
+WHERE username = :username
 |]
 
 allUsersQ :: Query
@@ -80,17 +79,22 @@ userByUsername conn username_ = do
     [user] -> return $ Just user
     _ -> undefined -- TODO: replace with proper exception
 
-insertUser :: Connection -> User -> IO ()
-insertUser conn = execute conn insertUserQ
+-- TODO: handle failure
+insertUser :: Connection -> User -> IO (Maybe User)
+insertUser conn u = do
+  _ <- execute conn insertUserQ u
+  userByUsername conn (username u)
 
-updateUser :: Connection -> User -> IO ()
-updateUser conn u = executeNamed conn updateUserQ [ ":userId" := userId u
-                                                  , ":username" := username u
-                                                  , ":shell" := shell u
-                                                  , ":homeDirectory" := homeDirectory u
-                                                  , ":realName" := realName u
-                                                  , ":phone" := phone u
-                                                  ]
+-- TODO: handle failure
+updateUser :: Connection -> User -> IO (Maybe User)
+updateUser conn u = do
+  _ <- executeNamed conn updateUserQ [ ":username" := username u
+                                     , ":shell" := shell u
+                                     , ":homeDirectory" := homeDirectory u
+                                     , ":realName" := realName u
+                                     , ":phone" := phone u
+                                     ]
+  userByUsername conn (username u)
 
 connect :: IO Connection
 connect = open "finger.db"

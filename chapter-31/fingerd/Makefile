@@ -14,7 +14,7 @@ start-debug: debug
 fingerd: build
 
 start-fingerd: fingerd init
-	sudo `find . -type f -name $@ | head -1`
+	sudo `find . -type f -name $< | head -1`
 
 fingerctl: build
 
@@ -25,7 +25,7 @@ init: fingerctl
 
 check: init
 	${FINGERCTL} insert foo "/bin/bash" "/home/foo" "Foo" "555-811-325"
-	${FINGERCTL} update foo 2 "/bin/bash" "/home/foo" "Foo Bar" "555-811-325"
+	${FINGERCTL} update foo "/bin/bash" "/home/foo" "Foo Bar" "555-811-325"
 	echo "select * from users" | sqlite3 finger.db
 
 .PHONY: clean
