@@ -24,7 +24,8 @@ executable debug
 executable fingerd
   ghc-options:         -Wall
   hs-source-dirs:      src
-  main-is:             Main.hs
+  main-is:             Fingerd.hs
+  other-modules:       User
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
                      , bytestring
@@ -32,4 +33,16 @@ executable fingerd
                      , raw-strings-qq
                      , sqlite-simple
                      , parsec
+                     , text
+
+executable fingerctl
+  ghc-options:         -Wall
+  hs-source-dirs:      src
+  main-is:             Fingerctl.hs
+  other-modules:       User
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5
+                     , bytestring
+                     , raw-strings-qq
+                     , sqlite-simple
                      , text

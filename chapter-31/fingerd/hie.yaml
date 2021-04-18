@@ -3,5 +3,8 @@ cradle:
     - path: "./src/Debug.hs"
       component: "fingerd:exe:debug"
 
-    - path: "./src/Main.hs"
+    - path: "./src/Fingerd.hs"
       component: "fingerd:exe:fingerd"
+
+    - path: "./src/Fingerctl.hs"
+      component: "fingerd:exe:fingerctl"

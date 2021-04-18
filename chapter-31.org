@@ -19,9 +19,14 @@ Write a ~fingerd~ server
 ...
 
 * 31.05 Chapter Exercises
-1. Try using ~sqlite3~ command line interface to add more users
-2. (TODO) Write an executable separate from ~fingerd~ and ~debug~ that allows
+1. Try using ~sqlite3~ command line interface to add more users.
+   - Ok :-)
+2. Write an executable separate from ~fingerd~ and ~debug~ that allows
    you to insert new users in the database.
-3. (TODO) Add the ability to modify an existing user in the database.
+   - Extract ~User~ module with data and database dependencies.
+   - Create ~Fingerctl~ module and ~fingerctl~ executable to insert
+     and update users in the database.
+3. Add the ability to modify an existing user in the database.
+   - See above.
 4. (TODO) Try creating a "control socket" bound to a different port
    that permits insert/update of users in the database.
