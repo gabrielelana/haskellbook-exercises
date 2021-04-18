@@ -105,8 +105,6 @@ initDatabase conn = do
   alreadyThere <- userByUsername conn (username me)
   -- NOTE: idempotency, insert an user if not present
   when (isNothing alreadyThere) $ execute conn insertUserQ me
-  rows <- query_ conn allUsersQ
-  mapM_ print (rows :: [User])
   where me = User Nothing
                   "coder"
                   "/bin/bash"
