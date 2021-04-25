@@ -7,4 +7,258 @@
 #+PROPERTY: header-args:haskell+ :wrap EXAMPLE
 
 * 30.01 Exceptions
+Sometimes the best thing to do is to raise an exception. Letting the
+exception bubble to the top of the stack and blow the process is not
+nice. Exceptions can be handled...
+
+* 30.02 The Exception Class and Methods
+The ~Exception~ typeclass definition looks like the following
+
+#+BEGIN_SRC haskell :eval never
+class (Typeable e, Show e) => Exception e where
+  toException :: e -> SomeException
+  fromException :: SomeException -> e
+  displayException :: e -> String
+#+END_SRC
+
+- ~Show~ is there to being able to print ~e~ when we need to show the
+  exception.
+- ~Typeable~ is a typeclass that defines methods for identifying types
+  at runtime.
+- Many data types have an instance of ~Exception~ like: ~IOException~,
+  ~Deadlock~, ~AssertionFailed~, ...
+
+Sometimes the data type that implements ~Exception~ have only one data
+constructor, sometimes many, primary to differentiate the cause of the
+exception.
+
+#+BEGIN_SRC haskell
+import Control.Exception
+
+:i ArithException
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+data ArithException
+  = Overflow
+  | Underflow
+  | LossOfPrecision
+  | DivideByZero
+  | Denormal
+  | RatioZeroDenominator
+  	-- Defined in ‘GHC.Exception.Type’
+instance Eq ArithException -- Defined in ‘GHC.Exception.Type’
+instance Ord ArithException -- Defined in ‘GHC.Exception.Type’
+instance Show ArithException -- Defined in ‘GHC.Exception.Type’
+instance Exception ArithException
+  -- Defined in ‘GHC.Exception.Type’
+#+END_EXAMPLE
+
+To be able to catch multiple types of exceptions at once without
+having to list all of them in a sum type, the exception library in
+Haskell use the /Existential Quantification/ instead of the /Universal
+Quantification/
+
+#+BEGIN_SRC haskell :eval never
+:set -XExistentialQuantification
+:set -XGADTs
+
+:{
+data SomeException where
+  SomeException :: Exception e => e -> SomeException
+:}
+
+-- Which is equivalent to
+
+data SomeException = forall e . Exception e => SomeException e
+#+END_SRC
+
+When ~forall~ is used in the data constructor, doing so will limit its
+scope and the meaning changes from /for all e/ (/Universal
+Quantification/) to /there exists some e/ (/Existential
+Quantification/).
+
+Normally the ~e~ is introduced in the type constructor, therefore at
+type level we can concretize it: ex. ~Maybe Int~.
+
+Here we cannot do it, we cannot write ~SomeException IOException~,
+when we catch an value of type ~SomeException~ its data constructor
+(~SomeException e~) can hold any value of type ~x~ as long as ~x~ have
+an instance of ~Exception~ typeclass.
+
+The ~Typeable~ typeclass exists to be able to check the type of ~e~
+at runtime.
+
+* 30.03 This Machine Kills Programs
+#+BEGIN_SRC haskell
+import Control.Exception
+:t catch
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+catch :: Exception e => IO a -> (e -> IO a) -> IO a
+#+END_EXAMPLE
+
+#+BEGIN_SRC haskell :eval never
+import Control.Exception
+import Data.Typeable
+
+:{
+handler :: SomeException => IO ()
+handler (SomeException e) = do
+  print (typeOf e)
+  putStrLn $ "ERROR: It was: " <> show e
+:}
+
+:{
+main :: IO ()
+main = writeFile "aaa" "hello" `catch` handler
+:}
+#+END_SRC
+
+* 30.04 Want Either? Try!
+#+BEGIN_SRC haskell
+import Control.Exception
+:t try
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+try :: Exception e => IO a -> IO (Either e a)
+#+END_EXAMPLE
+
+* 30.05 The Unbearable Imprecision of Trying
+Remember that you will only catch exceptions of the specified type
+
+#+BEGIN_SRC haskell
+import Control.Exception
+:t throwIO
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+throwIO :: Exception e => e -> IO a
+#+END_EXAMPLE
+
+With the following code we will catch only ~ArithException~
+
+#+BEGIN_SRC haskell :results silent
+import Control.Exception
+
+:{
+catch' :: Exception e => e -> IO (Either ArithException ())
+catch' e = try $ throwIO e
+:}
+#+END_SRC
+
+With the following code we will catch all the exceptions
+
+#+BEGIN_SRC haskell :results silent
+import Control.Exception
+
+:{
+catch' :: Exception e => e -> IO (Either e ())
+catch' e = try $ throwIO e
+:}
+#+END_SRC
+
+* 30.06 Why throwIO?
+The function ~throw~ can be used to throw exceptions silently, at
+least ~throwIO~ will embed it into ~IO~ so that the client knows that
+something fishy is going on here.
+
+#+BEGIN_SRC haskell
+import Control.Exception
+
+:t throw
+:t throwIO
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+throw :: Exception e => e -> a
+throwIO :: Exception e => e -> IO a
+#+END_EXAMPLE
+
+* 30.07 Making Our Own Exception Types
+#+BEGIN_SRC haskell :results silent
+import Control.Exception
+
+data NotEven = NotEven deriving (Eq, Show)
+
+instance Exception NotEven
+#+END_SRC
+
+* 30.08 Surprising Interaction with Bottom
+NOTE:
+- The exception handling mechanism is not for catching bottom
+- Having caught an exception without re-throwing an exception, doesn't
+  mean your program won't fail.
+
+#+BEGIN_SRC haskell
+import Control.Exception
+
+:t try
+
+-- undefined :: IO ()
+:{
+f :: IO (Either SomeException ())
+f = try undefined
+:}
+
+-- undefined :: ()
+:{
+g :: IO (Either SomeException ())
+g = try $ return undefined
+:}
+
+f
+g
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+try :: Exception e => IO a -> IO (Either e a)
+Left Prelude.undefined
+CallStack (from HasCallStack):
+  error, called at libraries/base/GHC/Err.hs:80:14 in base:GHC.Err
+  undefined, called at <interactive>:155:9 in interactive:Ghci30
+Right *** Exception: Prelude.undefined
+CallStack (from HasCallStack):
+  error, called at libraries/base/GHC/Err.hs:80:14 in base:GHC.Err
+  undefined, called at <interactive>:161:18 in interactive:Ghci31
+#+END_EXAMPLE
+
+* 30.09 Asynchronous Exceptions
+Asynchronous exceptions are exceptions that are thrown from one thread
+to another
+
+#+BEGIN_SRC haskell
+import Control.Exception
+
+:t throwTo
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+throwTo :: Exception e => GHC.Conc.Sync.ThreadId -> e -> IO ()
+#+END_EXAMPLE
+
+You can always use ~mask_~ function to mask or delay exception thrown
+to our thread while we are doing certain kind of operations
+
+#+BEGIN_SRC haskell
+import Control.Exception
+
+:t mask_
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+mask_ :: IO a -> IO a
+#+END_EXAMPLE
+
+* 30.10 Follow-up resources
 ...
