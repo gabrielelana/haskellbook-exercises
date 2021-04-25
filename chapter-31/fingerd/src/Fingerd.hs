@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 module Main where
 
 import qualified Data.Text as T
@@ -98,7 +97,8 @@ renderUser Nothing e = BS.concat [ "ERROR: ", e, "\n" ]
 renderUser (Just u) _ = BS.concat [ "Login: ", e $ U.username u, "\t\t"
                                   , "Name: ", e $ U.realName u, "\n"
                                   , "Directory: ", e $ U.homeDirectory u, "\t\t"
-                                  , "Shell: ", e $ U.shell u, "\n"]
+                                  , "Shell: ", e $ U.shell u, "\n"
+                                  ]
   where e = encodeUtf8
 
 -- TODO: something better
